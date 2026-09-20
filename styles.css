@@ -230,8 +230,8 @@
     margin:0 0 .25rem; padding-bottom:.5rem;
   }
   .disco-item{
-    display:grid; grid-template-columns:56px 1fr auto;
-    gap: clamp(1rem,3vw,1.75rem); align-items:center;
+    display:grid; grid-template-columns:80px 1fr auto;
+    gap: clamp(1rem,3vw,1.75rem); align-items:start;
     padding: 1.15rem 0; border-top:1px solid var(--line);
   }
   .disco-info{ min-width:0; }
@@ -245,6 +245,50 @@
   .disco-links a:hover, .disco-links a:focus-visible{ color:var(--ink); border-bottom-color:var(--accent); }
   .disco-bottom{ position:relative; z-index:1; padding: clamp(3rem,8vh,5rem) 0 clamp(1rem,3vh,2rem); }
   @media (max-width:560px){
-    .disco-item{ grid-template-columns:44px 1fr; }
+    .disco-item{ grid-template-columns:56px 1fr; }
     .disco-links{ grid-column:2 / -1; margin-top:.35rem; }
   }
+
+
+  /* ---------- Kev's Kitchen (sounds & samples shop) ---------- */
+  .shop-head{ padding: clamp(3rem,10vh,6rem) 0 clamp(1.5rem,4vh,2.5rem); position:relative; z-index:1; }
+  .shop-head h1{ font-family:"Fraunces",Georgia,serif; font-weight:300; font-size:clamp(2.4rem,8vw,4.25rem); letter-spacing:-0.025em; margin:0 0 .85rem; }
+  .shop-head p{ color:var(--ink-soft); margin:0; max-width:52ch; }
+  .shop-grid{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:clamp(1.25rem,3vw,2rem); padding-bottom:clamp(2.5rem,6vh,4rem); }
+  .product{ display:flex; flex-direction:column; background:var(--bg-raise); border:1px solid var(--line); border-radius:3px; overflow:hidden; transition:border-color .2s ease, transform .2s ease; }
+  .product:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .product-cover{ aspect-ratio:1; display:grid; place-items:center; overflow:hidden; background:linear-gradient(150deg, #16202b, #0b0f14); color:var(--ink-faint); }
+  .product-cover svg{ width:34%; height:34%; opacity:.5; }
+  .product-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .product-body{ display:flex; flex-direction:column; gap:.4rem; padding:1.1rem 1.15rem 1.25rem; flex:1; }
+  .product-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
+  .product-desc{ color:var(--ink-soft); font-size:0.9rem; margin:0; flex:1; }
+  .product-meta{ color:var(--ink-faint); font-size:0.78rem; letter-spacing:0.03em; margin:.15rem 0 0; }
+  .product-foot{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:.75rem; }
+  .product-price{ font-family:"Fraunces",Georgia,serif; font-size:1.25rem; }
+  .buy-btn{ display:inline-flex; align-items:center; background:var(--ink); color:#10151b; font-weight:600; font-size:0.85rem; padding:.5rem 1rem; border-radius:2px; border:1px solid var(--ink); transition:background .2s ease, color .2s ease; }
+  .buy-btn:hover, .buy-btn:focus-visible{ background:transparent; color:var(--ink); }
+  .shop-note{ position:relative; z-index:1; border-top:1px solid var(--line); padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem); }
+  .shop-note p{ color:var(--ink-faint); font-size:0.85rem; max-width:60ch; margin:0 0 1.5rem; }
+
+
+  /* ---------- Featured product ---------- */
+  .featured{ position:relative; z-index:1; display:grid; grid-template-columns:1.05fr 1fr; gap:clamp(1.5rem,4vw,3rem); align-items:center; padding-bottom:clamp(2.5rem,6vh,4rem); margin-bottom:clamp(2.5rem,6vh,4rem); border-bottom:1px solid var(--line); }
+  .featured-media{ aspect-ratio:16/9; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#0b0f14; }
+  .featured-media img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .featured-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:clamp(1.9rem,4.5vw,2.7rem); letter-spacing:-0.02em; margin:0; }
+  .featured-sub{ color:var(--ink-soft); font-size:1rem; margin:.4rem 0 1.25rem; }
+  .featured-desc{ color:var(--ink-soft); line-height:1.6; margin:0 0 1.4rem; }
+  .kit-label{ color:var(--ink); font-family:"Fraunces",Georgia,serif; font-size:1rem; margin:0 0 .6rem; }
+  .kit-list{ list-style:none; padding:0; margin:0 0 1.75rem; display:flex; flex-direction:column; gap:.5rem; }
+  .kit-list li{ color:var(--ink-soft); font-size:0.92rem; line-height:1.5; padding-left:1.1rem; position:relative; }
+  .kit-list li::before{ content:""; position:absolute; left:0; top:.55em; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .featured-foot{ display:flex; align-items:center; gap:1.5rem; }
+  @media (max-width:720px){ .featured{ grid-template-columns:1fr; } }
+
+
+  /* ---------- Discography embedded player ---------- */
+  .disco-item.has-player{ grid-template-columns:80px 1fr; }
+  .disco-player{ grid-column:1 / -1; margin-top:1.25rem; }
+  .disco-player iframe{ width:100%; height:344px; border:0; border-radius:16px; display:block; }
+  @media (max-width:560px){ .disco-item.has-player{ grid-template-columns:56px 1fr; } }
