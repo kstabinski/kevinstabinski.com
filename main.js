@@ -7,20 +7,10 @@
   // Hero entrance — the single orchestrated moment.
   requestAnimationFrame(() => document.querySelector('.hero')?.classList.add('in'));
 
-  // Active nav link based on the section in view (wayfinding, not decoration).
-  const links = [...document.querySelectorAll('.nav-links a')];
-  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
-  const spy = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting){
-        links.forEach(l => l.classList.remove('active'));
-        map.get(e.target.id)?.classList.add('active');
-      }
-    });
-  }, { rootMargin: '-45% 0px -50% 0px' });
-  ['music','videos','kitchen'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) spy.observe(el);
+  // Highlight the nav link for the page you're on.
+  const page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    if ((a.getAttribute('href') || '').toLowerCase() === page) a.classList.add('active');
   });
 
 // Click-to-load YouTube players (keeps pages with many videos fast).
