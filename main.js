@@ -18,7 +18,7 @@
       }
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
-  ['music','store','contact'].forEach(id => {
+  ['music','watch','store'].forEach(id => {
     const el = document.getElementById(id);
     if (el) spy.observe(el);
   });
