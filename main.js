@@ -18,7 +18,7 @@
       }
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
-  ['music','watch','store'].forEach(id => {
+  ['music','videos','kitchen'].forEach(id => {
     const el = document.getElementById(id);
     if (el) spy.observe(el);
   });
