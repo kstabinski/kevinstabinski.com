@@ -4,7 +4,7 @@
   onScroll();
   addEventListener('scroll', onScroll, { passive:true });
 
-  // Keep the primary navigation aligned with the sections on the home page.
+  // Keep the primary navigation aligned with the home-page sections.
   const navItems = [
     { label: 'Music', anchor: 'music' },
     { label: 'Videos', anchor: 'watch' },
