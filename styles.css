@@ -347,4 +347,70 @@
     var(--bg) 100%
   );
 }
-  }
+
+
+/* ---------- Nav: keep five links on one line on small phones ---------- */
+@media (max-width:420px){
+  .nav-links{ gap:.8rem; }
+  .nav-links a{ font-size:.8rem; }
+  .wordmark{ font-size:1.1rem; }
+}
+
+
+/* ---------- Courses ---------- */
+.course-head{ position:relative; z-index:1; padding: clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.5rem); }
+.course-head h1{ font-family:"Fraunces",Georgia,serif; font-weight:300; font-size:clamp(2.4rem,8vw,4.25rem); letter-spacing:-0.025em; margin:0 0 .85rem; }
+.course-head p{ color:var(--ink-soft); margin:0; max-width:52ch; }
+
+.course{ position:relative; z-index:1; padding-bottom:clamp(2.5rem,6vh,4rem); }
+.course-intro{ background:var(--bg-raise); border:1px solid var(--line); border-radius:3px; padding:clamp(1.5rem,5vw,2.75rem); margin-top:clamp(1.5rem,4vh,2.5rem); }
+.course-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:clamp(1.9rem,5vw,2.75rem); letter-spacing:-0.02em; margin:0 0 .4rem; }
+.course-sub{ color:var(--ink-soft); margin:0; }
+.course-meta{ color:var(--ink-faint); font-size:.88rem; margin:1.25rem 0 0; }
+.course-meta b{ color:var(--ink); font-weight:500; }
+
+/* Step sequencer: one pad per week. Lit pads link to that week's recap. */
+.seq{ display:grid; grid-template-columns:repeat(12,1fr); gap:6px; margin:clamp(1.5rem,4vw,2.25rem) 0 .6rem; }
+.seq > *{
+  aspect-ratio:1; border-radius:3px; border:1px solid var(--line); background:var(--bg);
+  display:flex; align-items:flex-end; padding:4px 6px;
+  font-size:.72rem; color:var(--ink-faint); line-height:1;
+}
+.seq > :nth-child(4n+1){ border-color:#34435a; }
+.seq > a.on{ background:var(--accent); border-color:var(--accent); color:#10151b; font-weight:600; transition:background .2s ease, transform .2s ease; }
+.seq > a.on:hover, .seq > a.on:focus-visible{ background:var(--ink); border-color:var(--ink); transform:translateY(-1px); }
+.seq-caption{ color:var(--ink-faint); font-size:.8rem; margin:0; }
+@media (max-width:560px){ .seq{ grid-template-columns:repeat(4,1fr); } .seq > *{ aspect-ratio:2/1; } }
+
+.course-block{ border-top:1px solid var(--line); padding-top:clamp(2rem,5vh,3rem); margin-top:clamp(2.5rem,6vh,4rem); max-width:44rem; }
+.course-block h2{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:clamp(1.6rem,4vw,2.2rem); letter-spacing:-0.02em; margin:0 0 1.25rem; }
+.course-block h3{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:2.25rem 0 .75rem; }
+.course-block h2 + h3{ margin-top:0; }
+.course-block p{ color:var(--ink-soft); margin:0 0 1rem; }
+.course-block p b, .course-block li b{ color:var(--ink); font-weight:600; }
+.course-block em{ color:var(--ink); }
+
+/* In-text links: the site resets link styling, so course copy gets an underline */
+.course-block a:not(.btn){ color:var(--ink); border-bottom:1px solid var(--accent); padding-bottom:1px; transition:color .2s ease, border-color .2s ease; }
+.course-block a:not(.btn):hover, .course-block a:not(.btn):focus-visible{ color:var(--accent); }
+
+.course-list{ list-style:none; padding:0; margin:0 0 1.25rem; display:flex; flex-direction:column; gap:.65rem; }
+.course-list li{ color:var(--ink-soft); line-height:1.55; padding-left:1.1rem; position:relative; }
+.course-list li::before{ content:""; position:absolute; left:0; top:.6em; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+
+.shortcuts{ display:grid; grid-template-columns:max-content 1fr; gap:.55rem 1.25rem; margin:0 0 1.75rem; align-items:center; }
+.shortcuts dt{ margin:0; white-space:nowrap; }
+.shortcuts dd{ margin:0; color:var(--ink-soft); }
+kbd{
+  font-family:"Hanken Grotesk",system-ui,sans-serif; font-size:.8rem; font-weight:600; color:var(--ink);
+  background:var(--bg-raise); border:1px solid var(--line); border-bottom-width:2px; border-radius:3px;
+  padding:.1em .45em;
+}
+
+.week{ border-left:2px solid var(--accent); padding:.15rem 0 .15rem clamp(1rem,3vw,1.5rem); margin-top:2rem; scroll-margin-top:calc(5.5rem + var(--safe-t)); }
+.week h3{ margin-top:0; }
+.week dl{ margin:0; }
+.week dt{ color:var(--ink); font-weight:600; font-size:.9rem; margin-top:1rem; }
+.week dt:first-child{ margin-top:0; }
+.week dd{ color:var(--ink-soft); margin:.2rem 0 0; }
+.course-note{ font-size:.9rem; }
