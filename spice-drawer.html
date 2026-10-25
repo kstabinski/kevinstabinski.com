@@ -109,6 +109,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .pack-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;max-height:520px;overflow-y:auto}
 .pack-list li[draggable=true]{cursor:grab}
 .drag-hint{margin:0;padding:6px 14px 0}
+.folder{margin:10px 14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--sunk);display:flex;flex-direction:column;gap:8px;font-size:13px}
+.folder .f-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.folder .f-name{font-weight:600;overflow-wrap:anywhere}
+.folder .f-help{font-size:12px;color:var(--muted);margin:0}
+.folder .linkbtn{border:0;background:none;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px}
 .pack-list li{display:grid;grid-template-columns:auto 10px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 6px;border-radius:2px}
 .pack-list li:hover{background:var(--sunk)}
 .pack-list li.playing{background:color-mix(in srgb,var(--c) 16%,transparent)}
@@ -244,6 +249,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
         <div class="pack-stats" id="pStats"></div>
       </div>
       <ul class="pack-list" id="pList"></ul>
+      <div class="folder" id="folderBox" hidden></div>
       <p class="hint drag-hint" id="dragHint"></p>
       <div class="pack-foot" id="pFoot">
         <button class="tbtn" id="bVar">Make 8 variations</button>
@@ -2468,6 +2474,50 @@ function dragOut(e,buf,name){
   e.dataTransfer.setData('text/plain',fn);
 }
 document.addEventListener('dragend',()=>{ selfDrag=false; });
+
+/* Linked folder (Chrome/Edge, outside Claude): every sample added to the pack is also written
+   straight into a folder on disk, e.g. one added to Ableton's browser under Places. */
+const CAN_LINK = LOCAL && typeof window.showDirectoryPicker==='function';
+let dirH=null;
+function kv(mode,fn){ return new Promise((res,rej)=>{ const r=indexedDB.open('spicedrawer',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+  r.onerror=()=>rej(r.error);
+  r.onsuccess=()=>{ const tx=r.result.transaction('kv',mode), q=fn(tx.objectStore('kv')); tx.oncomplete=()=>res(q&&q.result); tx.onerror=()=>rej(tx.error); }; }); }
+async function loadDir(){ if(!CAN_LINK) return; try{ dirH=(await kv('readonly',st=>st.get('dir')))||null; }catch(e){ dirH=null; } folderUI(); }
+async function linkDir(){
+  try{ dirH=await window.showDirectoryPicker({id:'spicedrawer',mode:'readwrite',startIn:'music'});
+    try{ await kv('readwrite',st=>st.put(dirH,'dir')); }catch(e){}
+    toast('Linked '+dirH.name+'. New samples will be saved there.'); }
+  catch(e){ if(e&&e.name!=='AbortError') toast('Couldn’t link that folder.'); }
+  folderUI(); }
+async function unlinkDir(){ dirH=null; try{ await kv('readwrite',st=>st.delete('dir')); }catch(e){} folderUI(); }
+// Call at the very start of a click handler: Chrome only shows the permission prompt during a user gesture.
+function dirReady(){ if(!dirH) return Promise.resolve(false);
+  const o={mode:'readwrite'};
+  return dirH.queryPermission(o).then(p=>p==='granted'?true:dirH.requestPermission(o).then(q=>q==='granted')).catch(()=>false); }
+async function writeToDir(type,name,buf){
+  const pn=safe(S.packName)||'Spice Drawer';
+  const d1=await dirH.getDirectoryHandle(pn,{create:true}), sub=TYPES[type].folder, d2=await d1.getDirectoryHandle(sub,{create:true});
+  const base=safe(name); let n=base, k=2;
+  for(;;){ try{ await d2.getFileHandle(n+'.wav'); n=base+' '+(k++); }catch(e){ break; } }
+  const fh=await d2.getFileHandle(n+'.wav',{create:true}), w=await fh.createWritable();
+  await w.write(new Blob([wav(buf)],{type:'audio/wav'})); await w.close();
+  return pn+'/'+sub+'/'+n+'.wav'; }
+async function toDir(perm,type,name,buf){
+  if(!dirH) return null;
+  if(!(await perm)){ toast('Allow access to '+dirH.name+' to save samples there.'); return null; }
+  try{ return await writeToDir(type,name,buf); }catch(e){ toast('Couldn’t write to '+dirH.name+'. Try linking the folder again.'); return null; } }
+function folderUI(){
+  const box=$('#folderBox'); if(!box) return;
+  box.hidden=!CAN_LINK; if(!CAN_LINK) return;
+  if(dirH){
+    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every sample you add lands in <b>pack name / sound type</b> inside this folder. In Ableton, add the folder under Places (Add Folder…) and drag samples from the browser.</p>`;
+    box.querySelector('.f-name').textContent=dirH.name;
+    box.querySelector('#fChange').onclick=linkDir; box.querySelector('#fUnlink').onclick=unlinkDir;
+  } else {
+    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every sample you add to the pack is saved straight into it. Add the same folder to Ableton’s browser under Places, and new sounds show up there, ready to drag in.</p>`;
+    box.querySelector('#fLink').onclick=linkDir;
+  } }
 async function saveFile(filename, blob){
   if(!downloads){ toast('Saving files isn’t available in this view.'); return; }
   try{ await downloads.save({filename, data:blob}); toast('Saved '+filename); }
@@ -2490,14 +2540,19 @@ $('#bMut').onclick=()=>{ snap(); S.params[S.type]=vary(S.type,S.params[S.type],0
 $('#bRnd').onclick=()=>{ snap(); S.params[S.type]=vary(S.type,S.params[S.type],0,true); persist(); buildParams(); schedule(); };
 $('#bReset').onclick=()=>{ snap(); S.params[S.type]=defaults(S.type); persist(); buildParams(); schedule(); };
 async function freshBuf(){ if(!curBuf || curKey!==editorKey()){ clearTimeout(rT); await rerender(false); } return curBuf; }
-$('#bAdd').onclick=async()=>{ const t=S.type, params={...S.params[t]}; const b=await freshBuf(); const it=addItem(t,params,b); toast('Added '+it.name); };
-$('#bSave').onclick=async()=>{ const b=await freshBuf(); if(!b) return; const n=safe(nextName(S.type)); if(LOCAL) await saveFile(n+'.wav', new Blob([wav(b)],{type:'audio/wav'})); else await saveFile(n+'.zip', zip([{name:n+'.wav',data:wav(b)}])); };
+$('#bAdd').onclick=async()=>{ const perm=dirReady(); const t=S.type, params={...S.params[t]}; const b=await freshBuf(); const it=addItem(t,params,b); toast('Added '+it.name);
+  const p=await toDir(perm,t,it.name,b); if(p) toast('Added '+it.name+' → '+dirH.name+'/'+p); };
+$('#bSave').onclick=async()=>{ const perm=dirReady(); const b=await freshBuf(); if(!b) return; const n=safe(nextName(S.type));
+  if(dirH){ const p=await toDir(perm,S.type,n,b); if(p){ toast('Saved '+dirH.name+'/'+p); return; } }
+  if(LOCAL) await saveFile(n+'.wav', new Blob([wav(b)],{type:'audio/wav'})); else await saveFile(n+'.zip', zip([{name:n+'.wav',data:wav(b)}])); };
 $('#bVar').onclick=async()=>{
-  const b=$('#bVar'); b.disabled=true; const t=S.type, base=S.params[t];
-  for(let i=0;i<8;i++){ b.textContent=`Rendering ${i+1} of 8…`; const p=vary(t,base,0.16,false); addItem(t,p,await render(t,p)); }
+  const perm=dirReady(); const b=$('#bVar'); b.disabled=true; const t=S.type, base=S.params[t];
+  for(let i=0;i<8;i++){ b.textContent=`Rendering ${i+1} of 8…`; const p=vary(t,base,0.16,false), buf=await render(t,p), it=addItem(t,p,buf); await toDir(perm,t,it.name,buf); }
   b.textContent='Make 8 variations'; b.disabled=false; toast('Added 8 '+TYPES[t].label.toLowerCase()+' variations');
 };
 $('#bExport').onclick=async()=>{
+  if(dirH){ const perm=dirReady(); let n=0; for(const it of S.pack){ if(it.buf && await toDir(perm,it.type,it.name,it.buf)) n++; else if(!dirH) break; }
+    if(n){ toast('Saved '+n+' sample'+(n===1?'':'s')+' to '+dirH.name+'/'+(safe(S.packName)||'Spice Drawer')); return; } }
   const pn=safe(S.packName), used=new Set(), files=[];
   for(const it of S.pack){
     let path=`${pn}/${TYPES[it.type].folder}/${safe(it.name)}`, k=2, p=path;
@@ -2668,7 +2723,8 @@ buildRail(); buildParams(); drawPack(); drawSeq(); rerender(false);
 rerenderPack();
 (async()=>{ try{ downloads = window.claude?.use ? await window.claude.use('downloads') : null; }catch(e){ downloads=null; }
   if(LOCAL) downloads=localSave;
-  $('#dragHint').textContent = LOCAL ? 'Drag any sample (or the waveform) straight into Ableton or any DAW.' : 'To drag samples straight into Ableton, open the desktop copy of this page in Chrome.';
+  loadDir();
+  $('#dragHint').textContent = LOCAL ? 'In Chrome you can also drag a sample (or the waveform) onto your desktop or into a DAW that accepts dragged files.' : 'To drag samples straight into Ableton, open the desktop copy of this page in Chrome.';
   $('#bSave').disabled=!downloads; drawPack(); drawSeq();
   if(!downloads){ $('#bSave').title='Saving files isn’t available in this view'; $('#bExport').title='Saving files isn’t available in this view'; }
 })();
