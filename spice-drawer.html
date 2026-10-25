@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spice Drawer — Kev&rsquo;s Kitchen</title>
-<meta name="description" content="Spice Drawer: a free in-browser sound designer for kicks, snares, percussion, risers, downlifters and ambiences. Build your own WAV sample packs and drag them straight into your DAW.">
+<meta name="description" content="Spice Drawer: a free in-browser sound designer for kicks, snares, percussion, risers, downlifters and ambiences. Build your own WAV sample packs and save them straight into a folder for your DAW.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2500,11 +2500,10 @@ function drawPack(){
     const li=document.createElement('li'); li.style.setProperty('--c',`var(${TYPES[it.type].c})`); li.dataset.id=it.id;
     li.innerHTML=`<button class="icon" title="Play">${ICON.play}</button><span class="dot"></span><input id="pk-${it.id}" value="" aria-label="Sample name"><span class="dur">${it.buf?fmtDur(it.buf.duration):'…'}</span><button class="icon del" title="Remove">${ICON.del}</button>`;
     const inp=li.querySelector('input'); inp.value=it.name;
-    li.draggable=true; li.title=LOCAL?'Drag onto the waveform to load its settings, or into your DAW':'Drag onto the waveform to load its settings';
+    li.draggable=true; li.title='Drag onto the waveform to load its settings';
     inp.addEventListener('mousedown',()=>{ li.draggable=false; }); inp.addEventListener('blur',()=>{ li.draggable=true; });
     li.addEventListener('dragstart',e=>{ if(e.target===inp){ e.preventDefault(); return; }
-      dragItem=it; e.dataTransfer.effectAllowed='copy'; e.dataTransfer.setData(ITEM_MIME,String(it.id)); e.dataTransfer.setData('text/plain',it.name);
-      dragOut(e,it.buf,it.name); });
+      dragItem=it; e.dataTransfer.effectAllowed='copy'; e.dataTransfer.setData(ITEM_MIME,String(it.id)); e.dataTransfer.setData('text/plain',it.name); });
     inp.addEventListener('change',()=>{ it.name=inp.value.trim()||it.name; inp.value=it.name; persist(); });
     li.querySelector('.icon').onclick=()=>{ document.querySelectorAll('.pack-list li.playing').forEach(x=>x.classList.remove('playing')); li.classList.add('playing'); play(it.buf,null,()=>li.classList.remove('playing')); };
     li.querySelector('.del').onclick=()=>{ S.pack=S.pack.filter(x=>x!==it); persist(); drawPack(); };
@@ -2556,22 +2555,13 @@ function zip(files){
 const safe=s=>s.replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim()||'Sample';
 
 let downloads=null;
-/* Opened from your own computer (no Claude runtime): save directly and allow drag-out to a DAW. */
+/* Opened outside Claude (site or desktop copy): save files directly. */
 const LOCAL=!(window.claude && window.claude.use);
 const localSave={ save:async({filename,data})=>{ const u=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));
   const a=document.createElement('a'); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000); return {status:'saved'}; } };
 let selfDrag=false;
 const ITEM_MIME='application/x-spicedrawer-item';
 let dragItem=null;   // pack item being dragged (its settings load when dropped on the waveform)
-function dragOut(e,buf,name){
-  if(!LOCAL||!buf){ if(!dragItem) e.preventDefault(); return; }
-  const bytes=new Uint8Array(wav(buf)); let bin=''; for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
-  const fn=safe(name)+'.wav', u='data:audio/wav;base64,'+btoa(bin);
-  selfDrag=true;
-  e.dataTransfer.effectAllowed='copy';
-  e.dataTransfer.setData('DownloadURL','audio/wav:'+fn+':'+u);
-  e.dataTransfer.setData('text/plain',fn);
-}
 document.addEventListener('dragend',()=>{ selfDrag=false; dragItem=null; cv.classList.remove('drop'); });
 function loadItem(it){
   if(!it || !it.params || !TYPES[it.type]) return;
@@ -2729,7 +2719,6 @@ async function loadSound(file){
 }
 $('#fileIn').addEventListener('change',e=>{ loadSound(e.target.files[0]); e.target.value=''; });
 cv.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; if(!selfDrag||dragItem) cv.classList.add('drop'); });
-if(LOCAL){ cv.draggable=true; cv.title='Click to play. Drag into Ableton (or any folder) to drop the WAV.'; cv.addEventListener('dragstart',e=>dragOut(e,curBuf,nextName(S.type))); }
 cv.addEventListener('dragleave',()=>cv.classList.remove('drop'));
 cv.addEventListener('drop',e=>{ e.preventDefault(); cv.classList.remove('drop');
   const id=dragItem?dragItem.id:+(e.dataTransfer.getData(ITEM_MIME)||0);
@@ -2838,7 +2827,7 @@ rerenderPack();
 (async()=>{ try{ downloads = window.claude?.use ? await window.claude.use('downloads') : null; }catch(e){ downloads=null; }
   if(LOCAL) downloads=localSave;
   loadDir();
-  $('#dragHint').textContent = LOCAL ? 'Drag a sample onto the waveform to load its settings. In Chrome you can also drag one onto your desktop or into a DAW that accepts dragged files.' : 'Drag a sample onto the waveform to load its settings.';
+  $('#dragHint').textContent = CAN_LINK ? 'Drag a sample onto the waveform to load its settings. To use your sounds in Ableton, add them to the pack with a folder linked above.' : 'Drag a sample onto the waveform to load its settings. Export pack saves everything as WAVs.';
   $('#bSave').disabled=!downloads; drawPack(); drawSeq();
   if(!downloads){ $('#bSave').title='Saving files isn’t available in this view'; $('#bExport').title='Saving files isn’t available in this view'; }
 })();
