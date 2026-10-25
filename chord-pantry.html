@@ -72,6 +72,7 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .card.playing{box-shadow:0 0 0 2px var(--c)}
 .card .nm{font-family:var(--display);font-size:clamp(17px,1.8vw,22px);font-weight:500;letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .rn{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .fn{font-size:10px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;color:color-mix(in oklab,var(--c) 80%,var(--ink));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .acts{display:flex;gap:2px;margin-top:4px}
 .card .ic{border:0;background:transparent;width:26px;height:24px;display:grid;place-items:center;border-radius:2px;color:var(--muted);cursor:pointer;padding:0}
 .card .ic:hover{background:color-mix(in oklab,var(--c) 22%,transparent);color:var(--ink)}
@@ -530,12 +531,14 @@ function voice(p,st){
     }
     const bpc = inv && third!=null ? (root+third)%12 : root;
     const rel=(bpc-st.key+12)%12;
-    ch.slashLbl = inv && third!=null ? (SCALES[st.scale].iv.includes(rel)||![1,3,6,8,10].includes(rel) ? noteName(bpc,st.key,st.scale) : N_FLAT[bpc]) : null;
+    ch.slashLbl = inv && third!=null ? spellAs(bpc, LETTERS.indexOf(rootName(ch,st)[0])+2) : null;   // the third of the chord, spelled from its root (A7/C♯, not A7/D♭)
     if(ch.slash==='third' && third==null) ch.slash=null;
     let best2=null; for(let n=28;n<=50;n++) if(n%12===bpc){ if(best2==null || Math.abs(n-(prevB??40))<Math.abs(best2-(prevB??40))) best2=n; }
     ch.bass=best2; prevB=best2;
   });
 }
+const LETTERS='CDEFGAB', NAT=[0,2,4,5,7,9,11];
+function spellAs(pc,letterIdx){ const L=((letterIdx%7)+7)%7; let d=((pc-NAT[L])%12+12)%12; if(d>6) d-=12; return LETTERS[L]+(d===1?'♯':d===2?'𝄪':d===-1?'♭':d===-2?'𝄫':''); }
 const rootName=(ch,st)=>{ const pc=(st.key+ch.r)%12; return SCALES[st.scale].iv.includes(ch.r)||![1,3,6,8,10].includes(ch.r) ? noteName(pc,st.key,st.scale) : N_FLAT[pc]; };
 const chordName=(ch,st)=>{ const s=Q[ch.q].s; return rootName(ch,st)+s+(ch.slashLbl?(s.includes('/')?' / ':'/')+ch.slashLbl:''); };
 
@@ -872,8 +875,8 @@ function drawStrip(){
   S.prog.chords.forEach((ch,i)=>{
     const c=document.createElement('div'); c.className='card f-'+func(ch,st)+(ch.locked?' locked':''); c.style.gridColumn=`${ch.start+1} / span ${ch.len}`;
     c.tabIndex=0; c.setAttribute('role','button'); c.setAttribute('aria-label','Play '+chordName(ch,st));
-    c.innerHTML=`<span class="nm"></span><span class="rn"></span><span class="acts"><button type="button" class="ic rr" title="Reroll this chord">${ICON.reroll}</button><button type="button" class="ic fl" title="Flip major / minor (modal interchange)" aria-pressed="${!!ch.flip}" ${canFlip(ch)?'':'disabled'}>${ICON.flip}</button><button type="button" class="ic lk" title="Lock this chord" aria-pressed="${ch.locked}">${ch.locked?ICON.lock:ICON.unlock}</button></span>`;
-    c.querySelector('.nm').textContent=chordName(ch,st); c.querySelector('.rn').textContent=roman(ch)+' · '+(ch.flip&&func(ch,st)!=='tonic'&&func(ch,st)!=='pre'&&func(ch,st)!=='dom'?FN_TAG.flip:FN_TAG[func(ch,st)]);
+    c.innerHTML=`<span class="nm"></span><span class="rn"></span><span class="fn"></span><span class="acts"><button type="button" class="ic rr" title="Reroll this chord">${ICON.reroll}</button><button type="button" class="ic fl" title="Flip major / minor (modal interchange)" aria-pressed="${!!ch.flip}" ${canFlip(ch)?'':'disabled'}>${ICON.flip}</button><button type="button" class="ic lk" title="Lock this chord" aria-pressed="${ch.locked}">${ch.locked?ICON.lock:ICON.unlock}</button></span>`;
+    c.querySelector('.nm').textContent=chordName(ch,st); c.querySelector('.rn').textContent=roman(ch); c.querySelector('.fn').textContent=(ch.flip&&!['tonic','pre','dom'].includes(func(ch,st))?FN_TAG.flip:FN_TAG[func(ch,st)]);
     c.title=chordName(ch,st)+'  ·  '+ch.notes.map(n=>noteName(n,st.key,st.scale)).join(' ');
     c.onclick=e=>{ if(e.target.closest('.ic')) return; audition(ch); };
     c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); audition(ch); } };
