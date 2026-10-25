@@ -78,7 +78,7 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .card .ic[aria-pressed="true"]{color:var(--c)}
 .card .ic svg{width:15px;height:15px}
 .card.locked{border-style:dashed}
-.card.f-pre{--c:var(--f-pre)} .card.f-dom{--c:var(--f-dom)} .card.f-color{--c:var(--f-color)}
+.card.f-pre{--c:var(--f-pre)} .card.f-dom{--c:var(--f-dom)} .card.f-color,.card.f-sec{--c:var(--f-color)}
 canvas.roll{width:100%;height:170px;display:block;border-radius:2px;background:var(--sunk);border:1px solid var(--line)}
 
 /* controls */
@@ -180,10 +180,10 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       <div class="readout">
         <b id="rKey">C minor</b><span id="rMeta">4 bars · 122 BPM</span>
         <span class="legend" aria-label="Chord colours">
-          <span style="--c:var(--f-tonic)"><i></i>Home</span>
-          <span style="--c:var(--f-pre)"><i></i>Lift</span>
-          <span style="--c:var(--f-dom)"><i></i>Tension</span>
-          <span style="--c:var(--f-color)"><i></i>Borrowed</span>
+          <span style="--c:var(--f-tonic)"><i></i>Tonic</span>
+          <span style="--c:var(--f-pre)"><i></i>Predominant</span>
+          <span style="--c:var(--f-dom)"><i></i>Dominant</span>
+          <span style="--c:var(--f-color)"><i></i>Borrowed / secondary</span>
         </span>
       </div>
       <div class="tl" id="tl">
@@ -261,12 +261,13 @@ const Q={
   m7b5:{iv:[0,3,6,10],s:'m7♭5'}, dim7:{iv:[0,3,6,9],s:'°7'},
   maj9:{iv:[0,4,7,11,14],s:'maj9'}, m9:{iv:[0,3,7,10,14],s:'m9'}, '9':{iv:[0,4,7,10,14],s:'9'},
   m11:{iv:[0,3,7,10,14,17],s:'m11'}, '9sus4':{iv:[0,5,7,10,14],s:'9sus4'}, '7sus4':{iv:[0,5,7,10],s:'7sus4'},
-  'maj9#11':{iv:[0,4,7,11,14,18],s:'maj9♯11'}, '13':{iv:[0,4,7,10,14,21],s:'13'}, '7b9':{iv:[0,4,7,10,13],s:'7♭9'},
+  'maj9#11':{iv:[0,4,7,11,14,18],s:'maj9♯11'}, 'maj7#11':{iv:[0,4,7,11,18],s:'maj7♯11'}, '13':{iv:[0,4,7,10,14,21],s:'13'}, '7b9':{iv:[0,4,7,10,13],s:'7♭9'},
 };
 // how rich each family gets as Colour rises (level 0..3)
 const EXT={
-  maj:[['maj'],['add9','maj7','6','sus2'],['maj9','69','maj7'],['maj9','69','maj9#11']],
-  min:[['min'],['m7','madd9'],['m9','m7'],['m11','m9']],
+  maj:[['maj'],['add9','maj7','6','sus2'],['maj9','69','maj7'],['maj9','69','maj9#11','maj7#11']],
+  majDom:[['maj'],['add9','7','sus4'],['9','7sus4','13'],['13','9sus4','9']],     // major chords whose in-key 7th is flat (V in major, ♭VII in minor)
+  min:[['min'],['m7','madd9','m6'],['m9','m7'],['m11','m9','m7']],
   dom:[['7'],['9','7sus4'],['9','13','9sus4'],['13','9sus4','7b9']],
   dim:[['dim'],['m7b5'],['m7b5'],['m7b5']],
   hdim:[['m7b5'],['m7b5'],['m7b5'],['m7b5']],
@@ -283,21 +284,36 @@ function parseTok(t,minor){
   return {r,fam};
 }
 const RN=['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII'];
+const isMinorQ=q=>['min','m7','m9','m11','madd9','m6','m7b5','dim','dim7'].includes(q);
+function numeral(r,q){ let n=RN[r]; if(isMinorQ(q)) n=n.toLowerCase();
+  const s=Q[q].s.replace(/^m(?!aj)/,''); return n+(q==='dim'?'°':q==='m7b5'?'ø7':q==='dim7'?'°7':s); }
 function roman(ch){
-  const lower=['min','dim','hdim'].includes(ch.fam) || ['min','m7','m9','m11','madd9','m6','m7b5','dim','dim7'].includes(ch.q);
-  let n=RN[ch.r]; if(lower) n=n.toLowerCase().replace('♭','♭');
-  const s=Q[ch.q].s.replace(/^m(?!aj)/,'');
-  const suf = ch.q==='dim'?'°' : ch.q==='m7b5'?'ø7' : ch.q==='dim7'?'°7' : s;
-  return n+suf+(ch.slash!=null?'/'+(ch.slashLbl||''):'');
+  const inv=ch.slashLbl?'⁶':'';
+  if(ch.sec) return (Q[ch.q].iv.includes(10)?'V7':'V')+'/'+ch.sec;      // secondary dominant: "V7/vi"
+  return numeral(ch.r,ch.q)+inv;
 }
-// function colour: home / lift / tension / borrowed
+const FN_TAG={tonic:'tonic',pre:'predominant',dom:'dominant',color:'borrowed',sec:'secondary'};
+// function (after Rick Beato's Masterclass 2): tonic chords share two notes with I (I, iii, vi; i, ♭III, ♭VI),
+// predominant chords hold the 4th degree (ii, IV), dominant chords hold the leading tone (V, vii°; ♭VII in pop/minor).
+// Anything with notes from outside the key is borrowed, or a secondary dominant when it resolves to its target.
 function func(ch,st){
-  const sc=SCALES[st.scale].iv;
-  if(Q[ch.q].iv.slice(0,3).some(x=>!sc.includes((ch.r+x)%12))) return 'color';   // any chord tone outside the scale
+  if(ch.sec) return 'sec';
+  const sc=SCALES[st.scale].iv, minor=SCALES[st.scale].minor;
+  const out=Q[ch.q].iv.slice(0,3).some(x=>!sc.includes((ch.r+x)%12));
+  if(out && !(minor && ch.r===7)) return 'color';                 // V(7) in minor borrows the leading tone: still dominant
   if([7,10,11].includes(ch.r)) return 'dom';
   if([2,5].includes(ch.r)) return 'pre';
   if(ch.r===1||ch.r===6) return 'color';
   return 'tonic';
+}
+// mark secondary dominants (a major/dominant chord a 5th above the next chord's root, outside the key)
+function analyze(p,st){
+  const sc=SCALES[st.scale].iv, cs=p.chords;
+  cs.forEach((ch,i)=>{ ch.sec=null; const nx=cs[(i+1)%cs.length]; if(!nx||nx===ch) return;
+    const majorish=Q[ch.q].iv.includes(4) && !Q[ch.q].iv.includes(3);
+    const outside=Q[ch.q].iv.slice(0,4).some(x=>!sc.includes((ch.r+x)%12));
+    if(majorish && outside && (ch.r+5)%12===nx.r && nx.r!==0 && !['dim','hdim'].includes(nx.fam)) ch.sec=numeral(nx.r, nx.fam==='min'?'min':'maj');
+  });
 }
 const diatonicFam=(r,scale)=>{ const sc=SCALES[scale].iv, i=sc.indexOf(r); if(i<0) return 'maj';
   const third=(sc[(i+2)%7]-r+12)%12, fifth=(sc[(i+4)%7]-r+12)%12;
@@ -308,27 +324,27 @@ const STYLES={
   euphoric:{label:'Euphoric',hint:'Big, bright festival chords. Think Avicii.',
     maj:['vi IV I V','I V vi IV','IV I V vi','I vi IV Vsus','vi V IV V'],
     min:['i VI III VII','i VII VI VII','VI VII i i','i III VII VI','i VI VII v'],
-    sus:0.35, def:{scale:'minor',color:0.3,spice:0.15,rate:'1',rhythm:'syncopated',voicing:'open',sound:'pluck',swing:0,bpm:126,humanize:0.3,dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off'}},
+    sus:0.35, def:{scale:'minor',flow:'loop',inv:'root',color:0.3,spice:0.15,rate:'1',rhythm:'syncopated',voicing:'open',sound:'pluck',swing:0,bpm:126,humanize:0.3,dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off'}},
   neosoul:{label:'Neo-soul house',hint:'Bouncy 7ths and 9ths with a swing. Think Kaytranada.',
     maj:['ii V7 I vi','IV iii ii I','ii iii IV V7','I VI7 ii V7','IV V7 iii vi'],
     min:['i iv VII7 III','iiø V7 i iv','i IV7 i IV7','iv v i VI','i VII VI V7'],
-    def:{scale:'dorian',color:0.75,spice:0.35,rate:'2',rhythm:'syncopated',voicing:'open',sound:'keys',swing:0.15,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'staccato',roll:0.12,rubato:0.12,pedal:'off'}},
+    def:{scale:'dorian',flow:'functional',inv:'smooth',color:0.75,spice:0.35,rate:'2',rhythm:'syncopated',voicing:'open',sound:'keys',swing:0.15,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'staccato',roll:0.12,rubato:0.12,pedal:'off'}},
   future:{label:'Lush future',hint:'Wide, glossy, slightly chromatic. Think Sam Gellaitry.',
     maj:['IV V iii vi','I II IV iv','IV I bVII IV','vi IV I II','I iii IV iv'],
     min:['i VI III VII','iv i VI VII','i VII iv VI'],
-    def:{scale:'lydian',color:0.85,spice:0.5,rate:'mixed',rhythm:'stabs',voicing:'spread',sound:'keys',swing:0.05,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
+    def:{scale:'lydian',flow:'chromatic',inv:'smooth',color:0.85,spice:0.5,rate:'mixed',rhythm:'stabs',voicing:'spread',sound:'keys',swing:0.05,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
   dark:{label:'Dark',hint:'Brooding minor loops for heavier tracks.',
     maj:['I bVII bVI bVII','I bIII IV iv'],
     min:['i bII i VII','i VI iv V7','i iv VI V7','i VI III VII','i v VI iv'],
-    def:{scale:'phrygian',color:0.3,spice:0.3,rate:'1',rhythm:'hold',voicing:'close',sound:'pad',swing:0,bpm:128,humanize:0.3,dyn:'swell',range:0.5,accent:'top',artic:'legato',roll:0.08,rubato:0.08,pedal:'chord'}},
+    def:{scale:'phrygian',flow:'chromatic',inv:'root',color:0.3,spice:0.3,rate:'1',rhythm:'hold',voicing:'close',sound:'pad',swing:0,bpm:128,humanize:0.3,dyn:'swell',range:0.5,accent:'top',artic:'legato',roll:0.08,rubato:0.08,pedal:'chord'}},
   lofi:{label:'Lo-fi',hint:'Jazzy, dusty and laid back.',
     maj:['ii V7 I vi','IV iii vi I','I vi ii V7','IV iv iii VI7'],
     min:['i iv VII III','iv v i i','iiø V7 i VI'],
-    def:{scale:'major',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0.3,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
+    def:{scale:'major',flow:'functional',inv:'smooth',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0.3,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
   pop:{label:'Pop',hint:'Clean, singable triads.',
     maj:['I V vi IV','vi IV I V','I IV vi V','I vi IV V'],
     min:['i VI III VII','i iv VI V','i VI iv V'],
-    def:{scale:'major',color:0.12,spice:0.1,rate:'1',rhythm:'stabs',voicing:'close',sound:'piano',swing:0,bpm:120,humanize:0.35,dyn:'build',range:0.4,accent:'top',artic:'tenuto',roll:0.15,rubato:0.1,pedal:'chord'}},
+    def:{scale:'major',flow:'loop',inv:'smooth',color:0.12,spice:0.1,rate:'1',rhythm:'stabs',voicing:'close',sound:'piano',swing:0,bpm:120,humanize:0.35,dyn:'build',range:0.4,accent:'top',artic:'tenuto',roll:0.15,rubato:0.1,pedal:'chord'}},
 };
 // make the chosen mode audible
 const MODE_SUBS={
@@ -339,12 +355,20 @@ const MODE_SUBS={
   harmonic:[[7,'min',7,'dom'],[10,'maj',7,'dom']],
 };
 // borrowed-chord swaps (Spice)
-const BORROW={maj:[[5,'maj',5,'min'],[9,'min',8,'maj'],[7,'maj',10,'maj'],[2,'min',2,'dom'],[0,'maj',3,'maj']],
-              min:[[5,'min',5,'maj'],[7,'min',7,'dom'],[8,'maj',5,'min'],[10,'maj',1,'maj'],[3,'maj',3,'min']]};
+// borrowed chords (Spice): major keys borrow from the parallel minor (i, ii°, ♭III, iv, v, ♭VI, ♭VII); minor keys from the parallel major
+const BORROW={maj:[[5,'maj',5,'min'],[7,'maj',7,'min'],[9,'min',8,'maj'],[7,'maj',10,'maj'],[2,'min',2,'hdim'],[4,'min',3,'maj'],[0,'maj',0,'min']],
+              min:[[5,'min',5,'maj'],[7,'min',7,'dom'],[8,'maj',5,'min'],[10,'maj',7,'dom'],[3,'maj',3,'min']]};
+// functional flow: tonic -> predominant -> dominant -> tonic, with plagal (IV-I) and deceptive (V-vi) moves
+const FUNC={maj:{T:[[0,'maj',3],[9,'min',2.5],[4,'min',0.8]],PD:[[5,'maj',3],[2,'min',2]],D:[[7,'maj',3],[11,'dim',0.25]]},
+            min:{T:[[0,'min',3],[8,'maj',2],[3,'maj',1.5]],PD:[[5,'min',3],[2,'hdim',0.7]],D:[[7,'min',1.3],[7,'dom',1.5],[10,'maj',2]]}};
+const FLOW={T:{T:0.22,PD:0.53,D:0.25},PD:{D:0.55,T:0.3,PD:0.15},D:{T:0.72,PD:0.18,D:0.1}};
+// chromatic flow: rising major chords from the tonic (I ♭II ♭III IV, the Radiohead move) and the ♭VI–V–IV fall
+const CHROM={maj:[['I','bII','bIII','IV'],['I','bVI','V','IV'],['I','bIII','IV','iv'],['I','bVI','bVII','I']],
+             min:[['i','bII','III','iv'],['i','VI','V','iv'],['i','bII','i','VII'],['i','III','bII','i']]};
 
 /* ---------------- state ---------------- */
 const KEY='chordpantry.v1';
-const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'syncopated',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,
+const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'syncopated',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,flow:'loop',inv:'root',
   dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off',room:false};
 let S={set:{...DEF},prog:null,pantry:[]};
 try{ const j=JSON.parse(localStorage.getItem(KEY)||'null'); if(j&&j.set){ S.set={...DEF,...j.set}; S.prog=j.prog||null; S.pantry=Array.isArray(j.pantry)?j.pantry:[]; } }catch(e){}
@@ -368,10 +392,28 @@ function passing(T,prev,st,R){
   const sc=SCALES[st.scale].iv, i=sc.indexOf(T.r); if(i>=0){ const r=sc[(i+6)%7]; opts.push([0.7,{r,fam:diatonicFam(r,st.scale)}]); } // step below
   let tot=opts.reduce((a,o)=>a+o[0],0), x=R()*tot; for(const [w,o] of opts){ x-=w; if(x<=0) return {...o}; } return {...opts[0][1]};
 }
-function newChord(base,slot,R){ return {r:base.r,fam:base.fam,slash:base.slash==='third'?'third':null,start:slot.start,len:slot.len,role:slot.role,locked:false,u:R(),q:'maj'}; }
+function newChord(base,slot,R){ return {r:base.r,fam:base.fam,force:base.force||null,slash:base.slash==='third'?'third':null,start:slot.start,len:slot.len,role:slot.role,locked:false,u:R(),q:'maj'}; }
+const pickW=(R,list)=>{ let t=list.reduce((a,x)=>a+x[x.length-1],0), x=R()*t; for(const it of list){ x-=it[it.length-1]; if(x<=0) return it; } return list[0]; };
+function functionalSeq(st,R,minor){
+  const n=st.bars, F=FUNC[minor?'min':'maj'], seq=[{r:0,fam:minor?'min':'maj',fn:'T'}];
+  for(let i=1;i<n;i++){
+    const cadence = i===n-1 || (n===8&&i===3);
+    const prev=seq[i-1], w=cadence?{D:0.7,PD:0.3}:FLOW[prev.fn];
+    const fn=pickW(R,Object.entries(w))[0];
+    let c; for(let k=0;k<6;k++){ const opts=F[fn].map(x=>[x[0],x[1],x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]); const x=pickW(R,opts); c={r:x[0],fam:x[1],fn}; if(c.r!==prev.r) break; }
+    seq.push(c);
+  }
+  return seq;
+}
 function generate(st,keep){
   const R=mulberry(st.seed*7919+17), sty=STYLES[st.style], minor=SCALES[st.scale].minor;
-  const list=minor?sty.min:sty.maj, tpl=list[Math.floor(R()*list.length)].split(' ').map(t=>parseTok(t,minor));
+  let tpl;
+  if(st.flow==='functional') tpl=functionalSeq(st,R,minor);
+  else if(st.flow==='chromatic'){ const L=CHROM[minor?'min':'maj'], t=L[Math.floor(R()*L.length)];
+    tpl=t.map((tok,i)=>{ const c=parseTok(tok,minor);
+      if(c.r===1) c.force='maj7#11'; else if(c.r===3&&c.fam==='maj') c.force='69'; else if(c.r===5&&c.fam==='maj'&&i===t.length-1) c.susRes=true;
+      return c; }); }
+  else { const list=minor?sty.min:sty.maj; tpl=list[Math.floor(R()*list.length)].split(' ').map(t=>parseTok(t,minor)); }
   const subs=MODE_SUBS[st.scale]||[];
   const mains=[]; for(let b=0;b<st.bars;b++){
     let c={...tpl[b%tpl.length]};
@@ -380,11 +422,19 @@ function generate(st,keep){
     if(b>0 && R()<pB){ const bl=BORROW[minor?'min':'maj'].filter(x=>x[0]===c.r&&x[1]===c.fam); if(bl.length){ const x=bl[Math.floor(R()*bl.length)]; c={r:x[2],fam:x[3]}; } }
     mains.push(c);
   }
+  // secondary dominants (Spice): swap a tonic/predominant chord for V of the chord it leads to — III before vi, VI before ii, II before V
+  for(let b=1;b<st.bars;b++){ const nx=mains[(b+1)%st.bars];
+    if(st.flow!=='chromatic' && nx.r!==0 && ['maj','min'].includes(nx.fam) && R()<st.spice*0.3 && mains[b].r!==7) mains[b]={r:(nx.r+7)%12,fam:'dom'}; }
+  // ♭II wants to fall back to I unless it is part of a rising line
+  for(let b=0;b<st.bars;b++){ const c=mains[b]; if(c.r!==1) continue; const nx=mains[(b+1)%st.bars];
+    if(!(nx.r===3||nx.r===5) && nx.r!==0 && b+1<st.bars) mains[b+1]={r:0,fam:minor?'min':'maj'}; }
   const slots=slotsFor(st,R), chords=[];
   slots.forEach((sl,i)=>{
     let base;
     if(sl.role==='main') base=mains[sl.bar];
     else { const next=mains[(sl.bar+1)%st.bars]; base=passing(next,mains[sl.bar],st,R); }
+    if(base.susRes && sl.len===4){   // sus4 that resolves to the major chord within the bar
+      chords.push(newChord({...base,fam:'sus',force:'sus4'},{...sl,len:2},R), newChord({...base,susRes:false},{...sl,start:sl.start+2,len:2},R)); return; }
     chords.push(newChord(base,sl,R));
   });
   // keep locked chords from the current progression where they fit the same slot
@@ -392,15 +442,18 @@ function generate(st,keep){
   const p={chords}; colorize(p,st); return p;
 }
 function pickQ(ch,st){
-  const u=ch.u, sty=STYLES[st.style];
+  const u=ch.u, sty=STYLES[st.style], sc=SCALES[st.scale].iv, inKey=sc.includes(ch.r);
+  if(ch.force) return ch.fam==='sus' ? ch.force : st.color>=0.22 ? ch.force : 'maj';
   if(ch.fam==='maj' && sty.sus && (ch.r===7||ch.r===10) && ((u*7.31)%1)<sty.sus) return st.color>0.45?'7sus4':'sus4';
   let lv=st.color+(u-0.5)*0.28; lv = lv<0.22?0 : lv<0.5?1 : lv<0.76?2 : 3;
-  let o=EXT[ch.fam][lv].slice();
-  if(ch.fam==='maj'&&lv===3&&!(st.scale==='lydian'||st.style==='future'||ch.r===5)) o=o.filter(q=>q!=='maj9#11');
-  if(ch.fam==='dom'&&!SCALES[st.scale].minor) o=o.filter(q=>q!=='7b9');
-  if(ch.fam==='min'&&st.scale==='dorian'&&ch.r===0&&lv===1) o.push('m6');
-  if(ch.fam==='dim'&&SCALES[st.scale].minor&&lv>0&&ch.r===11) o=['dim7'];
-  return o[Math.floor(((u*13.7)%1)*o.length)]||o[0];
+  let fam=ch.fam;
+  if(fam==='maj' && inKey && sc.includes((ch.r+10)%12) && !sc.includes((ch.r+11)%12)) fam='majDom';
+  if(ch.fam==='dim'&&SCALES[st.scale].minor&&lv>0&&ch.r===11) return 'dim7';
+  // a chord built on a note of the key keeps its added notes (7ths, 9ths, 6ths, 11ths) in the key too
+  const core=fam==='dom'||fam==='majDom'?4:3;
+  const ok=q=>!inKey || Q[q].iv.slice(Q[q].iv.length>core?core:Q[q].iv.length).every(x=>sc.includes((ch.r+x)%12)) && (fam!=='majDom'||!Q[q].iv.includes(11));
+  for(let l=lv;l>=0;l--){ const o=EXT[fam][l].filter(ok); if(o.length) return o[Math.floor(((u*13.7)%1)*o.length)]; }
+  return EXT[fam][0][0];
 }
 function colorize(p,st){ for(const c of p.chords) c.q=pickQ(c,st); voice(p,st); }
 
@@ -437,21 +490,28 @@ function vcost(v,prev,center){
 }
 function voice(p,st){
   const center=54+st.register*14, span=st.voicing==='spread'?27:st.voicing==='open'?23:18, lo=Math.round(center-span/2), hi=Math.round(center+span/2);
-  let prev=null, prevB=null;
-  for(const ch of p.chords){
+  let prev=null, prevB=null; analyze(p,st);
+  p.chords.forEach((ch,ci)=>{
     const root=(st.key+ch.r)%12;
     const pcs=[...new Set(upperIv(ch,st).map(x=>(root+x)%12))];
     const cands=candidates(pcs,st,lo,hi);
     let best=null,bc=1e9; for(const v of cands){ const c=vcost(v,prev,center); if(c<bc){bc=c;best=v;} }
     ch.notes=best||pcs.map(x=>60+x); prev=ch.notes;
-    // bass: root (or the chord's third for a slash chord), nearest to the last bass note, kept in E1..D3
+    // bass: root, or the chord's third (first inversion, like G/B) for a slash chord or where it lets the bass walk by step
     const third=Q[ch.q].iv.find(x=>x===3||x===4);
-    const bpc = ch.slash==='third' && third!=null ? (root+third)%12 : root;
-    ch.slashLbl = ch.slash==='third' && third!=null ? noteName(bpc,st.key,st.scale) : null;
+    let inv = ch.slash==='third';
+    if(!inv && st.inv==='smooth' && third!=null && ci>0 && !ch.sec){
+      const pb=(prevB??0)%12, tp=(root+third)%12, nx=p.chords[ci+1], nr=nx?(st.key+nx.r)%12:null;
+      const dist=(a,b)=>{ const d=Math.abs(a-b)%12; return Math.min(d,12-d); };
+      if(dist(pb,root)>2 && dist(pb,tp)<=2 && tp!==pb && (nr==null || dist(tp,nr)<=2)) inv=true;
+    }
+    const bpc = inv && third!=null ? (root+third)%12 : root;
+    const rel=(bpc-st.key+12)%12;
+    ch.slashLbl = inv && third!=null ? (SCALES[st.scale].iv.includes(rel)||![1,3,6,8,10].includes(rel) ? noteName(bpc,st.key,st.scale) : N_FLAT[bpc]) : null;
     if(ch.slash==='third' && third==null) ch.slash=null;
     let best2=null; for(let n=28;n<=50;n++) if(n%12===bpc){ if(best2==null || Math.abs(n-(prevB??40))<Math.abs(best2-(prevB??40))) best2=n; }
     ch.bass=best2; prevB=best2;
-  }
+  });
 }
 const rootName=(ch,st)=>{ const pc=(st.key+ch.r)%12; return SCALES[st.scale].iv.includes(ch.r)||![1,3,6,8,10].includes(ch.r) ? noteName(pc,st.key,st.scale) : N_FLAT[pc]; };
 const chordName=(ch,st)=>{ const s=Q[ch.q].s; return rootName(ch,st)+s+(ch.slashLbl?(s.includes('/')?' / ':'/')+ch.slashLbl:''); };
@@ -708,7 +768,9 @@ const PARAMS=[
   {k:'bars',label:'Length',kind:'seg',opts:[4,8],labels:{4:'4 bars',8:'8 bars'},act:'regen'},
   {k:'rate',label:'Chord changes',kind:'seg',opts:['1','2','mixed'],labels:{'1':'1 / bar','2':'2 / bar',mixed:'Mixed'},act:'regen'},
   {k:'color',label:'Colour',kind:'range',min:0,max:1,fmt:v=>v<0.22?'triads':v<0.5?'7ths, add9':v<0.76?'9ths':'11ths, 13ths',act:'color',hint:'How rich each chord is.'},
-  {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed and passing chords.'},
+  {k:'flow',label:'Progression logic',kind:'seg',opts:['loop','functional','chromatic'],labels:{loop:'Pop loop',functional:'Functional',chromatic:'Chromatic'},act:'regen',hint:'Pop loops of I, IV, V, vi; tonic → predominant → dominant → tonic with cadences; or rising chromatic major chords.'},
+  {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed chords from the parallel key and secondary dominants.'},
+  {k:'inv',label:'Inversions',kind:'seg',opts:['root','smooth'],labels:{root:'Root position',smooth:'Smooth bass'},act:'voice',hint:'First inversions (like G/B) where they let the bass walk by step.'},
   {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice'},
   {k:'register',label:'Register',kind:'range',min:0,max:1,fmt:v=>v<0.33?'low':v<0.67?'mid':'high',act:'voice'},
   {k:'rhythm',label:'Rhythm',kind:'select',opts:['hold','stabs','offbeat','syncopated','arp'],labels:{hold:'Hold',stabs:'Stabs',offbeat:'Offbeat house',syncopated:'Syncopated',arp:'Arpeggio'},act:'events'},
@@ -786,7 +848,7 @@ function drawStrip(){
     const c=document.createElement('div'); c.className='card f-'+func(ch,st)+(ch.locked?' locked':''); c.style.gridColumn=`${ch.start+1} / span ${ch.len}`;
     c.tabIndex=0; c.setAttribute('role','button'); c.setAttribute('aria-label','Play '+chordName(ch,st));
     c.innerHTML=`<span class="nm"></span><span class="rn"></span><span class="acts"><button type="button" class="ic rr" title="Reroll this chord">${ICON.reroll}</button><button type="button" class="ic lk" title="Lock this chord" aria-pressed="${ch.locked}">${ch.locked?ICON.lock:ICON.unlock}</button></span>`;
-    c.querySelector('.nm').textContent=chordName(ch,st); c.querySelector('.rn').textContent=roman(ch);
+    c.querySelector('.nm').textContent=chordName(ch,st); c.querySelector('.rn').textContent=roman(ch)+' · '+FN_TAG[func(ch,st)];
     c.title=chordName(ch,st)+'  ·  '+ch.notes.map(n=>noteName(n,st.key,st.scale)).join(' ');
     c.onclick=e=>{ if(e.target.closest('.ic')) return; audition(ch); };
     c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); audition(ch); } };
@@ -823,7 +885,7 @@ function drawRoll(playB){
   for(let b=0;b<=L;b++){ x.globalAlpha=b%4===0?1:0.4; x.beginPath(); x.moveTo(Math.round(bx(b))+0.5,0); x.lineTo(Math.round(bx(b))+0.5,h); x.stroke(); }
   x.globalAlpha=1; if(st.bass){ x.beginPath(); x.moveTo(0,rollH+3.5); x.lineTo(w,rollH+3.5); x.stroke(); }
   const ny=n=>rollH-((n-lo)/(hi-lo))*rollH;
-  const colOf=b=>{ const c=S.prog.chords.find(c=>b>=c.start-1e-6&&b<c.start+c.len); return cssVar('--f-'+(c?func(c,st):'tonic')); };
+  const colOf=b=>{ const c=S.prog.chords.find(c=>b>=c.start-1e-6&&b<c.start+c.len); const fn=c?func(c,st):'tonic'; return cssVar('--f-'+(fn==='sec'?'color':fn)); };
   const nh=Math.max(3,Math.min(9,rollH/(hi-lo)*0.85));
   for(const e of ev){
     const X=bx(e.b), W=Math.max(2,bx(e.d)-1); x.fillStyle=colOf(e.b); x.globalAlpha=0.45+0.55*e.v/127;
