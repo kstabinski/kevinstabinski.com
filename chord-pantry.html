@@ -120,6 +120,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .plist .del:hover{background:var(--panel);color:var(--ink)}
 .plist .empty{display:block;padding:14px 8px;color:var(--muted)}
 .plist .empty strong{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.folder{margin:10px 14px 4px;padding:10px 12px;border:1px solid var(--line);border-radius:2px;background:var(--sunk);display:flex;flex-direction:column;gap:8px;font-size:13px}
+.folder .f-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.folder .f-name{font-weight:600;overflow-wrap:anywhere}
+.folder .f-help{font-size:12px;color:var(--muted);margin:0}
+.folder .linkbtn{border:0;background:none;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px}
 .pantry-foot{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
 .pantry-foot .tbtn{flex:1 1 auto;justify-content:center}
 .confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
@@ -203,6 +208,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 
     <aside class="panel pantry" aria-label="Pantry">
       <div class="pantry-head"><h2>Pantry</h2><p id="pStats">0 progressions</p></div>
+      <div class="folder" id="folderBox" hidden></div>
       <ul class="plist" id="pList"></ul>
       <div class="pantry-foot" id="pFoot">
         <button class="tbtn primary" id="bExport" type="button">Export all MIDI</button>
@@ -921,7 +927,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{ dra
 /* ---------------- pantry ---------------- */
 function progLabel(p,st){ return p.chords.filter((c,i,a)=>i===0||chordName(c,st)!==chordName(a[i-1],st)).map(c=>chordName(c,st)).join('  ·  '); }
 function fileTitle(p,st){ const k=ascii(noteName(st.key,st.key,st.scale))+' '+SCALES[st.scale].label.toLowerCase();
-  const ch=p.chords.slice(0,4).map(c=>ascii(chordName(c,st)).replace(/\//g,' over ')).join(' ');
+  const ch=p.chords.slice(0,4).map(c=>ascii(chordName(c,st)).replace('6/9','69').replace(/ \/ |\//g,' over ')).join(' ');
   return `${k} ${st.bpm}bpm - ${ch}`.replace(/[\\/:*?"<>|]+/g,'').trim(); }
 function drawPantry(){
   const ul=$('#pList'); ul.innerHTML='';
@@ -948,12 +954,59 @@ async function saveFile(filename,blob){
   try{ await downloads.save({filename,data:blob}); toast('Saved '+filename); }
   catch(e){ const c=e&&e.code; toast(c==='declined'?'Save cancelled.':c==='rate_limited'?'A save prompt is already open.':'Couldn’t save the file here.'); }
 }
+/* Linked folder (Chrome/Edge on the site or the desktop copy): MIDI is written straight into a folder on disk,
+   e.g. one added to Ableton's browser under Places. Shares the folder link with Spice Drawer (same site, same store). */
+const CAN_LINK = LOCAL && typeof window.showDirectoryPicker==='function';
+const SUB='Chord Pantry';
+let dirH=null;
+function kv(mode,fn){ return new Promise((res,rej)=>{ const r=indexedDB.open('spicedrawer',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+  r.onerror=()=>rej(r.error);
+  r.onsuccess=()=>{ const tx=r.result.transaction('kv',mode), q=fn(tx.objectStore('kv')); tx.oncomplete=()=>res(q&&q.result); tx.onerror=()=>rej(tx.error); }; }); }
+async function loadDir(){ if(!CAN_LINK) return; try{ dirH=(await kv('readonly',st=>st.get('dir')))||null; }catch(e){ dirH=null; } folderUI(); }
+async function linkDir(){
+  try{ dirH=await window.showDirectoryPicker({id:'spicedrawer',mode:'readwrite',startIn:'music'});
+    try{ await kv('readwrite',st=>st.put(dirH,'dir')); }catch(e){}
+    toast('Linked '+dirH.name+'. Progressions you keep will be saved there.'); }
+  catch(e){ if(e&&e.name!=='AbortError') toast('Couldn’t link that folder.'); }
+  folderUI(); }
+async function unlinkDir(){ dirH=null; try{ await kv('readwrite',st=>st.delete('dir')); }catch(e){} folderUI(); }
+// Call at the very start of a click handler: Chrome only shows the permission prompt during a user gesture.
+function dirReady(){ if(!dirH) return Promise.resolve(false);
+  const o={mode:'readwrite'};
+  return dirH.queryPermission(o).then(p=>p==='granted'?true:dirH.requestPermission(o).then(q=>q==='granted')).catch(()=>false); }
+async function writeMid(title,bytes){
+  const d=await dirH.getDirectoryHandle(SUB,{create:true});
+  const same=async h=>{ const a=new Uint8Array(await (await h.getFile()).arrayBuffer()); return a.length===bytes.length && a.every((x,i)=>x===bytes[i]); };
+  let n=title, k=2; for(;;){ let h; try{ h=await d.getFileHandle(n+'.mid'); }catch(e){ break; } if(await same(h)) return SUB+'/'+n+'.mid'; n=title+' '+(k++); }   // identical file already there: keep it
+  const fh=await d.getFileHandle(n+'.mid',{create:true}), w=await fh.createWritable();
+  await w.write(new Blob([bytes],{type:'audio/midi'})); await w.close();
+  return SUB+'/'+n+'.mid'; }
+async function toDir(perm,title,bytes){
+  if(!dirH) return null;
+  if(!(await perm)){ toast('Allow access to '+dirH.name+' to save MIDI there.'); return null; }
+  try{ return await writeMid(title,bytes); }catch(e){ toast('Couldn’t write to '+dirH.name+'. Try linking the folder again.'); return null; } }
+function folderUI(){
+  const box=$('#folderBox'); if(!box) return;
+  box.hidden=!CAN_LINK; if(!CAN_LINK) return;
+  if(dirH){
+    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every progression you add to the pantry is saved as MIDI in <b>${SUB}</b> inside this folder. In Ableton, add the folder under Places (Add Folder…) and drag the clips from the browser.</p>`;
+    box.querySelector('.f-name').textContent=dirH.name;
+    box.querySelector('#fChange').onclick=linkDir; box.querySelector('#fUnlink').onclick=unlinkDir;
+  } else {
+    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every progression you add to the pantry is saved straight into it as MIDI. Add the same folder to Ableton’s browser under Places, and new progressions show up there, ready to drag in.</p>`;
+    box.querySelector('#fLink').onclick=linkDir;
+  } }
 async function saveCurrent(){
-  const t=fileTitle(S.prog,S.set), mid=midiFile(S.prog,S.set,t);
+  const perm=dirReady(), t=fileTitle(S.prog,S.set), mid=midiFile(S.prog,S.set,t);
+  if(dirH){ const p=await toDir(perm,t,mid); if(p){ toast('Saved '+dirH.name+'/'+p); return; } }
   if(LOCAL) await saveFile(t+'.mid',new Blob([mid],{type:'audio/midi'}));
   else await saveFile(t+'.zip',zip([{name:t+'.mid',data:mid}]));
 }
 async function exportAll(){
+  if(dirH){ const perm=dirReady(); let n=0;
+    for(const it of S.pantry){ const st={...DEF,...it.set}, t=fileTitle(it.prog,st); if(await toDir(perm,t,midiFile(it.prog,st,t))) n++; else break; }
+    if(n){ toast('Saved '+n+' progression'+(n===1?'':'s')+' to '+dirH.name+'/'+SUB); return; } }
   const used=new Set(), files=[];
   for(const it of S.pantry){ let t=fileTitle(it.prog,it.set), n=t, k=2; while(used.has(n)) n=`${t} ${k++}`; used.add(n);
     files.push({name:`Chord Pantry/${n}.mid`,data:midiFile(it.prog,{...DEF,...it.set},n)}); }
@@ -968,7 +1021,8 @@ $('#bPlay').onclick=()=>playing?stop():play();
 $('#bGen').onclick=()=>{ snap(); regen(); };
 $('#bBack').onclick=()=>hist(-1); $('#bFwd').onclick=()=>hist(1);
 $('#bMidi').onclick=saveCurrent;
-$('#bAdd').onclick=()=>{ S.pantry.push({id:++uid,set:{...S.set},prog:JSON.parse(JSON.stringify(S.prog))}); persist(); drawPantry(); toast('Added to the pantry'); };
+$('#bAdd').onclick=async()=>{ const perm=dirReady(); S.pantry.push({id:++uid,set:{...S.set},prog:JSON.parse(JSON.stringify(S.prog))}); persist(); drawPantry(); toast('Added to the pantry');
+  if(dirH){ const t=fileTitle(S.prog,S.set), p=await toDir(perm,t,midiFile(S.prog,S.set,t)); if(p) toast('Added to the pantry → '+dirH.name+'/'+p); } };
 $('#bExport').onclick=exportAll;
 $('#bClear').onclick=()=>{
   const foot=$('#pFoot'), saved=[...foot.children], c=document.createElement('div'); c.className='confirm';
@@ -991,6 +1045,7 @@ if(!S.prog||!S.prog.chords||!S.prog.chords.length) S.prog=generate(S.set,null); 
 syncControls(); afterChange(); drawPantry(); histUI();
 (async()=>{ try{ downloads = window.claude?.use ? await window.claude.use('downloads') : null; }catch(e){ downloads=null; }
   if(LOCAL) downloads=localSave;
+  loadDir();
   $('#bMidi').disabled=!downloads; if(!downloads) $('#bMidi').title='Saving files isn’t available in this view'; drawPantry(); })();
 })();
 </script>
