@@ -3,61 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spice Drawer — Kev&rsquo;s Kitchen</title>
 <meta name="description" content="Spice Drawer: a free in-browser sound designer for kicks, snares, percussion, risers, downlifters and ambiences. Build your own WAV sample packs and drag them straight into your DAW.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<title>Spice Drawer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: three-column bench — sound rail | editor (waveform + controls) | pack crate; stacks on phones */
 :root{
-  --bg:#E7E9EC; --panel:#F7F8F9; --sunk:#DDE1E5; --ink:#15171A; --muted:#5B616A; --line:#C9CED5;
-  --accent:#2B44E0; --accent-ink:#FFFFFF; --danger:#C92A2A;
-  --kick:#E8590C; --snare:#D6336C; --clap:#9C36B5; --hat:#0C8599; --perc:#2F9E44; --riser:#E67700; --down:#3B5BDB; --impact:#C2255C; --eco:#5C940D; --city:#5F6B7A; --birds:#1971C2;
-  --f-display:"Syne", "Arial Black", system-ui, sans-serif;
-  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Site blue-hour palette (styles.css), mapped onto the tool's tokens */
+  --maxw:1360px;
+  --panel:var(--bg-raise); --sunk:#0a0e13; --muted:var(--ink-soft);
+  --accent-ink:#10151b; --danger:#ff7b7b;
+  --kick:#FF8A3D; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
+  --f-display:"Fraunces", Georgia, serif;
+  --f-body:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#101215; --panel:#181B1F; --sunk:#0B0D0F; --ink:#E7E9EC; --muted:#8C939C; --line:#2A2F36;
-  --accent:#8191FF; --accent-ink:#0B0D12; --danger:#FF6B6B;
-  --kick:#FF8A3D; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#101215; --panel:#181B1F; --sunk:#0B0D0F; --ink:#E7E9EC; --muted:#8C939C; --line:#2A2F36;
-  --accent:#8191FF; --accent-ink:#0B0D12; --danger:#FF6B6B;
-  --kick:#FF8A3D; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
-  color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
-  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:16px 32px}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{max-width:1360px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.app{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 var(--pad) clamp(2rem,5vh,3rem);font-size:14px;line-height:1.45;display:flex;flex-direction:column;gap:14px}
 
-.brand .back{display:inline-block;margin-bottom:6px;font-size:13px;color:var(--muted);text-decoration:none}.brand .back:hover{color:var(--ink);text-decoration:underline}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
-.brand h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4vw,38px);letter-spacing:-0.02em;margin:0;line-height:1}
-.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.brand h1{font-family:var(--f-display);font-weight:300;font-size:clamp(2.4rem,8vw,4.25rem);letter-spacing:-0.025em;margin:0 0 .85rem;line-height:1.05}
+.brand p{margin:0;color:var(--ink-soft);max-width:52ch;font-size:clamp(1rem,0.97rem + 0.15vw,1.075rem);line-height:1.6}
 .globals{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .field{display:flex;flex-direction:column;gap:3px}
 .field label,.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
-.field input,.field select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-family:var(--f-mono);font-size:13px}
+.field input,.field select{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:6px 8px;font-family:var(--f-mono);font-size:13px}
 .field input[type=number]{width:76px}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;padding-top:16px;cursor:pointer}
 
 .bench{display:grid;grid-template-columns:168px minmax(0,1fr) 320px;gap:14px;align-items:start}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px}
 
 /* rail */
 .rail{display:flex;flex-direction:column;padding:6px;gap:2px}
-.rail button{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:10px;padding:9px 10px;border:0;background:transparent;border-radius:7px;cursor:pointer;text-align:left;font-weight:500}
+.rail button{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:10px;padding:9px 10px;border:0;background:transparent;border-radius:2px;cursor:pointer;text-align:left;font-weight:500}
 .rail button:hover{background:var(--sunk)}
 .rail button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
-.key{font-family:var(--f-mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px}
+.key{font-family:var(--f-mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:2px;padding:0 5px}
 .rail button[aria-pressed="true"] .key{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 .rail .sep{height:1px;background:var(--line);margin:4px 8px}
 
@@ -65,18 +57,18 @@ header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:spac
 .editor{display:flex;flex-direction:column;min-width:0}
 .scope{position:relative;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
 .scope-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.scope-head h2{margin:0;font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.scope-head h2{margin:0;font-family:var(--f-display);font-size:22px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
 .scope-head h2 .dot{width:12px;height:12px}
 .desc{color:var(--muted);font-size:13px;margin:0}
 .readout{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:14px}
-.wave{width:100%;height:150px;display:block;background:var(--sunk);border-radius:8px;cursor:pointer}
+.wave{width:100%;height:150px;display:block;background:var(--sunk);border-radius:3px;cursor:pointer}
 .transport{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);align-items:center}
-.btn{border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:7px;cursor:pointer;font-weight:500;display:inline-flex;gap:7px;align-items:center;white-space:nowrap}
-.btn:hover{background:var(--sunk)}
-.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
-.btn.primary:hover{filter:brightness(1.08)}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-.btn kbd{font-family:var(--f-mono);font-size:10.5px;opacity:.65}
+.tbtn{border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:2px;cursor:pointer;font-weight:500;display:inline-flex;gap:7px;align-items:center;white-space:nowrap}
+.tbtn:hover{background:var(--sunk)}
+.tbtn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.tbtn.primary:hover{filter:brightness(1.08)}
+.tbtn:disabled{opacity:.45;cursor:not-allowed}
+.tbtn kbd{font-family:var(--f-mono);font-size:10.5px;opacity:.65}
 .spacer{flex:1}
 .groups{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);}
 .group{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -93,61 +85,61 @@ input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;ba
 input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--c,var(--accent)) var(--p,50%),var(--line) var(--p,50%))}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--panel);border:2px solid var(--ink);margin-top:-5px}
 input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--ink)}
-.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
 .seg button{flex:1;border:0;background:transparent;padding:5px 8px;cursor:pointer;font-size:13px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .hint{font-size:12px;color:var(--muted);margin:0}
-.pick{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:13px;width:100%;min-width:0}
+.pick{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:5px 8px;font-size:13px;width:100%;min-width:0}
 .sub{grid-column:1 / -1;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding-top:6px;border-top:1px solid var(--line);margin-top:2px}
 .sub:first-of-type{border-top:0;padding-top:0;margin-top:0}
 .presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .presets .lbl{margin-right:4px}
-.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 12px;cursor:pointer;font-size:13px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:2px;padding:4px 12px;cursor:pointer;font-size:13px}
 .chip:hover{border-color:var(--ink)}
-.loader{grid-column:1 / -1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px;border:1px dashed var(--line);border-radius:8px}
+.loader{grid-column:1 / -1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px;border:1px dashed var(--line);border-radius:3px}
 .loader-name{font-size:13px;color:var(--muted);min-width:0;flex:1 1 200px}
 .wave.drop{outline:2px dashed var(--accent);outline-offset:3px}
 
 /* pack */
 .pack{display:flex;flex-direction:column;min-width:0}
 .pack-head{padding:14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
-.pack-head h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:700}
+.pack-head h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:400}
 .pack-head .field input{width:100%;font-family:var(--f-body)}
 .pack-stats{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .pack-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px;max-height:520px;overflow-y:auto}
 .pack-list li[draggable=true]{cursor:grab}
 .drag-hint{margin:0;padding:6px 14px 0}
-.pack-list li{display:grid;grid-template-columns:auto 10px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 6px;border-radius:7px}
+.pack-list li{display:grid;grid-template-columns:auto 10px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 6px;border-radius:2px}
 .pack-list li:hover{background:var(--sunk)}
 .pack-list li.playing{background:color-mix(in srgb,var(--c) 16%,transparent)}
-.pack-list input{border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:5px;min-width:0;width:100%;font-size:13px}
+.pack-list input{border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:2px;min-width:0;width:100%;font-size:13px}
 .pack-list input:hover,.pack-list input:focus{border-color:var(--line);background:var(--panel)}
 .pack-list .dur{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.icon{border:0;background:transparent;width:26px;height:26px;border-radius:6px;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
+.icon{border:0;background:transparent;width:26px;height:26px;border-radius:2px;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
 .icon:hover{background:var(--panel);color:var(--ink)}
 .icon.del:hover{color:var(--danger)}
 .icon svg{width:14px;height:14px;fill:currentColor}
 .empty{padding:22px 16px;color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:6px}
 .empty strong{color:var(--ink);font-weight:600}
 .pack-foot{padding:12px 14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px}
-.pack-foot .btn{flex:1 1 auto;justify-content:center}
+.pack-foot .tbtn{flex:1 1 auto;justify-content:center}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;width:100%}
 
-.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:3px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* sequencer */
-.seq{display:flex;flex-direction:column;min-width:0}
+.tseq{display:flex;flex-direction:column;min-width:0}
 .seq-head{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-.seq-head h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:700;margin-right:6px}
+.seq-head h2{margin:0;font-family:var(--f-display);font-size:20px;font-weight:400;margin-right:6px}
 .seq-swing{min-width:140px}
 .seq-swing label{display:flex;justify-content:space-between;gap:8px}
 .seq-scroll{overflow-x:auto;padding:10px 14px 4px}
 .seq-grid{display:flex;flex-direction:column;gap:6px;min-width:760px}
 .seq-row{display:grid;grid-template-columns:10px 190px minmax(0,1fr) 90px 26px;gap:10px;align-items:center}
-.seq-row select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:13px;min-width:0;width:100%}
+.seq-row select{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:5px 6px;font-size:13px;min-width:0;width:100%}
 .steps{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:4px}
-.step{height:30px;border-radius:5px;border:1px solid var(--line);background:var(--sunk);cursor:pointer;padding:0;position:relative}
+.step{height:30px;border-radius:2px;border:1px solid var(--line);background:var(--sunk);cursor:pointer;padding:0;position:relative}
 .step:nth-child(4n+1){border-color:color-mix(in srgb,var(--ink) 30%,var(--line))}
 .step[data-v="1"]{background:color-mix(in srgb,var(--c) 55%,var(--sunk));border-color:var(--c)}
 .step[data-v="2"]{background:var(--c);border-color:var(--c)}
@@ -167,18 +159,42 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   .groups{grid-template-columns:minmax(0,1fr)}
   .group+.group{border-left:0;border-top:1px solid var(--line)}
   .group.finish .params{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
-  .btn kbd{display:none}
+  .tbtn kbd{display:none}
   .wave{height:120px}
 }
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* Site look for the tool's buttons */
+.tbtn{font-size:14px;transition:background .2s ease,color .2s ease,border-color .2s ease}
+.tbtn.primary{background:var(--ink);color:#10151b;border-color:var(--ink)}
+.tbtn.primary:hover{background:transparent;color:var(--ink);filter:none}
+.tbtn kbd{background:none;border:0;padding:0;color:inherit;font-weight:500}
+.chk input{accent-color:var(--accent)}
+.seg{flex-wrap:wrap}
+.seg button{flex:1 1 auto;white-space:nowrap}
+.page-foot{position:relative;z-index:1;border-top:1px solid var(--line);padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem)}
+.page-foot p{color:var(--ink-faint);font-size:0.85rem;max-width:60ch;margin:0 0 1.5rem}
 </style>
 
 </head>
 <body>
-<div class="app">
+<div class="atmosphere" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html#top" class="wordmark">KSTAB</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="discography.html">Music</a>
+      <a href="videos.html">Videos</a>
+      <a href="kitchen.html" class="active" aria-current="page">Kev's Kitchen</a>
+      <a href="courses.html">Courses</a>
+    </nav>
+  </div>
+</header>
+
+<main class="app" id="top">
   <header class="top">
     <div class="brand">
-      <a class="back" href="kitchen.html">&larr; Kev&rsquo;s Kitchen</a>
       <h1>Spice Drawer</h1>
       <p>Cook up drums, risers, downlifters, impacts and ambiences from scratch, then bounce them into a WAV sample pack.</p>
     </div>
@@ -205,15 +221,15 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
         <canvas class="wave" id="wave" aria-label="Waveform. Click to play."></canvas>
       </div>
       <div class="transport">
-        <button class="btn primary" id="bPlay">Play <kbd>Space</kbd></button>
-        <button class="btn" id="bBack" title="Go back to the previous sound (Z)" disabled>&#8630; Back <kbd>Z</kbd></button>
-        <button class="btn" id="bFwd" title="Go forward again (Shift+Z)" disabled>Forward &#8631;</button>
-        <button class="btn" id="bMut">Mutate <kbd>M</kbd></button>
-        <button class="btn" id="bRnd">Randomize <kbd>R</kbd></button>
-        <button class="btn" id="bReset">Reset</button>
+        <button class="tbtn primary" id="bPlay">Play <kbd>Space</kbd></button>
+        <button class="tbtn" id="bBack" title="Go back to the previous sound (Z)" disabled>&#8630; Back <kbd>Z</kbd></button>
+        <button class="tbtn" id="bFwd" title="Go forward again (Shift+Z)" disabled>Forward &#8631;</button>
+        <button class="tbtn" id="bMut">Mutate <kbd>M</kbd></button>
+        <button class="tbtn" id="bRnd">Randomize <kbd>R</kbd></button>
+        <button class="tbtn" id="bReset">Reset</button>
         <span class="spacer"></span>
-        <button class="btn" id="bSave">Save WAV</button>
-        <button class="btn primary" id="bAdd">Add to pack <kbd>A</kbd></button>
+        <button class="tbtn" id="bSave">Save WAV</button>
+        <button class="tbtn primary" id="bAdd">Add to pack <kbd>A</kbd></button>
       </div>
       <div class="groups">
         <div class="group"><h3>Sound</h3><div class="presets" id="presets" hidden></div><div class="params" id="pSound"></div><input type="file" id="fileIn" accept="audio/*,.wav,.aif,.aiff,.mp3,.flac,.ogg,.m4a" hidden><p class="hint">Double-click a label to reset that control.</p></div>
@@ -230,27 +246,44 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       <ul class="pack-list" id="pList"></ul>
       <p class="hint drag-hint" id="dragHint"></p>
       <div class="pack-foot" id="pFoot">
-        <button class="btn" id="bVar">Make 8 variations</button>
-        <button class="btn primary" id="bExport">Export pack</button>
-        <button class="btn" id="bClear">Clear</button>
+        <button class="tbtn" id="bVar">Make 8 variations</button>
+        <button class="tbtn primary" id="bExport">Export pack</button>
+        <button class="tbtn" id="bClear">Clear</button>
       </div>
     </aside>
   </div>
 
-  <section class="panel seq" aria-label="Step sequencer">
+  <section class="panel tseq" aria-label="Step sequencer">
     <div class="seq-head">
       <h2>Sequencer</h2>
-      <button class="btn primary" id="sqPlay">Play</button>
+      <button class="tbtn primary" id="sqPlay">Play</button>
       <div class="field seq-swing"><label for="sqSwing">Swing <span id="sqSwingV" class="val"></span></label><input type="range" id="sqSwing" min="0" max="1000" step="1"></div>
       <span class="spacer"></span>
-      <button class="btn" id="sqAdd">Add row</button>
-      <button class="btn" id="sqClear">Clear steps</button>
-      <button class="btn" id="sqExport">Export loop</button>
+      <button class="tbtn" id="sqAdd">Add row</button>
+      <button class="tbtn" id="sqClear">Clear steps</button>
+      <button class="tbtn" id="sqExport">Export loop</button>
     </div>
     <div class="seq-scroll"><div class="seq-grid" id="sqGrid"></div></div>
     <p class="hint seq-hint">Click a step to turn it on, again for an accent, again to turn it off. Editor rows play the sound as it is in the editor right now, so you can tweak while the loop runs.</p>
   </section>
-</div>
+
+  <div class="page-foot">
+    <p>Everything you make here is yours, royalty-free for your own music and packs.</p>
+    <a class="more-link" href="kitchen.html">Back to Kev&rsquo;s Kitchen &rarr;</a>
+  </div>
+  <footer id="contact">
+      <div class="foot-grid">
+        <div class="socials" aria-label="Social links">
+          <a href="https://open.spotify.com/artist/7ogkPvRYLFvfpVNEqNGi7E?si=UTplcCznTDON6Axlid5GDA" target="_blank" rel="noopener" aria-label="Spotify"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm4.59 14.44a.62.62 0 01-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 11-.28-1.21c3.81-.87 7.08-.5 9.72 1.11.29.18.38.56.21.85zm1.22-2.72a.78.78 0 01-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 11-.45-1.49c3.63-1.1 8.15-.56 11.23 1.33.37.22.49.7.26 1.07zm.11-2.84C14.8 8.95 9.4 8.77 6.32 9.71a.94.94 0 11-.54-1.8c3.53-1.07 9.49-.86 13.23 1.36a.94.94 0 01-.96 1.61z"/></svg></a>
+          <a href="https://music.apple.com/us/artist/kevin-stabinski/1827594935" target="_blank" rel="noopener" aria-label="Apple Music"><svg viewBox="0 0 24 24"><path d="M17.5 3.5c-.3 0-.6.05-1 .13L9 5.2c-.7.14-1 .55-1 1.25v8.06c-.4-.18-.85-.26-1.35-.2-1.3.16-2.3 1.16-2.25 2.36.05 1.1 1.05 1.9 2.3 1.78 1.2-.12 2.2-1.05 2.2-2.3V9.06l6.5-1.3v4.9c-.4-.17-.85-.25-1.35-.19-1.3.16-2.3 1.16-2.25 2.36.05 1.1 1.05 1.9 2.3 1.78 1.2-.12 2.2-1.05 2.2-2.3V4.6c0-.72-.38-1.12-1.1-1.1z"/></svg></a>
+          <a href="https://www.youtube.com/@kstab" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7.5a3 3 0 00-2.1-2.12C19.05 4.9 12 4.9 12 4.9s-7.05 0-8.9.48A3 3 0 001 7.5C.5 9.36.5 12 .5 12s0 2.64.5 4.5a3 3 0 002.1 2.12C4.95 19.1 12 19.1 12 19.1s7.05 0 8.9-.48A3 3 0 0023 16.5c.5-1.86.5-4.5.5-4.5s0-2.64-.5-4.5zM9.75 15.25v-6.5L15.5 12l-5.75 3.25z"/></svg></a>
+          <a href="https://soundcloud.com/kstab" target="_blank" rel="noopener" aria-label="SoundCloud"><svg viewBox="0 0 24 24"><path d="M1 14.5c0-.3.2-.5.4-.5.3 0 .5.2.5.5l.2 2-.2 2c0 .3-.2.5-.5.5-.2 0-.4-.2-.4-.5l-.2-2 .2-2zm2-1.3c0-.3.2-.5.5-.5.2 0 .4.2.5.5l.2 3.3-.2 3.2c0 .3-.3.5-.5.5-.3 0-.5-.2-.5-.5L2.8 16l.2-2.8zm2.2-.7c0-.3.2-.5.5-.5s.5.2.5.5l.2 4-.2 3.8c0 .3-.2.5-.5.5s-.5-.2-.5-.5L5 16l.2-3.5zm2.3-.5c0-.3.2-.6.5-.6.3 0 .5.3.5.6L9.4 16l-.2 3.7c0 .3-.2.5-.5.5-.3 0-.5-.2-.5-.5L8 16l.2-3.7zm2.3-.3c0-.3.3-.5.6-.5.3 0 .5.2.5.5l.2 4.3-.2 3.5c0 .3-.2.5-.5.5-.3 0-.6-.2-.6-.5L9.5 16l.2-4.3zM12 10c.3 0 .5.2.5.5l.2 5.5-.2 3.5c0 .3-.2.5-.5.5s-.5-.2-.5-.5l-.2-3.5.2-5.5c0-.3.2-.5.5-.5zm2-1c.3 0 .5.2.5.5v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V9.5c0-.3.2-.5.5-.5zm7.5 3c1.4 0 2.5 1.1 2.5 2.5S22.9 20 21.5 20H15c-.3 0-.5-.2-.5-.5V9.7c0-.3.1-.4.4-.5.7-.3 1.5-.4 2.3-.4 2.6 0 4.7 1.9 5.1 4.4.2-.1.5-.2.7-.2z"/></svg></a>
+          <a href="https://www.instagram.com/kstabinski" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2c2.7 0 3 0 4.1.06 1 .05 1.7.22 2.3.46.6.24 1.1.56 1.6 1.06.5.5.82 1 1.06 1.6.24.6.4 1.3.46 2.3C21.99 9 22 9.3 22 12s0 3-.06 4.1c-.05 1-.22 1.7-.46 2.3a4.3 4.3 0 01-1.06 1.6c-.5.5-1 .82-1.6 1.06-.6.24-1.3.4-2.3.46C15 21.99 14.7 22 12 22s-3 0-4.1-.06c-1-.05-1.7-.22-2.3-.46a4.3 4.3 0 01-1.6-1.06 4.3 4.3 0 01-1.06-1.6c-.24-.6-.4-1.3-.46-2.3C2.01 15 2 14.7 2 12s0-3 .06-4.1c.05-1 .22-1.7.46-2.3A4.3 4.3 0 013.58 4c.5-.5 1-.82 1.6-1.06.6-.24 1.3-.4 2.3-.46C9 2.01 9.3 2 12 2zm0 1.8c-2.65 0-2.96.01-4 .06-.77.04-1.19.16-1.47.27-.37.14-.63.31-.91.59-.28.28-.45.54-.59.91-.1.28-.23.7-.27 1.47-.05 1.04-.06 1.35-.06 4s.01 2.96.06 4c.04.77.16 1.19.27 1.47.14.37.31.63.59.91.28.28.54.45.91.59.28.1.7.23 1.47.27 1.04.05 1.35.06 4 .06s2.96-.01 4-.06c.77-.04 1.19-.16 1.47-.27.37-.14.63-.31.91-.59.28-.28.45-.54.59-.91.1-.28.23-.7.27-1.47.05-1.04.06-1.35.06-4s-.01-2.96-.06-4c-.04-.77-.16-1.19-.27-1.47a2.5 2.5 0 00-.59-.91 2.5 2.5 0 00-.91-.59c-.28-.1-.7-.23-1.47-.27-1.04-.05-1.35-.06-4-.06zm0 3.06a5.14 5.14 0 110 10.28 5.14 5.14 0 010-10.28zm0 8.48a3.34 3.34 0 100-6.68 3.34 3.34 0 000 6.68zm6.54-8.69a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0z"/></svg></a>
+        </div>
+      </div>
+      <p class="foot-meta">&copy; 2026 KSTAB LLC. All rights reserved.</p>
+    </footer>
+</main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -2335,7 +2368,7 @@ function buildParams(){
   if(t==='kick' && p.grit==='sample'){
     const box=document.createElement('div'); box.className='loader';
     const has=SRC[p.sample];
-    box.innerHTML=`<button type="button" class="btn" id="loadBtn">Choose a sound…</button><span class="loader-name"></span>`;
+    box.innerHTML=`<button type="button" class="tbtn" id="loadBtn">Choose a sound…</button><span class="loader-name"></span>`;
     box.querySelector('.loader-name').textContent = has ? has.name : 'No sound loaded yet. Pick any file (ambient rumble, traffic, foley) or drop one on the waveform. Until then the grit layer uses noise.';
     box.querySelector('#loadBtn').onclick=()=>$('#fileIn').click();
     const gh=[...s.querySelectorAll('.sub')].pop(); gh?gh.after(box):s.prepend(box);
@@ -2476,7 +2509,7 @@ $('#bExport').onclick=async()=>{
 $('#bClear').onclick=()=>{
   const foot=$('#pFoot'), saved=[...foot.children];
   const c=document.createElement('div'); c.className='confirm';
-  c.innerHTML=`<span>Remove all ${S.pack.length} sounds?</span><span class="spacer"></span><button class="btn" id="cNo">Keep</button><button class="btn primary" id="cYes">Remove all</button>`;
+  c.innerHTML=`<span>Remove all ${S.pack.length} sounds?</span><span class="spacer"></span><button class="tbtn" id="cNo">Keep</button><button class="tbtn primary" id="cYes">Remove all</button>`;
   foot.replaceChildren(c);
   c.querySelector('#cNo').onclick=()=>foot.replaceChildren(...saved);
   c.querySelector('#cYes').onclick=()=>{ S.pack=[]; persist(); foot.replaceChildren(...saved); drawPack(); };
@@ -2641,5 +2674,6 @@ rerenderPack();
 })();
 })();
 </script>
+<script src="main.js"></script>
 </body>
 </html>
