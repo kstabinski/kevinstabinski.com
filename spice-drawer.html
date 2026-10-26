@@ -111,8 +111,6 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .pick{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:5px 8px;font-size:13px;width:100%;min-width:0}
 .sub{grid-column:1 / -1;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding-top:6px;border-top:1px solid var(--line);margin-top:2px}
 .sub:first-of-type{border-top:0;padding-top:0;margin-top:0}
-.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.presets .lbl{margin-right:4px}
 .chip{border:1px solid var(--line);background:transparent;border-radius:2px;padding:4px 12px;cursor:pointer;font-size:13px}
 .chip:hover{border-color:var(--ink)}
 .loader{grid-column:1 / -1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px;border:1px dashed var(--line);border-radius:3px}
@@ -256,7 +254,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
         <button class="tbtn primary" id="bAdd">Add to pack <kbd>A</kbd></button>
       </div>
       <div class="groups">
-        <div class="group"><h3>Sound</h3><div class="presets" id="presets" hidden></div><div class="params" id="pSound"></div><input type="file" id="fileIn" accept="audio/*,.wav,.aif,.aiff,.mp3,.flac,.ogg,.m4a" hidden><p class="hint">Double-click a label to reset that control.</p></div>
+        <div class="group"><h3>Sound</h3><div class="params" id="pSound"></div><input type="file" id="fileIn" accept="audio/*,.wav,.aif,.aiff,.mp3,.flac,.ogg,.m4a" hidden><p class="hint">Double-click a label to reset that control.</p></div>
         <div class="group finish"><h3>Finish</h3><div class="params" id="pFinish"></div></div>
       </div>
     </section>
@@ -331,21 +329,19 @@ const AMB = (amb, own=true) => [
   ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'}), {kind:'head',label:'Sound'}]:[]),
 ];
 const POST = [
-  P('drive','Drive',0,1,0.2,'%'),
+  P('drive','Drive',0,1,0.2,'%',{rmax:0.5}),
   P('space','Space',0,1,0,'%',{rmax:0.45}),
   P('room','Decay',0.2,2,1.2,'s',{log:true}),
   {k:'reverse',label:'Reverse',kind:'bool',def:false},
 ];
 
-/* ---------- risers & downlifters: parameters, characters and the simple-mode resolver ---------- */
+/* ---------- risers & downlifters: parameters, defaults and the simple-mode resolver ---------- */
 const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const SWEEP_MACROS=new Set(['mode','character','tension','widthX','grit','bright','spaceX','laserX','bars','key','octave','seed']);
+const SWEEP_MACROS=new Set(['mode','tension','widthX','grit','bright','spaceX','laserX','bars','key','octave','seed']);
 const sweepParams=(down)=>{
-  const chars=down?['laser fall','impact tail','sub drop','noise fall']:['laser','noise sweep','dark tension','airy'];
   const L=[
     {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
-      onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,sweepResolve({...p,mode:'simple'},down),{mode:'detailed'}); }},
-    {k:'character',label:'Character',kind:'sel',opts:chars,def:chars[0],rebuild:true,simple:true},
+      onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') bakeMacros(down?'down':'riser',p,sweepResolve({...p,mode:'simple'},down)); }},
     P('tension','Tension',0,1,0.5,'%',{rnd:[0.3,0.75],simple:true}),
     P('widthX','Width',0,1,0.5,'%',{rnd:[0.3,0.8],simple:true}),
     P('grit','Grit',0,1,0.4,'%',{rnd:[0.15,0.65],simple:true}),
@@ -403,24 +399,12 @@ const sweepParams=(down)=>{
     else if(d.detail){ const w=d.when; d.when=w?(p=>p.mode==='detailed'&&w(p)):(p=>p.mode==='detailed'); } }
   return L;
 };
-const SWEEP_CHARS={
-  riser:{
-    'laser':{laserLvl:1,laserVoices:2,noiseLvl:0.1,lp0:6000,lp1:18000,hp0:20,hp1:150,reso:0.8,curve:1.5,verb0:0.08,verb1:0.3,width0:0.15,width1:0.4,suck:0.3},
-    'noise sweep':{laserLvl:0.3,laserVoices:1,laserRange:6,noiseLvl:1,color0:0.2,color1:1,lp0:300,lp1:16000,hp0:100,hp1:2000,reso:5,curve:2,verb0:0.15,verb1:0.5,suck:0.5,width0:0.3,width1:1},
-    'dark tension':{laserLvl:0.9,laserVoices:1,laserRange:5,laserFade:12,noiseLvl:0.3,lp0:200,lp1:3500,hp0:40,hp1:200,reso:6,curve:3,verb0:0.3,verb1:0.6,width0:0.5,width1:0.8,drive0:0.2,drive1:0.6},
-    'airy':{laserLvl:0.2,laserVoices:1,noiseLvl:0.9,color0:0.5,color1:1,lp0:2000,lp1:18000,hp0:600,hp1:5000,verb0:0.4,verb1:0.8,width0:0.6,width1:1,curve:1.5,suck:0.6},
-  },
-  down:{
-    'laser fall':{laserLvl:1,laserVoices:2,noiseLvl:0,subLvl:0,hitLvl:0,lp0:18000,lp1:12000,hp0:30,hp1:20,reso:0.8,curve:1,width0:0.3,width1:0.15,verb0:0.1,verb1:0.3,tail:1},
-    'impact tail':{laserLvl:0.35,laserVoices:1,noiseLvl:1},
-    'sub drop':{laserLvl:0.25,laserVoices:1,subLvl:1,subDrop:24,subLen:2,noiseLvl:0.3,hitLvl:0.4,verb0:0.2,verb1:0.4,tail:1.5},
-    'noise fall':{laserLvl:0.15,laserVoices:1,noiseLvl:1,color0:1,color1:0.2,lp0:14000,lp1:250,hp0:1500,hp1:60,subLvl:0,hitLvl:0,verb0:0.3,verb1:0.7},
-  },
-};
+const SWEEP_DEFAULT={riser:{laserLvl:1,laserVoices:2,noiseLvl:0.1,lp0:6000,lp1:18000,hp0:20,hp1:150,reso:0.8,curve:1.5,verb0:0.08,verb1:0.3,width0:0.15,width1:0.4,suck:0.3},
+  down:{laserLvl:1,laserVoices:2,noiseLvl:0,subLvl:0,hitLvl:0,lp0:18000,lp1:12000,hp0:30,hp1:20,reso:0.8,curve:1,width0:0.3,width1:0.15,verb0:0.1,verb1:0.3,tail:1}};
 function sweepResolve(p,down){
   const t=down?'down':'riser', defs=TYPES[t].params, raw={};
-  for(const d of defs) if(d.k && 'def' in d && !SWEEP_MACROS.has(d.k)) raw[d.k]=d.def;
-  const b={...raw,...(SWEEP_CHARS[t][p.character]||{})};
+  for(const d of defs) if(d.k && 'def' in d && !SWEEP_MACROS.has(d.k)) raw[d.k]= d.k in p ? p[d.k] : d.def;
+  const b=raw;
   const lim=(k,v)=>{ const d=defs.find(x=>x.k===k); return d&&d.min!=null?clamp(v,d.min,d.max):v; };
   const te=p.tension??0.5, w=p.widthX??0.5, g=p.grit??0.4, br=p.bright??0, s=p.spaceX??0.5;
   b.curve=lim('curve',b.curve*Math.pow(2,(te-0.5)*1.2)); b.drive1=lim('drive1',b.drive1+(te-0.5)*0.5);
@@ -453,17 +437,11 @@ const BIRD_LABELS=Object.fromEntries([...BIRD_SPECIES.map(k=>[k,BIRD_NAMES[k]]),
 const ANIMAL_NAME=(p)=>p.group==='frogs'?(FROG_NAMES[p.frog]||WFROG_NAMES[p.frog]):(BIRD_NAMES[p.species]||WBIRD_NAMES[p.species]);
 const FROG_GAP={moorfrog:[1.5,3],banjo:[0.8,1.8],marsh:[1.5,3],pacific:[0.7,1.3],whistling:[1,2],firebelly:[0.8,1.5],midwife:[1.5,3],olivetoad:[1,2],canyon:[2,4],peeper:[0.7,1.4],chorusfrog:[1.5,3],graytree:[2,4],greentree:[0.6,1.1],cricket:[1,2],amtoad:[1,2.5],fowler:[1,2],bullfrog:[2,4],greenfrog:[1,3],leopard:[1,3],narrowmouth:[1.5,3]};
 const TYPES = {
-  kick:{label:'Kick',folder:'Kicks',c:'--kick',desc:'Pick a character, then shape it with six macros. The acoustic characters model a real drum: beater, head, shell and room mic. Detailed opens every layer.',
+  kick:{label:'Kick',folder:'Kicks',c:'--kick',desc:'An acoustic drum model (beater, head, shell and room mic) with FM and grit layers. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
     post:{drive:0.03,space:0,room:0.8},
-    presets:{
-      Studio:{mode:'simple',roomX:0,character:'studio'}, Vintage:{mode:'simple',roomX:0,character:'vintage'}, Open:{mode:'simple',roomX:0,character:'open'}, Jazz:{mode:'simple',roomX:0,character:'jazz'},
-      Breakbeat:{mode:'simple',roomX:0,character:'breakbeat',drive:0.15}, Thud:{mode:'simple',roomX:0,character:'thud'}, 'Live room':{mode:'simple',roomX:0,character:'live room'}, Noise:{mode:'simple',roomX:0,character:'noise'}, Ambience:{mode:'simple',roomX:0,character:'ambience'},
-    },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
-        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,kickResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
-      {k:'character',label:'Character',kind:'sel',opts:['studio','vintage','open','jazz','breakbeat','thud','live room','noise','ambience','clean','punchy','deep','acrylic','stadium','dubstep'],labels:{'live room':'Live room'},def:'studio',rebuild:true,when:p=>p.mode!=='detailed',
-        rndOpts:['studio','vintage','open','jazz','breakbeat','thud','live room','noise','ambience','studio','vintage','breakbeat','thud','noise','ambience','punchy','acrylic']},
+        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') bakeMacros('kick',p,kickResolve({...p,mode:'simple'})); }},
       P('tune','Tune',-7,7,0,'st',{step:1,rnd:[-4,4],when:p=>p.mode!=='detailed'}),
       P('click','Click',0,1,0.5,'%',{rnd:[0.3,0.75],when:p=>p.mode!=='detailed'}),
       P('lenX','Length',0.5,2,1,'x',{log:true,rnd:[0.75,1.35],when:p=>p.mode!=='detailed'}),
@@ -527,18 +505,6 @@ const TYPES = {
     ]},
   bass:{label:'808',folder:'808s',c:'--bass',desc:'Tuned 808s and amapiano log drums. Pick the key and octave, then shape the punch, length, glide and grit.',
     post:{drive:0,space:0,room:0.8},
-    presets:{
-      '808':{kind:'808'}, 'Trap 808':{kind:'808',length:2.4,punch:16,sat:'tape',satAmt:0.5,harm:0.55},
-      'Distorted 808':{kind:'808',length:1.8,punch:14,sat:'hard',satAmt:0.75,tone:3500,harm:0.6},
-      'Slide 808':{kind:'808',length:2,glide:12,glideTime:0.22,sat:'soft',satAmt:0.45},
-      'Short 808':{kind:'808',length:0.55,punch:20,punchTime:0.03,click:0.5,sat:'soft',satAmt:0.4},
-      'Log drum':{kind:"log",octave:2,length:0.552,punch:39.4,punchTime:0.0047,hollow:0.148,tone:2386,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-      'Long log':{kind:"log",octave:2,length:1.366,punch:37.6,punchTime:0.0053,hollow:0.352,tone:390,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-      'Pluck log':{kind:"log",octave:2,length:0.59,punch:31.1,punchTime:0.007,hollow:0.135,tone:1539,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-      'Sub log':{kind:"log",octave:1,length:0.799,punch:37.7,punchTime:0.0068,hollow:0.644,tone:300,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-      'Round log':{kind:"log",octave:1,length:0.799,punch:30.8,punchTime:0.008,hollow:0.075,tone:12000,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-      'Short log':{kind:"log",octave:1,length:0.347,punch:28.8,punchTime:0.0099,hollow:0.196,tone:12000,harm:0,knock:0,wood:0,sat:"clean",glide:0,click:0},
-    },
     params:[
       {k:'kind',label:'Type',kind:'sel',opts:['808','log'],labels:{'808':'808','log':'Log drum'},def:'808',lock:true,rebuild:true,
         onset:(p,prev,o)=>{ if(o!==prev) Object.assign(p,BASS_KIND[o]); }},
@@ -559,18 +525,11 @@ const TYPES = {
       P('tone','Tone',200,12000,5000,'Hz',{log:true,rnd:[2500,8000],rndBy:{log:[350,12000]}}),
       P('seed','Variation',0,999,7,'seed',{step:1}),
     ]},
-  snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'Pick a character, then shape it with six macros. A stick rings a feedback-delay drum head, with snare wires and a room on top. Detailed opens every layer.',
+  snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'A stick rings a feedback-delay drum head, with snare wires and a room on top. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
     post:{drive:0.2,space:0.25,room:0.7}, macroKeys:null,
-    presets:{
-      Studio:{mode:'simple',character:'studio'}, Tight:{mode:'simple',character:'tight',space:0.15}, Ringy:{mode:'simple',character:'ringy',drive:0.3},
-      Fat:{mode:'simple',character:'fat',space:0.35,room:1.1}, Deep:{mode:'simple',character:'deep',space:0.3,room:1}, Piccolo:{mode:'simple',character:'piccolo'},
-      Rimshot:{mode:'simple',character:'rimshot',space:0.2}, 'Trash can':{mode:'simple',character:'trash can',drive:0.65,amb:'crackle'},
-      'Ghost note':{mode:'simple',character:'studio',velocity:0.2},
-    },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
-        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,snareResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
-      {k:'character',label:'Character',kind:'sel',opts:['studio','tight','ringy','fat','deep','piccolo','rimshot','trash can'],def:'studio',rebuild:true},
+        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') bakeMacros('snare',p,snareResolve({...p,mode:'simple'})); }},
       P('tune','Tune',-7,7,0,'st',{step:1,rnd:[-4,4]}),
       P('snap','Snap',0,1,0.5,'%',{rnd:[0.3,0.75]}),
       P('body','Body',0,1,0.5,'%',{rnd:[0.3,0.75]}),
@@ -613,13 +572,6 @@ const TYPES = {
     ]},
   clap:{label:'Clap',folder:'Claps',c:'--clap',desc:'Stacked bandpassed noise bursts with a long last slap.',
     post:{drive:0.15,space:0.18,room:1.1},
-    presets:{
-      Studio:{}, Snap:{bursts:1,spread:0.004,decay:0.12,tone:2200,q:2.5,space:0.1},
-      Tight:{bursts:3,spread:0.006,decay:0.15,tone:1600,q:2},
-      Big:{bursts:6,spread:0.018,decay:0.5,tone:1100,q:1.2,space:0.3,room:1.6},
-      Crowd:{bursts:7,spread:0.028,decay:0.7,tone:1000,q:0.8,space:0.35,room:1.8},
-      'Lo-fi':{tone:900,q:3,decay:0.3,drive:0.45,amb:'crackle'},
-    },
     params:[
       ...AMB('room'),
       P('bursts','Hands',1,7,4,'n',{step:1}),
@@ -630,11 +582,6 @@ const TYPES = {
     ]},
   hat:{label:'Hat',folder:'Hats',c:'--hat',desc:'Six metallic square partials (808-style) blended with noise.',
     post:{drive:0.1,space:0,room:1},
-    presets:{
-      Closed:{}, Tight:{decay:0.035,tone:9000,metal:0.7}, Open:{decay:0.45},
-      '606 style':{pitch:1.25,decay:0.06,metal:0.75,tone:8000}, Shaker:{metal:0.1,decay:0.09,tone:6000},
-      Trashy:{metal:0.9,decay:0.2,pitch:0.8,drive:0.4},
-    },
     params:[
       ...AMB('crackle'),
       P('decay','Decay',0.02,2,0.07,'s',{log:true}),
@@ -642,18 +589,11 @@ const TYPES = {
       P('metal','Metal',0,1,0.6,'%'),
       P('tone','Brightness',3000,13000,7000,'Hz',{log:true}),
     ]},
-  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'Pick a character, then shape it with six macros. A stick and shaped noise excite a bank of tuned resonators. Detailed opens every layer.',
+  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'A stick and shaped noise excite a bank of tuned resonators: hats, blocks, toms and bells. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
     post:{drive:0,space:0,room:1}, macroKeys:null,
-    presets:{
-      'Closed hat':{mode:'simple',character:'closed hat'}, 'Open hat':{mode:'simple',character:'open hat'}, 'Pedal chick':{mode:'simple',character:'pedal chick'},
-      'Money hat':{mode:'simple',character:'money hat'},
-      Woodblock:{mode:'simple',character:'woodblock'}, Clave:{mode:'simple',character:'clave'}, Tom:{mode:'simple',character:'tom'},
-      'Floor tom':{mode:'simple',character:'floor tom'}, Cowbell:{mode:'simple',character:'cowbell'},
-    },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
-        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,percResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
-      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat','woodblock','clave','tom','floor tom','cowbell'],def:'closed hat',rebuild:true},
+        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') bakeMacros('perc',p,percResolve({...p,mode:'simple'})); }},
       P('tune','Tune',-12,12,0,'st',{step:1,rnd:[-5,5]}),
       P('stick','Stick',0,1,0.5,'%',{rnd:[0.3,0.75]}),
       P('lenX','Length',0.33,3,1,'x',{log:true,rnd:[0.7,1.5]}),
@@ -696,20 +636,12 @@ const TYPES = {
     ]},
   riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser build with a steady resonant noise sweep and a reverse suck into the drop, in your key.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
-    presets:{'Laser':{mode:'simple',character:'laser'},'Noise sweep':{mode:'simple',character:'noise sweep'},'Dark tension':{mode:'simple',character:'dark tension'},'Airy':{mode:'simple',character:'airy'}},
     params:sweepParams(false)},
   down:{label:'Downlifter',folder:'Downlifters',c:'--down',desc:'A laser fall, or an impact tail: a hit, a sub drop and a noise wash falling away into a growing reverb.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
-    presets:{'Laser fall':{mode:'simple',character:'laser fall'},'Impact tail':{mode:'simple',character:'impact tail'},'Sub drop':{mode:'simple',character:'sub drop'},'Noise fall':{mode:'simple',character:'noise fall'}},
     params:sweepParams(true)},
   impact:{label:'Impact',folder:'Impacts',c:'--impact',desc:'Sub boom, crack and a closing noise wash for drops and transitions.',
     post:{drive:0.35,space:0.4,room:2},
-    presets:{
-      Cinematic:{}, 'Sub boom':{sub:1,noise:0.2,crack:0.1,bDecay:3,bEnd:28},
-      Thunder:{noise:1,nDecay:3,bright:3000,crack:0.2,sub:0.6,amb:'rumble'},
-      Punch:{bStart:200,bDecay:0.8,nDecay:0.4,crack:0.8,space:0.25},
-      'Bright hit':{crack:1,bright:14000,nDecay:0.7,sub:0.5},
-    },
     params:[
       ...AMB('rumble'),
       P('bStart','Boom start',50,320,140,'Hz',{log:true}),
@@ -723,16 +655,6 @@ const TYPES = {
     ]},
   eco:{label:'Ecosystem',folder:'Ecosystems',c:'--eco',desc:'A generative ecosystem texture: weather and creatures set back in a forest, with vinyl character to sit under a track.',
     post:{drive:0,space:0,room:1.5},
-    presets:{
-      Day:{},
-      Night:{wind:0.25,gust:0.3,birds:0.3,birdType:'owls',crickets:0.75,frogs:0.55,aliens:0,distance:0.45,forest:0.55},
-      Rainforest:{wind:0.3,rain:0.5,drops:0.6,birds:0.6,crickets:0.3,frogs:0.3,forest:0.7,size:2.8},
-      Storm:{wind:0.85,gust:0.85,rain:0.9,drops:0.7,thunder:0.8,birds:0,crickets:0,frogs:0.15,distance:0.6,size:3.5},
-      'Alien day':{birds:0.3,aliens:0.8,crickets:0.2,wind:0.3,chorus:0.6},
-      'Alien night':{birds:0,aliens:0.7,crickets:0.55,frogs:0.4,wind:0.2,distance:0.5},
-      Calm:{wind:0.2,gust:0.2,birds:0.3,chance:0.35,distance:0.7,forest:0.65},
-      'Lo-fi forest':{wind:0.3,rain:0.25,drops:0.4,birds:0.5,crickets:0.25,presence:0.2,crackle:0.6,hiss:0.4,wow:0.5,tone:3800,lowCut:90},
-    },
     params:[
       P('seed','Variation',0,999,7,'seed',{step:1}),
       P('length','Length',4,30,10,'s',{step:0.5,lock:true}),
@@ -773,20 +695,6 @@ const TYPES = {
     ]},
   birds:{label:'Animals',folder:'Animals',c:'--birds',desc:'Birds and frogs from the eastern US and around the world, each modeled from its real song or call structure. Add individuals for a chorus.',
     post:{drive:0,space:0,room:1.5},
-    presets:{
-      'Songbird':{group:'birds',species:'cardinal',individuals:1},
-      'Counter-singing':{group:'birds',species:'wren',individuals:2,phrases:3,distance:0.3},
-      'Owl at night':{group:'birds',species:'owl',individuals:1,distance:0.5,forest:0.5},
-      'Peeper chorus':{group:'frogs',frog:'peeper',individuals:8,phrases:4,distance:0.35,depth:0.6,forest:0.35},
-      'Toad trill':{group:'frogs',frog:'amtoad',individuals:2,phrases:1,distance:0.3},
-      'Treefrog chorus':{group:'frogs',frog:'graytree',individuals:5,phrases:3,distance:0.4,depth:0.5},
-      'Bullfrog pond':{group:'frogs',frog:'bullfrog',individuals:3,phrases:2,distance:0.35,forest:0.3},
-      'Laughing frogs':{group:'frogs',frog:'marsh',individuals:4,phrases:2,distance:0.35,depth:0.5},
-      'Midwife toads':{group:'frogs',frog:'midwife',individuals:4,phrases:4,distance:0.4,depth:0.6,forest:0.35},
-      'Cuckoo':{group:'birds',species:'cuckoo',individuals:1,phrases:1,distance:0.45,forest:0.4},
-      'Kookaburras':{group:'birds',species:'kookaburra',individuals:3,phrases:1,distance:0.35,depth:0.5},
-      'Bell miners':{group:'birds',species:'bellbird',individuals:7,phrases:5,distance:0.4,depth:0.6,forest:0.4},
-    },
     params:[
       {k:'group',label:'Group',kind:'sel',opts:['birds','frogs'],labels:{birds:'Birds',frogs:'Frogs'},def:'birds',lock:true,rebuild:true},
       {k:'species',label:'Species',kind:'sel',opts:ALL_BIRDS,labels:BIRD_LABELS,def:'cardinal',lock:true,when:p=>p.group!=='frogs'},
@@ -806,14 +714,6 @@ const TYPES = {
     ]},
   city:{label:'City',folder:'City',c:'--city',desc:'A continuous urban bed with vinyl character: traffic wash, murmur, hum and crackle to sit under a track.',
     post:{drive:0,space:0,room:1.5},
-    presets:{
-      'City haze':{},
-      'Late night':{traffic:0.4,cars:0.15,murmur:0.08,hum:0.45,air:0.15,crackle:0.3,tone:5000},
-      'Busy street':{traffic:0.8,cars:0.6,murmur:0.5,hum:0.2,crackle:0.2,tone:9000,space:0.3},
-      Rooftop:{traffic:0.55,cars:0.2,murmur:0.05,hum:0.3,air:0.5,crackle:0.15,tone:6000},
-      'Lo-fi street':{traffic:0.6,cars:0.3,murmur:0.25,crackle:0.75,hiss:0.5,wow:0.6,tone:3500,lowCut:120},
-      'Just vinyl':{traffic:0,cars:0,murmur:0,hum:0,air:0,crackle:0.6,hiss:0.4,wow:0.3,space:0},
-    },
     params:[
       P('seed','Variation',0,999,7,'seed',{step:1}),
       P('length','Length',4,30,10,'s',{step:0.5,lock:true}),
@@ -835,39 +735,24 @@ const TYPES = {
       P('width','Width',0,1,0.8,'%'),
     ]},
 };
-const KICK_CHARS={
-  // acoustic: the shell layer is the drum; tuned against real recorded kicks (close, mid and room mics)
-  studio:{shellLvl:1,shellPitch:60,shellDamp:0.6,beater:'plastic',shellAir:0.5,shellRoom:0.3,shellBend:0.25,nearLvl:0.3,pStart:110,pEnd:52,pDrop:0.02,nearLen:0.25,clickFM:6,clickDecay:0.002,modTone:1800,resoFreq:60,resoAmt:6,scoop:10,air:3,farLvl:0,grit:'off',lowCut:28,tone:12000},
-  vintage:{shellLvl:1,shellPitch:74,shellDamp:0.8,beater:'felt',shellAir:0.75,shellRoom:0.45,shellBend:0.15,nearLvl:0,farLvl:0,grit:'off',lowCut:40,tone:4800},
-  open:{shellLvl:1,shellPitch:55,shellDamp:0.12,beater:'wood',shellAir:0.45,shellRoom:0.4,shellBend:0.25,nearLvl:0,farLvl:0,grit:'off',lowCut:28,tone:12000},
-  jazz:{shellLvl:1,shellPitch:92,shellDamp:0.1,beater:'felt',shellAir:0.4,shellRoom:0.55,shellBend:0.1,nearLvl:0,farLvl:0,grit:'off',lowCut:45,tone:12000},
-  breakbeat:{shellLvl:1,shellPitch:70,shellDamp:0.6,beater:'plastic',shellAir:0.8,shellRoom:0.5,shellBend:0.7,nearLvl:0,farLvl:0,grit:'off',lowCut:35,tone:7000},
-  thud:{shellLvl:1,shellPitch:60,shellDamp:0.95,beater:'felt',shellAir:0.85,shellRoom:0.25,shellBend:0.2,nearLvl:0,farLvl:0,grit:'off',lowCut:28,tone:12000},
-  'live room':{shellLvl:1,shellPitch:64,shellDamp:0.45,beater:'wood',shellAir:0.55,shellRoom:0.85,shellBend:0.2,nearLvl:0,farLvl:0,grit:'off',lowCut:28,tone:12000},
-  clean:{},
-  punchy:{nearLvl:0.98,pStart:300.0,pEnd:35.0,pDrop:0.00401,nearLen:0.264,clickFM:23.3,clickDecay:0.00158,modTone:4950.0,resoFreq:76.2,resoAmt:6.57,scoop:14.9,air:7.88,farLvl:0.123,farPitch:93.6,farDecay:0.584,farFM:6.81,farBurst:0.12,farHP:52.6,farAir:-5.9,farDelay:0.00626,width:0.542,lowCut:26.9,tone:9860.0,grit:"off"},
-  deep:{nearLvl:0.416,pStart:87.8,pEnd:45.2,pDrop:0.009,nearLen:0.201,clickFM:23.7,clickDecay:0.00299,modTone:2300.0,resoFreq:96.6,resoAmt:3.64,scoop:0.338,air:-8.61,farLvl:0.0796,farPitch:160.0,farDecay:0.408,farFM:11.5,farBurst:0.0544,farHP:121.0,farAir:-1.08,farDelay:0.0299,width:0.857,lowCut:20.1,tone:9690.0,grit:"off"},
-  acrylic:{nearLvl:0.324,pStart:103.0,pEnd:79.6,pDrop:0.0519,nearLen:0.0659,clickFM:9.58,clickDecay:0.000501,modTone:1160.0,resoFreq:212.0,resoAmt:17.8,scoop:16.9,air:-5.29,farLvl:0.244,farPitch:57.1,farDecay:0.249,farFM:1.94,farBurst:0.119,farHP:20.0,farAir:1.11,farDelay:0.000957,width:0.77,lowCut:20.9,tone:8570.0,grit:"off"},
-  stadium:{nearLvl:0.654,pStart:140.0,pEnd:36.1,pDrop:0.021,nearLen:0.727,clickFM:18.5,clickDecay:0.00741,modTone:2010.0,resoFreq:97.9,resoAmt:16.1,scoop:13.3,air:11.4,farLvl:0.375,farPitch:52.7,farDecay:1.05,farFM:8.82,farBurst:0.0156,farHP:167.0,farAir:-2.45,farDelay:0.0355,width:0.997,lowCut:47.6,tone:9000.0,grit:"off"},
-  noise:{nearLvl:0.673,pStart:60.9,pEnd:79.8,pDrop:0.14,nearLen:1.97,clickFM:5.56,clickDecay:0.0223,modTone:2550.0,resoFreq:81.6,resoAmt:9.43,scoop:7.19,air:-1.52,gritLvl:0.532,gritBass:37.8,gritBoost:23.1,gritQ:0.519,gritDist:0.00522,gritHP:33.6,gritDecay:1.68,lowCut:35.5,tone:6010.0,grit:"noise",farLvl:0},
-  ambience:{nearLvl:0.759,pStart:255.0,pEnd:49.1,pDrop:0.0141,nearLen:0.0649,clickFM:17.1,clickDecay:0.00225,modTone:1230.0,resoFreq:166.0,resoAmt:4.14,scoop:6.67,air:1.18,gritLvl:0.429,gritBass:52.0,gritBoost:23.3,gritQ:0.547,gritDist:0.00053,gritHP:35.3,gritDecay:3.24,lowCut:43.7,tone:16900.0,grit:"noise",farLvl:0},
-  dubstep:{nearLen:1.1,pStart:220,pEnd:40,pDrop:0.06,clickFM:20,farLvl:0.25},
-};
-const KICK_MACROS=new Set(['mode','character','tune','click','lenX','roomX','toneX','texture','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const KICK_DEFAULT={shellLvl:1,shellPitch:60,shellDamp:0.6,beater:'plastic',shellAir:0.5,shellRoom:0.3,shellBend:0.25,nearLvl:0.3,pStart:110,pEnd:52,pDrop:0.02,nearLen:0.25,clickFM:6,clickDecay:0.002,modTone:1800,resoFreq:60,resoAmt:6,scoop:10,air:3,farLvl:0,grit:'off',lowCut:28,tone:12000};
+for(const [t,o] of [['kick',KICK_DEFAULT],['riser',SWEEP_DEFAULT.riser],['down',SWEEP_DEFAULT.down]])
+  for(const d of TYPES[t].params) if(d.k && d.k in o) d.def=o[d.k];
+const KICK_MACROS=new Set(['mode','tune','click','lenX','roomX','toneX','texture','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
 for(const d of TYPES.kick.params){ if(KICK_MACROS.has(d.k)) continue; const w=d.when; d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
 function kickResolve(p){
-  const raw={}; for(const d of TYPES.kick.params) if(d.k&&!KICK_MACROS.has(d.k)&&'def' in d) raw[d.k]=d.def;
-  const b={...raw,...(KICK_CHARS[p.character]||{})};
+  const raw={}; for(const d of TYPES.kick.params) if(d.k&&!KICK_MACROS.has(d.k)&&'def' in d) raw[d.k]= d.k in p ? p[d.k] : d.def;
+  const b=raw;
   const lim=(k,v)=>{ const d=TYPES.kick.params.find(x=>x.k===k); return d?clamp(v,d.min,d.max):v; };
   const r=Math.pow(2,(p.tune||0)/12);
   for(const k of ['pStart','pEnd','resoFreq','farPitch','gritBass','shellPitch']) b[k]=lim(k,b[k]*r);
   const c=p.click??0.5;
   b.clickFM=lim('clickFM',b.clickFM*2*c); b.clickDecay=lim('clickDecay',b.clickDecay*(0.5+c)); b.air=lim('air',b.air+(c-0.5)*8);
   const L=p.lenX??1;
-  b.nearLen=lim('nearLen',b.nearLen*L); b.shellLenX=L; b.farDecay=lim('farDecay',b.farDecay*L); b.gritDecay=lim('gritDecay',b.gritDecay*L);
+  b.nearLen=lim('nearLen',b.nearLen*L); b.shellLenX=(p.shellLenX||1)*L; b.farDecay=lim('farDecay',b.farDecay*L); b.gritDecay=lim('gritDecay',b.gritDecay*L);
   const rm=p.roomX??0.5;
   if(b.shellLvl>0) b.shellRoom=lim('shellRoom',b.shellRoom*2*rm);
-  b.farLvl = b.shellLvl>0 ? lim('farLvl',b.farLvl*2*rm) : lim('farLvl',(b.farLvl||0.08)*2*rm); b.farDelay=lim('farDelay',b.farDelay*(0.5+rm)); b.width=lim('width',b.width*(0.5+rm));
+  b.farLvl = b.farLvl>0 ? lim('farLvl',b.farLvl*2*rm) : b.shellLvl>0 ? 0 : lim('farLvl',Math.max(0,rm-0.5)*0.16); b.farDelay=lim('farDelay',b.farDelay*(0.5+rm)); b.width=lim('width',b.width*(0.5+rm));
   const t=p.toneX??0;
   b.tone=lim('tone',b.tone*Math.pow(2,t*1.5)); b.air=lim('air',b.air+t*4); b.modTone=lim('modTone',b.modTone*Math.pow(2,t));
   const tx=p.texture??0.5;
@@ -879,48 +764,21 @@ function kickResolve(p){
   for(const k of ['drive','space','room','reverse','sample','srcStart','gritWidth']) if(k in p) b[k]=p[k];
   return b;
 }
-const SNARE_CHARS={
-  studio:{},
-  tight:{headPitch:230,ring:0.1,damp:3500,trLen:0.005,snDecay:0.14,snLvl:0.5},
-  ringy:{headPitch:260,ring:0.55,damp:7000,dip:0.5,headLvl:0.85,snLvl:0.45},
-  fat:{headPitch:150,sqRatio:0.9,ring:0.25,damp:3000,snDecay:0.32,snTone:1600,trLen:0.012},
-  deep:{headPitch:125,sqRatio:0.85,ring:0.35,damp:2600,snDecay:0.34,snTone:1300,snLvl:0.5,trLen:0.01,headLow:50,lowCut:40},
-  piccolo:{headPitch:360,ring:0.16,damp:9000,snDecay:0.12,snTone:3200,trLen:0.004,headLow:200},
-  rimshot:{headPitch:330,ring:0.09,damp:9000,trLvl:1,trLen:0.003,trBoost:14,trColor:9000,snLvl:0.2,snDecay:0.1,headLvl:0.8},
-  'trash can':{headPitch:210,ring:0.9,damp:11000,dip:0,bend:3,snLvl:0.7,couple:0.9},
-};
-const SNARE_MACROS=new Set(['mode','character','tune','snap','body','wires','lenX','toneX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
-const PERC_CHARS={
-  'closed hat':{},
-  'open hat':{nzDecay:0.7,lowDecay:0.5,hiDecay:0.8,coin:0.1},
-  'pedal chick':{pedal:0.8,nzDecay:0.05,lowDecay:0.06,hiDecay:0.07,stickLvl:0.2,lowCut:600},
-  'money hat':{coin:0.7,nzDecay:0.2,hiDecay:0.3,lowDecay:0.15},
-  // pitched, mostly harmonic hits: the low resonator bank is the instrument, the noise sizzle is off or nearly off
-  woodblock:{stickLvl:0.45,stickPitch:950,stickBend:7,stickFM:0.5,stickLen:0.004,stickTone:5000,nzLvl:0,fund:900,spread:0.03,lowDecay:0.2,lowDamp:9000,lowLvl:1,
-    hiMin:2500,hiMax:5000,hiDecay:0.03,hiHP:2000,hiLvl:0.05,shift:0,coin:0,width:0.2,color:0,lowCut:300,tone:12000},
-  clave:{stickLvl:0.3,stickPitch:2400,stickBend:4,stickFM:0.3,stickLen:0.002,stickTone:9000,nzLvl:0,fund:2400,spread:0,lowDecay:0.5,lowDamp:16000,lowLvl:1,
-    hiMin:5000,hiMax:9000,hiDecay:0.03,hiHP:4000,hiLvl:0.03,shift:0,coin:0,width:0.15,color:0,lowCut:800,tone:14000},
-  tom:{stickLvl:0.6,stickPitch:165,stickBend:2,stickFM:0.3,stickLen:0.025,stickTone:1500,nzLvl:0.12,nzDecay:0.04,fund:160,spread:0.3,lowDecay:0.55,lowDamp:500,lowLvl:1,
-    hiMin:1500,hiMax:4000,hiDecay:0.05,hiHP:1500,hiLvl:0.08,shift:0,coin:0,width:0.3,color:0,lowCut:50,tone:9000},
-  'floor tom':{stickLvl:0.6,stickPitch:98,stickBend:2,stickFM:0.3,stickLen:0.03,stickTone:1200,nzLvl:0.1,nzDecay:0.05,fund:95,spread:0.3,lowDecay:0.9,lowDamp:300,lowLvl:1,
-    hiMin:1500,hiMax:3500,hiDecay:0.05,hiHP:1500,hiLvl:0.06,shift:0,coin:0,width:0.35,color:0,lowCut:35,tone:8000},
-  cowbell:{stickLvl:0.4,stickPitch:800,stickBend:5,stickFM:1.5,stickLen:0.004,stickTone:6000,nzLvl:0,fund:560,spread:1,lowDecay:0.45,lowDamp:6000,lowLvl:1,
-    hiMin:2500,hiMax:5000,hiDecay:0.12,hiHP:2000,hiLvl:0.15,shift:0,coin:0,width:0.2,color:0,lowCut:400,tone:9000},
-};
-const PERC_MACROS=new Set(['mode','character','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const SNARE_MACROS=new Set(['mode','tune','snap','body','wires','lenX','toneX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const PERC_MACROS=new Set(['mode','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
 TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
 for(const [t,M] of [['snare',SNARE_MACROS],['perc',PERC_MACROS]])
   for(const d of TYPES[t].params){ const w=d.when;
     if(M.has(d.k)){ if(d.k!=='mode'&&!['velocity','seed','noiseType','amb','ambMotion','ambEvents'].includes(d.k)) d.when = w ? (p=>p.mode!=='detailed'&&w(p)) : (p=>p.mode!=='detailed'); }
     else d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
-function macroBase(t,M,chars,p){
-  const raw={}; for(const d of TYPES[t].params) if(d.k&&!M.has(d.k)&&'def' in d) raw[d.k]=d.def;
-  return {...raw,...(chars[p.character]||{})};
+function macroBase(t,M,p){
+  const raw={}; for(const d of TYPES[t].params) if(d.k&&!M.has(d.k)&&'def' in d) raw[d.k]= d.k in p ? p[d.k] : d.def;
+  return raw;
 }
 const limOf=t=>(k,v)=>{ const d=TYPES[t].params.find(x=>x.k===k); return d&&d.min!=null?clamp(v,d.min,d.max):v; };
 function finishResolve(b,p,M){ for(const k of M) if(k!=='mode') b[k]=p[k]; b.mode='detailed'; for(const k of ['drive','space','room','reverse']) if(k in p) b[k]=p[k]; return b; }
 function snareResolve(p){
-  const b=macroBase('snare',SNARE_MACROS,SNARE_CHARS,p), lim=limOf('snare');
+  const b=macroBase('snare',SNARE_MACROS,p), lim=limOf('snare');
   const r=Math.pow(2,(p.tune||0)/12); b.headPitch=lim('headPitch',b.headPitch*r); b.snTone=lim('snTone',b.snTone*Math.sqrt(r));
   const sn=p.snap??0.5; b.trLvl=lim('trLvl',b.trLvl*2*sn); b.trBoost=lim('trBoost',b.trBoost+(sn-0.5)*8); b.trLen=lim('trLen',b.trLen*(1.5-sn));
   const bo=p.body??0.5; b.headLvl=lim('headLvl',b.headLvl*2*bo); b.bend=lim('bend',b.bend*(0.5+bo));
@@ -930,7 +788,7 @@ function snareResolve(p){
   return finishResolve(b,p,SNARE_MACROS);
 }
 function percResolve(p){
-  const b=macroBase('perc',PERC_MACROS,PERC_CHARS,p), lim=limOf('perc');
+  const b=macroBase('perc',PERC_MACROS,p), lim=limOf('perc');
   const r=Math.pow(2,(p.tune||0)/12);
   for(const k of ['stickPitch','fund','hiMin','hiMax','hiHP','colorF']) b[k]=lim(k,b[k]*r);
   if(b.hiMax<b.hiMin*1.3) b.hiMax=lim('hiMax',b.hiMin*1.3);
@@ -941,6 +799,10 @@ function percResolve(p){
   const w=p.widthX??0.5; b.width=lim('width',b.width*2*w);
   return finishResolve(b,p,PERC_MACROS);
 }
+// macros that act as offsets on the detailed settings (their defaults leave the sound unchanged)
+const OFFSET_MACROS={kick:['tune','click','lenX','roomX','toneX','texture'],snare:['tune','snap','body','wires','lenX','toneX'],perc:['tune','stick','lenX','metal','toneX','widthX'],
+  riser:['tension','widthX','grit','bright','spaceX','laserX'],down:['tension','widthX','grit','bright','spaceX','laserX']};
+function bakeMacros(t,p,resolved){ Object.assign(p,resolved); for(const k of OFFSET_MACROS[t]){ const d=TYPES[t].params.find(x=>x.k===k); p[k]=d.def; } p.mode='detailed'; }
 const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
 const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = (d.k in (TYPES[t].post||{})) ? TYPES[t].post[d.k] : d.def; return o; };
@@ -2416,10 +2278,7 @@ const norm=(d,v)=> d.log? Math.log(v/d.min)/Math.log(d.max/d.min) : (v-d.min)/(d
 const denorm=(d,n)=>{ n=clamp(n,0,1); let v=d.log? d.min*Math.pow(d.max/d.min,n) : d.min+(d.max-d.min)*n; if(d.step) v=Math.round(v/d.step)*d.step; return +v.toFixed(5); };
 function vary(t,p,amt,full){
   const o={...p};
-  const macroSet = t==='kick' ? KICK_MACROS : TYPES[t].macroKeys;
-  const simple = macroSet && p.mode!=='detailed';
-  for(const d of allDefs(t)){
-    if(simple && !macroSet.has(d.k)) continue;   // simple mode: only the character and macros move; Finish stays as you set it   // simple kicks: only the character and macros move; Finish stays as you set it
+  for(const d of allDefs(t)){                       // every parameter moves, whichever view is showing
     if(d.rnd && d.min!=null){
       const rr=(d.rndBy&&d.rndBy[p.kind])||d.rnd, lo=norm(d,rr[0]), hi=norm(d,rr[1]);
       o[d.k]=denorm(d, full ? lo+Math.random()*(hi-lo) : clamp(norm(d,p[d.k])+(Math.random()*2-1)*amt, lo, hi));
@@ -2586,15 +2445,6 @@ function buildParams(){
   const s=$('#pSound'), f=$('#pFinish'); s.innerHTML=''; f.innerHTML='';
   T.params.forEach(d=>{ const el=paramEl(d,p); if(el) s.appendChild(el); });
   POST.forEach(d=>{ const el=paramEl(d,p); if(el) f.appendChild(el); });
-  const pr=$('#presets'); pr.innerHTML=''; pr.hidden=!T.presets;
-  if(T.presets){
-    pr.innerHTML='<span class="lbl">Start from</span>';
-    for(const [name,vals] of Object.entries(T.presets)){
-      const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=name;
-      b.onclick=()=>{ snap(t); S.params[t]={...defaults(t),...vals,sample:p.sample,...(p.key&&t==='bass'?{key:p.key}:{})}; persist(); buildParams(); schedule(); };
-      pr.appendChild(b);
-    }
-  }
   if(t==='kick' && p.grit==='sample'){
     const box=document.createElement('div'); box.className='loader';
     const has=SRC[p.sample];
@@ -2768,8 +2618,8 @@ const INFO={
       '<b>Far mic</b>. A boomier sine, phase-modulated by noise on a slower envelope, high-passed, delayed by the mic distance and slightly chorused for width.',
       '<b>Grit</b>. Any source (noise, a supersaw or your own sample) gets a huge bass boost, then distortion, a high-pass and a fade, for gritty or textured kicks.',
       'Noise comes from a generated ambience (rumble, room, crackle or wind) instead of plain white noise. Every kick is DC-blocked and faded so it never pops.'],
-    tips:['<b>Texture</b> adds air and noise to the acoustic characters; <b>Room</b> moves the mic back.','Real kicks sit around 50–90 Hz with almost nothing below 45 Hz. Use <b>Tune</b> to match the song’s key.','Switch to <b>Detailed</b> to blend all three layers yourself.'],
-    src:'Inspired by Zion Jaymes: <a href="https://youtu.be/ndG-6-vONNc" target="_blank" rel="noopener">his kick design video</a> (the near and far mic method). The acoustic characters were tuned against real recorded kicks from the free Virtuosity Drums kit.'},
+    tips:['<b>Texture</b> adds air and noise; <b>Room</b> moves the mic back. The macros work on top of the detailed settings, and switching to Detailed writes them in.','Real kicks sit around 50–90 Hz with almost nothing below 45 Hz. Use <b>Tune</b> to match the song’s key.','Switch to <b>Detailed</b> to blend all three layers yourself.'],
+    src:'Inspired by Zion Jaymes: <a href="https://youtu.be/ndG-6-vONNc" target="_blank" rel="noopener">his kick design video</a> (the near and far mic method). The acoustic model was tuned against real recorded kicks from the free Virtuosity Drums kit.'},
   bass:{lead:'Tuned low end in two flavors: the 808 and the amapiano log drum.',
     how:[
       '<b>808</b>. A sine at the note you pick. <b>Punch</b> starts the pitch a few semitones high and drops it onto the note over the punch time. The note holds briefly, then decays exponentially over <b>Length</b>.',
@@ -2778,14 +2628,14 @@ const INFO={
       '<b>Log drum</b>. Built from real amapiano log drums: the pitch starts two and a half to three octaves up and drops onto the note in 5–10 ms (the pluck). A sine pushed into soft clipping gives the hollow, odd-harmonic tone (<b>Hollow</b>). Clipping happens before the volume envelope, so the tone holds as it decays. Then a pure exponential decay.',
       '<b>Saturation</b>: Soft (tanh), Tape (asymmetric), Hard (clip) or Fold (wavefolder), then <b>Tone</b> (a low-pass filter).'],
     tips:['Set <b>Note</b> to your song’s root or the bass line note. Hits stay in tune.','Keep 808s dry and in mono; Randomize leaves reverb off on purpose.','For log drums, more <b>Punch</b> and a shorter <b>Punch time</b> make a sharper pluck; more <b>Hollow</b> makes a squarer, woodier tone.'],
-    src:'Log drum presets were fitted to six amapiano log drum samples; each preset matches its sample within about 1 dB across the spectrum.'},
+    src:'The log drum defaults were fitted to real amapiano log drum samples, matching within about 1 dB across the spectrum.'},
   snare:{lead:'A drum head made from a feedback delay, struck by a stick, with snare wires on top.',
     how:[
       '<b>Stick</b>. A short burst of noise and a square-wave body makes the strike.',
       '<b>Drum head</b>. The strike rings a delay line fed back into itself. The loop length sets the head’s pitch, and filters inside the loop set how long it rings (<b>Ring</b>, <b>Damping</b>). The loop is corrected so the pitch stays where you set it. <b>Overtone dip</b> notches out a ringy overtone and <b>Hit bend</b> bends the pitch on impact, like a real head under tension.',
       '<b>Snare wires</b>. Filtered noise with its own decay, set to follow the head’s energy (<b>Follow head</b>), then spread in stereo.',
       'A room and master EQ finish it.'],
-    tips:['In simple mode, pick a character and shape it with six macros: <b>Tune</b>, <b>Snap</b> (the stick), <b>Body</b> (the head), <b>Wires</b>, <b>Length</b> and <b>Tone</b>. Switch to detailed to see what they set.','Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
+    tips:['Simple shows six macros that work on top of the detailed settings: <b>Tune</b>, <b>Snap</b> (the stick), <b>Body</b> (the head), <b>Wires</b>, <b>Length</b> and <b>Tone</b>. Switching to Detailed writes them in.','Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
     src:'Inspired by Zion Jaymes: <a href="https://youtu.be/1Db9rGbth_o" target="_blank" rel="noopener">his snare design video</a> (the feedback-delay drum head).'},
   clap:{lead:'Several hands that don’t quite land together.',
     how:['Short bursts of band-passed noise, one per hand, spread a few milliseconds apart (<b>Hands</b>, <b>Spread</b>).','The last burst is longer: the slap and its room.','<b>Tone</b> and <b>Focus</b> set the band-pass center and how narrow it is.'],
@@ -2795,10 +2645,10 @@ const INFO={
     tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
   perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Inharmonic shift</b> nudges the high modes off their harmonic ratios for a metallic shimmer, and <b>Coin ring</b> adds a bright ringing overtone.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
-    tips:['In simple mode, pick a hat or a pitched hit (woodblock, clave, toms, cowbell) and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and coin ring), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
+    tips:['Simple shows six macros that work on top of the detailed settings: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and coin ring), <b>Tone</b> and <b>Width</b>. Switching to Detailed writes them in.','Lower pitch, a soft high bank and a long low decay make toms; high and short make woodblocks and claves; a wide low spread makes bells.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
     how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. Steady noise runs through two filters, a high-pass that rises and a resonant low-pass that opens, both sweeping at a constant number of octaves per second so the sweep moves evenly from start to finish.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
-    tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
+    tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for more of the sci-fi sweep, or down to let the noise lead.'],src:''},
   down:{lead:'The release after a drop: a fall in your key with a sub dive.',
     how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to a low buzz, fading as it goes. <b>Smooth</b> rounds off the clicks as the pitch drops, so the low end turns into soft pulses instead of sharp ticks. More streams can stack in whole-number ratios.','A resonant filter closes evenly over steady noise as it falls, with a reverb tail.','An optional sub dive drops a sine into the low end.'],
     tips:['A two-octave fall over one bar is a classic transition; shorter falls work as fills.'],src:''},
