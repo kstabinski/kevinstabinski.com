@@ -331,9 +331,9 @@ const AMB = (amb, own=true) => [
   ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'}), {kind:'head',label:'Sound'}]:[]),
 ];
 const POST = [
-  P('drive','Drive',0,1,0.2,'%',{rmax:0.5}),
-  P('space','Space',0,1,0,'%',{rmax:0.45}),
-  P('room','Decay',0.2,2,1.2,'s',{log:true}),
+  P('drive','Drive',0,1,0,'%'),
+  P('space','Space',0,1,0,'%'),
+  P('room','Decay',0.2,2,0.2,'s',{log:true}),
   {k:'reverse',label:'Reverse',kind:'bool',def:false},
 ];
 
@@ -443,7 +443,7 @@ const TYPES = {
     post:{drive:0.03,space:0,room:0.8},
     presets:{
       Studio:{mode:'simple',roomX:0,character:'studio'}, Vintage:{mode:'simple',roomX:0,character:'vintage'}, Open:{mode:'simple',roomX:0,character:'open'}, Jazz:{mode:'simple',roomX:0,character:'jazz'},
-      Breakbeat:{mode:'simple',roomX:0,character:'breakbeat',drive:0.15}, Thud:{mode:'simple',roomX:0,character:'thud'}, 'Live room':{mode:'simple',roomX:0,character:'live room'}, Noise:{mode:'simple',roomX:0,character:'noise'}, Ambience:{mode:'simple',roomX:0,character:'ambience'},
+      Breakbeat:{mode:'simple',roomX:0,character:'breakbeat'}, Thud:{mode:'simple',roomX:0,character:'thud'}, 'Live room':{mode:'simple',roomX:0,character:'live room'}, Noise:{mode:'simple',roomX:0,character:'noise'}, Ambience:{mode:'simple',roomX:0,character:'ambience'},
     },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
@@ -739,7 +739,7 @@ const TYPES = {
       {kind:'head',label:'Tone and space'},
       P('tone','Tone',1000,18000,7000,'Hz',{log:true}),
       P('lowCut','Low cut',20,300,40,'Hz',{log:true}),
-      P('space','Space',0,1,0.25,'%'),
+      P('citySpace','Distance',0,1,0.25,'%'),
       P('width','Width',0,1,0.8,'%'),
     ]},
 };
@@ -830,7 +830,7 @@ const OFFSET_MACROS={snare:['tune','snap','body','wires','lenX','toneX'],perc:['
 function bakeMacros(t,p,resolved){ Object.assign(p,resolved); for(const k of OFFSET_MACROS[t]){ const d=TYPES[t].params.find(x=>x.k===k); p[k]=d.def; } p.mode='detailed'; }
 const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
-const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = (d.k in (TYPES[t].post||{})) ? TYPES[t].post[d.k] : d.def; return o; };
+const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = d.def; return o; };   // Finish always starts dry and clean
 
 /* ---------------- state ---------------- */
 const KEY='transientlab.v1';
@@ -1545,7 +1545,7 @@ function citySignal(p,sr){
     if(p.loop){ for(let i=0;i<a&&i<x.length;i++){ const g=Math.sin(Math.PI/2*i/a); x[i]*=g; const j=Nloop+i; if(j<x.length) x[j]*=Math.cos(Math.PI/2*i/a); } for(let j=Nloop+a;j<x.length;j++) x[j]=0; }
     else { const fi=Math.round(0.4*sr), fo=Math.round(1.2*sr); for(let i=0;i<x.length;i++){ let g=1; if(i<fi) g=i/fi; if(i>Nloop-fo) g=Math.max(0,(Nloop-i)/fo); x[i]*=g; } } };
   const rmsSet=(arrs,target)=>{ let e=0,n=0; for(const x of arrs){ for(let i=0;i<Nloop;i+=4){ e+=x[i]*x[i]; n++; } } const g=target/(Math.sqrt(e/n)||1); for(const x of arrs) for(let i=0;i<x.length;i++) x[i]*=g; };
-  const addBed=(L,Rb,send=0.4)=>{ for(let i=0;i<L.length&&i<N;i++){ dL[i]+=L[i]; dR[i]+=Rb[i]; sL[i]+=L[i]*send*p.space; sR[i]+=Rb[i]*send*p.space; } };
+  const addBed=(L,Rb,send=0.4)=>{ for(let i=0;i<L.length&&i<N;i++){ dL[i]+=L[i]; dR[i]+=Rb[i]; sL[i]+=L[i]*send*p.citySpace; sR[i]+=Rb[i]*send*p.citySpace; } };
   const pair=()=>[new Float32Array(NB),new Float32Array(NB)];
 
   // traffic wash: brown/pink roar from behind buildings, slowly swelling
@@ -2304,7 +2304,7 @@ const denorm=(d,n)=>{ n=clamp(n,0,1); let v=d.log? d.min*Math.pow(d.max/d.min,n)
 function vary(t,p,amt,full){
   const o={...p};
   const kickSimple = t==='kick' && p.mode!=='detailed';
-  for(const d of allDefs(t)){                       // every parameter moves, whichever view is showing (except a simple kick: character and macros only)
+  for(const d of TYPES[t].params.filter(d=>d.kind!=='head')){   // Finish is never randomized; every Sound parameter moves, whichever view is showing (except a simple kick: character and macros only)
     if(kickSimple && !KICK_MACROS.has(d.k)) continue;
     if(d.rnd && d.min!=null){
       const rr=(d.rndBy&&d.rndBy[p.kind])||d.rnd, lo=norm(d,rr[0]), hi=norm(d,rr[1]);
@@ -2319,7 +2319,7 @@ function vary(t,p,amt,full){
     const n = full ? 0.05+Math.random()*(hi-0.05) : clamp(norm(d,p[d.k])+(Math.random()*2-1)*amt, 0, d.rmax!=null?hi:1);
     o[d.k]=denorm(d,n);
   }
-  if(t==='kick'){ o.roomX=0; o.space=0; }   // kicks always come out of Randomize and Mutate dry
+  if(t==='kick') o.roomX=0;   // kicks always come out of Randomize and Mutate dry
   return o;
 }
 
@@ -2577,6 +2577,7 @@ const LOCAL=!(window.claude && window.claude.use);
 const localSave={ save:async({filename,data})=>{ const u=URL.createObjectURL(data instanceof Blob?data:new Blob([data]));
   const a=document.createElement('a'); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000); return {status:'saved'}; } };
 let selfDrag=false;
+if(!S.finishZero){ for(const t in S.params){ const q=S.params[t]; if(q){ q.drive=0; q.space=0; q.room=0.2; q.reverse=false; } } S.finishZero=true; }
 const ITEM_MIME='application/x-spicedrawer-item';
 let dragItem=null;   // pack item being dragged (its settings load when dropped on the waveform)
 document.addEventListener('dragend',()=>{ selfDrag=false; dragItem=null; cv.classList.remove('drop'); });
