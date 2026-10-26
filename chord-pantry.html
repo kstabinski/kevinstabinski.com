@@ -337,19 +337,19 @@ const STYLES={
   neosoul:{label:'Neo-soul house',hint:'Warm 7ths and 9ths. Think Kaytranada.',
     maj:['ii V7 I vi','IV iii ii I','ii iii IV V7','I VI7 ii V7','IV V7 iii vi'],
     min:['i iv VII7 III','iiø V7 i iv','i IV7 i IV7','iv v i VI','i VII VI V7'],
-    def:{scale:'dorian',flow:'functional',inv:'smooth',flip:'last',color:0.75,spice:0.35,rate:'2',rhythm:'hold',voicing:'open',sound:'keys',swing:0,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'tenuto',roll:0.12,rubato:0.12,pedal:'off'}},
+    def:{scale:'minor',flow:'loop',inv:'smooth',flip:'last',color:0.75,spice:0.3,rate:'2',rhythm:'hold',voicing:'open',sound:'keys',swing:0,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'tenuto',roll:0.12,rubato:0.12,pedal:'off'}},
   future:{label:'Lush future',hint:'Wide, glossy, slightly chromatic. Think Sam Gellaitry.',
     maj:['IV V iii vi','I II IV iv','IV I bVII IV','vi IV I II','I iii IV iv'],
     min:['i VI III VII','iv i VI VII','i VII iv VI'],
-    def:{scale:'lydian',flow:'chromatic',inv:'smooth',flip:'random',color:0.85,spice:0.5,rate:'mixed',rhythm:'hold',voicing:'spread',sound:'keys',swing:0,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
+    def:{scale:'lydian',flow:'functional',inv:'smooth',flip:'off',color:0.8,spice:0.35,rate:'mixed',rhythm:'hold',voicing:'spread',sound:'keys',swing:0,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
   dark:{label:'Dark',hint:'Brooding minor loops for heavier tracks.',
     maj:['I bVII bVI bVII','I bIII IV iv'],
     min:['i bII i VII','i VI iv V7','i iv VI V7','i VI III VII','i v VI iv'],
-    def:{scale:'phrygian',flow:'chromatic',inv:'root',flip:'off',color:0.3,spice:0.3,rate:'1',rhythm:'hold',voicing:'close',sound:'pad',swing:0,bpm:128,humanize:0.3,dyn:'swell',range:0.5,accent:'top',artic:'legato',roll:0.08,rubato:0.08,pedal:'chord'}},
+    def:{scale:'minor',flow:'loop',inv:'root',flip:'off',color:0.3,spice:0.3,rate:'1',rhythm:'hold',voicing:'close',sound:'pad',swing:0,bpm:128,humanize:0.3,dyn:'swell',range:0.5,accent:'top',artic:'legato',roll:0.08,rubato:0.08,pedal:'chord'}},
   lofi:{label:'Lo-fi',hint:'Jazzy, dusty and laid back.',
     maj:['ii V7 I vi','IV iii vi I','I vi ii V7','IV iv iii VI7'],
     min:['i iv VII III','iv v i i','iiø V7 i VI'],
-    def:{scale:'major',flow:'functional',inv:'smooth',flip:'first',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
+    def:{scale:'major',flow:'functional',inv:'smooth',flip:'off',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
   pop:{label:'Pop',hint:'Clean, singable triads.',
     maj:['I V vi IV','vi IV I V','I IV vi V','I vi IV V'],
     min:['i VI III VII','i iv VI V','i VI iv V'],
@@ -367,10 +367,11 @@ const MODE_SUBS={
 // borrowed chords (Spice): major keys borrow from the parallel minor (i, ii°, ♭III, iv, v, ♭VI, ♭VII); minor keys from the parallel major
 // major keys borrow from the parallel minor modes (Aeolian, Dorian, Phrygian), each with its typical chord type:
 // ♭IImaj7, iiø, ♭IIImaj7, iv m7/m6, v, ♭VImaj7, ♭VII7
-const BORROW={maj:[[5,'maj',5,'min'],[7,'maj',7,'min'],[9,'min',8,'maj','maj7'],[7,'maj',10,'dom'],[2,'min',2,'hdim'],[4,'min',3,'maj','maj7'],[2,'min',1,'maj','maj7'],[0,'maj',0,'min']],
-              min:[[5,'min',5,'maj'],[7,'min',7,'dom'],[8,'maj',5,'min'],[10,'maj',7,'dom'],[3,'maj',3,'min']]};
+// [from root, from type, to root, to type, chord type, how common]
+const BORROW={maj:[[5,'maj',5,'min',null,3],[9,'min',8,'maj','maj7',2],[4,'min',3,'maj','maj7',1.5],[7,'maj',10,'dom',null,1.2],[2,'min',2,'hdim',null,0.8],[2,'min',1,'maj','maj7',0.5]],
+              min:[[7,'min',7,'dom',null,3],[5,'min',5,'maj',null,1.5],[10,'maj',7,'dom',null,1.2],[8,'maj',5,'min',null,0.8],[3,'maj',3,'min',null,0.2]]};
 // functional flow: tonic -> predominant -> dominant -> tonic, with plagal (IV-I) and deceptive (V-vi) moves
-const FUNC={maj:{T:[[0,'maj',3],[9,'min',2.5],[4,'min',0.8]],PD:[[5,'maj',3],[2,'min',2]],D:[[7,'maj',3],[11,'dim',0.25]]},
+const FUNC={maj:{T:[[0,'maj',3],[9,'min',2.5],[4,'min',0.8]],PD:[[5,'maj',3],[2,'min',2]],D:[[7,'maj',3]]},
             min:{T:[[0,'min',3],[8,'maj',2],[3,'maj',1.5]],PD:[[5,'min',3],[2,'hdim',0.7]],D:[[7,'min',1.3],[7,'dom',1.5],[10,'maj',2]]}};
 const FLOW={T:{T:0.22,PD:0.53,D:0.25},PD:{D:0.55,T:0.3,PD:0.15},D:{T:0.72,PD:0.18,D:0.1}};
 // chromatic flow: rising major chords from the tonic (I ♭II ♭III IV, the Radiohead move) and the ♭VI–V–IV fall
@@ -395,14 +396,21 @@ function slotsFor(st,R){
     else out.push({bar:b,start:b*4,len:4,role:'main'});
   } return out;
 }
-function passing(T,prev,st,R){
-  const sp=st.spice, opts=[];
-  if(T.fam!=='dim'&&T.fam!=='hdim') opts.push([1+sp*1.5,{r:(T.r+7)%12,fam:'dom'}]);              // V7 of the next chord
-  if(T.fam==='maj'||T.fam==='dom') opts.push([0.8,{r:(T.r+2)%12,fam:'min'}]);                      // its ii
-  if(sp>0.25) opts.push([sp*1.4,{r:(T.r+1)%12,fam:'dom'}]);                                       // tritone sub: a dominant a half step above
-  if(sp>0.2 && T.fam!=='dim') opts.push([sp*1.1,{r:(T.r+11)%12,fam:'dim',force:'dim7'}]);         // diminished chord a half step below
-  opts.push([Math.max(0.15,1-sp),{r:prev.r,fam:prev.fam,slash:'third'}]);                         // same chord, 3rd in the bass
-  const sc=SCALES[st.scale].iv, i=sc.indexOf(T.r); if(i>=0){ const r=sc[(i+6)%7]; opts.push([0.7,{r,fam:diatonicFam(r,st.scale)}]); } // step below
+// the half-bar chord between two main chords. In-key by default; a colour approach chord only when Spice allows one.
+function passing(T,prev,st,R,colour,prevOut){
+  const sc=SCALES[st.scale].iv, opts=[];
+  if(prevOut) return {r:prev.r,fam:prev.fam,force:prev.force||null,flip:!!prev.flip,slash:'third'};   // a colour chord keeps its pull toward the next chord
+  if(colour && T.fam!=='dim' && T.fam!=='hdim'){
+    if(!sc.includes((T.r+7)%12)||T.r!==0) opts.push([1.4,{r:(T.r+7)%12,fam:'dom'}]);           // V7 of the next chord
+    if(st.spice>0.35) opts.push([0.9,{r:(T.r+1)%12,fam:'dom'}]);                              // tritone sub: a dominant a half step above
+    opts.push([0.8,{r:(T.r+11)%12,fam:'dim',force:'dim7'}]);                                   // diminished chord a half step below
+  } else {
+    opts.push([1.2,{r:prev.r,fam:prev.fam,force:prev.force||null,flip:!!prev.flip,slash:'third'}]);   // same chord, 3rd in the bass
+    const i=sc.indexOf(T.r);
+    if(i>=0){ const r=sc[(i+6)%7]; if(r!==prev.r) opts.push([0.9,{r,fam:diatonicFam(r,st.scale)}]); }   // the in-key chord a step below the next
+    const ii=(T.r+2)%12; if((T.fam==='maj')&&sc.includes(ii)&&diatonicFam(ii,st.scale)==='min'&&ii!==prev.r) opts.push([0.9,{r:ii,fam:'min'}]);   // its ii, when in key
+    if(T.r===0 && sc.includes(7) && prev.r!==7 && sc.includes(prev.r) && prev.fam!=='dom') opts.push([1.1,{r:7,fam:SCALES[st.scale].minor?'min':'maj'}]);     // V into the tonic
+  }
   let tot=opts.reduce((a,o)=>a+o[0],0), x=R()*tot; for(const [w,o] of opts){ x-=w; if(x<=0) return {...o}; } return {...opts[0][1]};
 }
 function newChord(base,slot,R){ return {r:base.r,fam:base.fam,force:base.force||null,flip:!!base.flip,slash:base.slash==='third'?'third':null,start:slot.start,len:slot.len,role:slot.role,locked:false,u:R(),q:'maj'}; }
@@ -417,10 +425,9 @@ function functionalSeq(st,R,minor){
   const n=st.bars, F=FUNC[minor?'min':'maj'], seq=[{r:0,fam:minor?'min':'maj',fn:'T'}];
   for(let i=1;i<n;i++){
     const cadence = i===n-1 || (n===8&&i===3);
-    const prev=seq[i-1], w=cadence?{D:0.7,PD:0.3}:FLOW[prev.fn];
+    const prev=seq[i-1], w={...(cadence?{D:0.7,PD:0.3}:FLOW[prev.fn])}; if(prev.fn==='D'){ delete w.D; if(cadence) w.PD=1; }   // no V twice in a row
     const fn=pickW(R,Object.entries(w))[0];
     let c; for(let k=0;k<6;k++){ let opts=F[fn].map(x=>[x[0],x[1],null,x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]);
-      if(fn==='D' && !minor && st.spice>0.2) opts=opts.concat([[10,'dom',null,st.spice*1.2],[1,'dom',null,st.spice*0.9],[5,'min','m6',st.spice*0.9],[2,'hdim',null,st.spice*0.6],[11,'dim','dim7',st.spice*0.5]]);
       const x=pickW(R,opts); c={r:x[0],fam:x[1],force:x[2],fn}; if(c.r!==prev.r) break; }
     seq.push(c);
   }
@@ -435,17 +442,31 @@ function generate(st,keep){
       if(c.r===1) c.force='maj7#11'; else if(c.r===3&&c.fam==='maj') c.force='69'; else if(c.r===5&&c.fam==='maj'&&i===t.length-1) c.susRes=true;
       return c; }); }
   else { const list=minor?sty.min:sty.maj; tpl=list[Math.floor(R()*list.length)].split(' ').map(t=>parseTok(t,minor)); }
+  const mains=[]; for(let b=0;b<st.bars;b++) mains.push({...tpl[b%tpl.length]});
+  // the mode's own colour (Dorian IV, Mixolydian ♭VII, Lydian II, Phrygian ♭II...): once per loop, not on every match
   const subs=MODE_SUBS[st.scale]||[];
-  const mains=[]; for(let b=0;b<st.bars;b++){
-    let c={...tpl[b%tpl.length]};
-    for(const [r,f,r2,f2] of subs) if(c.r===r&&c.fam===f&&R()<0.55){ c={r:r2,fam:f2}; break; }
-    const pB=st.spice*0.35+(b>=4&&b%4===3?0.25:0);
-    if(b>0 && R()<pB){ const bl=BORROW[minor?'min':'maj'].filter(x=>x[0]===c.r&&x[1]===c.fam); if(bl.length){ const x=bl[Math.floor(R()*bl.length)]; c={r:x[2],fam:x[3],force:x[4]||null}; } }
-    mains.push(c);
-  }
-  // secondary dominants (Spice): swap a tonic/predominant chord for V of the chord it leads to — III before vi, VI before ii, II before V
-  for(let b=1;b<st.bars;b++){ const nx=mains[(b+1)%st.bars];
-    if(st.flow!=='chromatic' && nx.r!==0 && ['maj','min'].includes(nx.fam) && R()<st.spice*0.3 && mains[b].r!==7) mains[b]={r:(nx.r+7)%12,fam:'dom'}; }
+  if(subs.length && R()<0.8){ const spots=[]; mains.forEach((c,b)=>{ for(const [r,f,r2,f2] of subs) if(b>0&&c.r===r&&c.fam===f) spots.push([b,r2,f2]); });
+    if(spots.length){ const [b,r2,f2]=spots[Math.floor(R()*spots.length)]; mains[b]={r:r2,fam:f2}; } }
+  // Spice is a budget of outside chords per 4 bars (0-3), each one placed where it resolves:
+  // a borrowed chord from the parallel minor modes, or a secondary dominant right before its target
+  let budget=(st.spice<0.12?0:st.spice<0.4?1:st.spice<0.7?2:3)*(st.bars/4);
+  if(st.flip&&st.flip!=='off') budget=Math.max(0,budget-1);           // the modal flip spends one
+  const FAMIV={maj:[0,4,7],min:[0,3,7],dom:[0,4,7,10],hdim:[0,3,6,10],dim:[0,3,6],sus:[0,5,7]};
+  const isOut=c=>(FAMIV[c.fam]||[0,4,7]).some(x=>!SCALES[st.scale].iv.includes((c.r+x)%12));   // any chord note outside the key
+  const bars=[...Array(st.bars).keys()].slice(1).sort(()=>R()-0.5);
+  for(const b of bars){ if(budget<1) break; if(R()>0.8) continue;
+    const c=mains[b], nx=mains[(b+1)%st.bars], prev=mains[b-1];
+    if(isOut(c)||isOut(prev)) continue;                                   // never two colour chords in a row
+    const opts=[];
+    for(const x of BORROW[minor?'min':'maj']) if(x[0]===c.r&&x[1]===c.fam){
+      if(x[3]==='hdim' && nx.r!==7) continue;                          // iiø only when a V follows
+      if(x[2]===10 && x[3]==='dom' && nx.r!==0) continue;               // backdoor ♭VII7 only straight into I
+      if(x[2]===prev.r||x[2]===nx.r) continue;                         // no repeated roots
+      opts.push([{r:x[2],fam:x[3],force:x[4]||null},x[5]]); }
+    if(st.flow!=='chromatic' && nx.r!==0 && ['maj','min'].includes(nx.fam) && c.r!==7 && SCALES[st.scale].iv.includes(nx.r)) opts.push([{r:(nx.r+7)%12,fam:'dom'},1.5]);   // secondary dominant
+    if(c.r===7 && nx.r===0 && !minor) opts.push([{r:10,fam:'dom'},1.2],[{r:1,fam:'dom'},0.8],[{r:5,fam:'min',force:'m6'},0.8]);   // V alternatives: backdoor ♭VII7, tritone ♭II7, iv m6
+    if(!opts.length) continue;
+    mains[b]=pickW(R,opts)[0]; budget--; }
   // ♭II wants to fall back to I unless it is part of a rising line
   for(let b=0;b<st.bars;b++){ const c=mains[b]; if(c.r!==1) continue; const nx=mains[(b+1)%st.bars];
     if(!(nx.r===3||nx.r===5) && nx.r!==0 && b+1<st.bars) mains[b+1]={r:0,fam:minor?'min':'maj'}; }
@@ -462,14 +483,15 @@ function generate(st,keep){
   slots.forEach((sl,i)=>{
     let base;
     const next=mains[(sl.bar+1)%st.bars];
-    if(sl.role==='main' && sl.len===2 && sl.bar>0 && next.r!==mains[sl.bar].r && ['maj','min'].includes(next.fam) && R()<st.spice*0.35){
+    if(sl.role==='main' && sl.len===2 && sl.bar>0 && budget>=1 && next.r!==mains[sl.bar].r && ['maj','min'].includes(next.fam) && R()<0.3){
+      budget--;
       const mt=next.fam==='min';                                      // ii–V of the next chord
       chords.push(newChord({r:(next.r+2)%12,fam:mt?'hdim':'min'},sl,R), newChord({r:(next.r+7)%12,fam:'dom',force:mt?'7b9':null},{...sl,start:sl.start+2,role:'pass'},R));
       skip=true; return; }
     if(skip && sl.role==='pass'){ skip=false; return; }
     skip=false;
     if(sl.role==='main') base=mains[sl.bar];
-    else base=passing(next,mains[sl.bar],st,R);
+    else { const colour = budget>=1 && R()<0.45 && !isOut(mains[sl.bar]) && !isOut(next); if(colour) budget--; base=passing(next,mains[sl.bar],st,R,colour,isOut(mains[sl.bar])); }
     if(base.susRes && sl.len===4){   // sus4 that resolves to the major chord within the bar
       chords.push(newChord({...base,fam:'sus',force:'sus4'},{...sl,len:2},R), newChord({...base,susRes:false},{...sl,start:sl.start+2,len:2},R)); return; }
     chords.push(newChord(base,sl,R));
@@ -488,9 +510,10 @@ function pickQ(ch,st){
   if(fam==='maj' && inKey && sc.includes((ch.r+10)%12) && !sc.includes((ch.r+11)%12)) fam='majDom';
   if(ch.fam==='dim'&&SCALES[st.scale].minor&&lv>0&&ch.r===11) return 'dim7';
   // a chord built on a note of the key keeps its added notes (7ths, 9ths, 6ths, 11ths) in the key too
+  const susOK = ch.r===7 || (sty.sus && ch.r===10);
   const core=fam==='dom'||fam==='majDom'?4:3;
   const ok=q=>!inKey || Q[q].iv.slice(Q[q].iv.length>core?core:Q[q].iv.length).every(x=>sc.includes((ch.r+x)%12)) && (fam!=='majDom'||!Q[q].iv.includes(11));
-  for(let l=lv;l>=0;l--){ const o=EXT[fam][l].filter(ok); if(o.length) return o[Math.floor(((u*13.7)%1)*o.length)]; }
+  for(let l=lv;l>=0;l--){ const o=EXT[fam][l].filter(q=>ok(q)&&(susOK||!q.includes('sus'))&&q!=='7b9'); if(o.length) return o[Math.floor(((u*13.7)%1)*o.length)]; }   // ♭9 only on the V of a minor ii–V
   return EXT[fam][0][0];
 }
 function colorize(p,st){ for(const c of p.chords) c.q=pickQ(c,st); voice(p,st); }
