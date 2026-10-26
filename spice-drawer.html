@@ -52,6 +52,8 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .key{font-family:var(--f-mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:2px;padding:0 5px}
 .rail button[aria-pressed="true"] .key{color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
 .rail .sep{height:1px;background:var(--line);margin:4px 8px}
+.rail .rhead{margin:0;padding:10px 10px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.rail .rhead:first-child{padding-top:6px}
 
 /* editor */
 .editor{display:flex;flex-direction:column;min-width:0}
@@ -179,7 +181,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   .bench{grid-template-columns:minmax(0,1fr)}
   .rail{flex-direction:row;overflow-x:auto;scrollbar-width:none}
   .rail button{grid-template-columns:10px auto;flex:0 0 auto}
-  .rail .key,.rail .sep{display:none}
+  .rail .key,.rail .sep,.rail .rhead{display:none}
   .groups{grid-template-columns:minmax(0,1fr)}
   .group+.group{border-left:0;border-top:1px solid var(--line)}
   .group.finish .params{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
@@ -256,7 +258,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       </div>
       <div class="groups">
         <div class="group"><h3>Sound</h3><div class="presets" id="presets" hidden></div><div class="params" id="pSound"></div><input type="file" id="fileIn" accept="audio/*,.wav,.aif,.aiff,.mp3,.flac,.ogg,.m4a" hidden><p class="hint">Double-click a label to reset that control.</p></div>
-        <div class="group finish"><h3>Finish</h3><div class="params" id="pFinish"></div></div>
+        <div class="group finish"><h3>Post-Processing</h3><div class="params" id="pFinish"></div></div>
       </div>
     </section>
 
@@ -2353,7 +2355,8 @@ const schedule=(aud=true)=>{ clearTimeout(rT); rT=setTimeout(()=>rerender(aud),1
 function buildRail(){
   const r=$('#rail'); r.innerHTML='';
   ORDER.forEach((t,i)=>{
-    if(i===6||i===9){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); }
+    const head={0:'Drums',6:'FX',9:'Textures'}[i];
+    if(head){ if(i){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); } const h=document.createElement('h3'); h.className='rhead'; h.textContent=head; r.appendChild(h); }
     const b=document.createElement('button'); b.type='button'; b.id='type-'+t; b.setAttribute('aria-pressed',String(S.type===t));
     b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:i===10?'-':''}</span>`;
     b.onclick=()=>selectType(t); r.appendChild(b);
