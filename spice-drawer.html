@@ -20,7 +20,7 @@
   --maxw:1360px;
   --panel:var(--bg-raise); --sunk:#0a0e13; --muted:var(--ink-soft);
   --accent-ink:#10151b; --danger:#ff7b7b;
-  --kick:#FF8A3D; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
+  --kick:#FF8A3D; --bass:#E8A87C; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
   --f-display:"Fraunces", Georgia, serif;
   --f-body:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
   --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -524,6 +524,38 @@ const TYPES = {
       P('lowCut','Low cut',20,150,20,'Hz',{log:true}),
       P('tone','Tone',600,20000,9000,'Hz',{log:true}),
     ]},
+  bass:{label:'808',folder:'808s',c:'--bass',desc:'Tuned 808s and amapiano log drums. Pick the key and octave, then shape the punch, length, glide and grit.',
+    post:{drive:0,space:0,room:0.8},
+    presets:{
+      '808':{kind:'808'}, 'Trap 808':{kind:'808',length:2.4,punch:16,sat:'tape',satAmt:0.5,harm:0.55},
+      'Distorted 808':{kind:'808',length:1.8,punch:14,sat:'hard',satAmt:0.75,tone:3500,harm:0.6},
+      'Slide 808':{kind:'808',length:2,glide:12,glideTime:0.22,sat:'soft',satAmt:0.45},
+      'Short 808':{kind:'808',length:0.55,punch:20,punchTime:0.03,click:0.5,sat:'soft',satAmt:0.4},
+      'Log drum':{kind:'log',octave:2,length:0.45,punch:14,punchTime:0.03,click:0,knock:0.55,wood:0.6,hollow:0.55,sat:'tape',satAmt:0.4,tone:6000,harm:0.2},
+      'Deep log':{kind:'log',octave:1,length:0.7,punch:12,punchTime:0.04,knock:0.35,wood:0.45,hollow:0.45,sat:'tape',satAmt:0.35,tone:4500,harm:0.3},
+      'Knock log':{kind:'log',octave:2,length:0.32,punch:16,punchTime:0.025,knock:0.9,wood:0.85,hollow:0.5,sat:'tape',satAmt:0.45,tone:7000,harm:0.15},
+      'Bouncy log':{kind:'log',octave:2,length:0.5,punch:24,punchTime:0.06,knock:0.5,wood:0.55,hollow:0.65,sat:'soft',satAmt:0.4,tone:6000,harm:0.2},
+    },
+    params:[
+      {k:'kind',label:'Type',kind:'sel',opts:['808','log'],labels:{'808':'808','log':'Log drum'},def:'808',lock:true,rebuild:true,
+        onset:(p,prev,o)=>{ if(o!==prev) Object.assign(p,BASS_KIND[o]); }},
+      {k:'key',label:'Note',kind:'sel',opts:NOTES,def:'F',lock:true},
+      P('octave','Octave',1,3,1,'n',{step:1,lock:true}),
+      P('length','Length',0.1,4,1.6,'s',{log:true,rnd:[0.35,2.6]}),
+      P('punch','Punch',0,36,12,'st',{step:1,rnd:[6,24]}),
+      P('punchTime','Punch time',0.005,0.2,0.04,'s',{log:true,rnd:[0.02,0.08]}),
+      P('click','Click',0,1,0.25,'%',{rnd:[0,0.6],when:p=>p.kind!=='log'}),
+      P('knock','Knock',0,1,0.55,'%',{rnd:[0.25,0.9],when:p=>p.kind==='log'}),
+      P('wood','Wood',0,1,0.6,'%',{rnd:[0.3,0.9],when:p=>p.kind==='log'}),
+      P('hollow','Hollow',0,1,0.55,'%',{rnd:[0.25,0.85],when:p=>p.kind==='log'}),
+      P('harm','Upper harmonics',0,1,0.4,'%',{rnd:[0.1,0.7]}),
+      P('glide','Glide',-12,12,0,'st',{step:1,rnd:[0,0]}),
+      P('glideTime','Glide time',0.02,1,0.2,'s',{log:true,when:p=>p.glide!==0}),
+      {k:'sat',label:'Saturation',kind:'sel',opts:['clean','soft','tape','hard','fold'],labels:{clean:'Clean',soft:'Soft',tape:'Tape',hard:'Hard',fold:'Fold'},def:'soft'},
+      P('satAmt','Saturation amount',0,1,0.35,'%',{rnd:[0.15,0.7],when:p=>p.sat!=='clean'}),
+      P('tone','Tone',200,12000,5000,'Hz',{log:true,rnd:[2500,8000]}),
+      P('seed','Variation',0,999,7,'seed',{step:1}),
+    ]},
   snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'A stick transient rings a feedback-delay drum head; snare wires and a room go on top.',
     post:{drive:0.2,space:0.25,room:0.7},
     presets:{
@@ -833,7 +865,7 @@ function kickResolve(p){
   for(const k of ['drive','space','room','reverse','sample','srcStart','gritWidth']) if(k in p) b[k]=p[k];
   return b;
 }
-const ORDER = ['kick','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
+const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
 const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = (d.k in (TYPES[t].post||{})) ? TYPES[t].post[d.k] : d.def; return o; };
 
@@ -894,10 +926,62 @@ function filt(ctx, type, f, q=0.707, gain=0){ const b=ctx.createBiquadFilter(); 
 function gainN(ctx, v=1){ const g=ctx.createGain(); g.gain.value=v; return g; }
 const chain = (...n) => { for(let i=0;i<n.length-1;i++) n[i].connect(n[i+1]); return n[n.length-1]; };
 
+/* ---------- 808 / log drum engine ---------- */
+const BASS_KIND={
+  '808':{octave:1,length:1.6,punch:12,punchTime:0.04,click:0.25,sat:'soft',satAmt:0.35,tone:5000,harm:0.4,glide:0},
+  log:{octave:2,length:0.45,punch:14,punchTime:0.03,click:0,knock:0.55,wood:0.6,hollow:0.55,sat:'tape',satAmt:0.4,tone:6000,harm:0.2,glide:0},
+};
+const bassHz=p=>440*Math.pow(2,(NOTES.indexOf(p.key)+12*(p.octave+1)-69)/12);   // octave 1 = F1 at 43.7 Hz
+const bassLen=p=>p.length*(p.kind==='log'?1.05:1.1)+0.06;
+function bassSignal(p,sr){
+  const N=Math.ceil(bassLen(p)*sr), x=new Float32Array(N), R=mulberry((p.seed|0)*313+9), f0=bassHz(p), log=p.kind==='log';
+  const hold=log?0.004:0.05, T=p.length, gT=Math.max(0.02,p.glideTime||0.2);
+  let ph=0;
+  for(let i=0;i<N;i++){
+    const t=i/sr;
+    let semis=p.punch*Math.exp(-t/p.punchTime);                         // the punch: a fast drop onto the note
+    if(p.glide){ const u=Math.min(1,t/gT); semis+=p.glide*(1-u*u*(3-2*u)); }   // glide into the note
+    ph+=2*Math.PI*f0*Math.pow(2,semis/12)/sr;
+    let s;
+    if(log){ const fm=1.5*p.hollow*Math.exp(-t/0.07);                   // hollow, woody tone: self-FM and odd harmonics
+      s=Math.sin(ph+fm*Math.sin(2*ph))+p.hollow*0.35*Math.sin(3*ph)+p.harm*0.3*Math.sin(2*ph); }
+    else s=Math.sin(ph)+p.harm*0.3*Math.sin(2*ph)+p.harm*0.12*Math.sin(3*ph);
+    const env=(t<0.0015?0.5-0.5*Math.cos(Math.PI*t/0.0015):1)*(t<hold?1:Math.exp(-6.91*(t-hold)/T));
+    x[i]=s*env;
+  }
+  // transient: an 808 click, or the log drum's knock and wooden body
+  if(!log && p.click>0){ const n=Math.ceil(0.012*sr), c=new Float32Array(N);
+    for(let i=0;i<n;i++){ const t=i/sr; c[i]=(Math.sin(2*Math.PI*1900*t)*0.6+(R()*2-1)*0.4)*Math.exp(-t/0.0018); }
+    biquad(c,'lp',6000,0.7,0,sr); for(let i=0;i<N;i++) x[i]+=c[i]*p.click*0.9; }
+  if(log){
+    if(p.wood>0){ const w=x.slice(), wf=clamp(f0*7,380,1300); biquad(w,'bp',wf,5,0,sr); biquad(w,'bp',wf,5,0,sr);
+      const pw=peakAbs(w)||1; for(let i=0;i<N;i++) x[i]+=w[i]/pw*p.wood*0.6; }
+    if(p.knock>0){ const n=Math.ceil(0.03*sr), k=new Float32Array(N);
+      for(let i=0;i<n;i++) k[i]=(R()*2-1)*Math.exp(-i/sr/0.006);
+      biquad(k,'bp',1800,2.2,0,sr); const pk=peakAbs(k)||1; for(let i=0;i<N;i++) x[i]+=k[i]/pk*p.knock*0.55; }
+  }
+  // saturation
+  const a=p.sat==='clean'?0:p.satAmt, pk0=peakAbs(x)||1; for(let i=0;i<N;i++) x[i]/=pk0;
+  if(a>0){ const k=1+a*a*5+a*1.5;                                   // gentle at low amounts, square-ish only near the top
+    for(let i=0;i<N;i++){ const v=x[i];
+      x[i] = p.sat==='soft' ? Math.tanh(k*v)/Math.tanh(k)
+           : p.sat==='tape' ? (v>=0 ? Math.tanh(k*v) : Math.tanh(k*0.75*v)*1.12)/Math.tanh(k)
+           : p.sat==='hard' ? clamp(v*(1+a*a*4+a),-1,1)
+           : Math.sin(v*(1+a*2.5)*Math.PI/2); } }
+  biquad(x,'lp',p.tone,0.707,0,sr); biquad(x,'lp',p.tone,0.707,0,sr);
+  return [x,x.slice()];
+}
+
 /* each builder: connect into `out`, return the dry length in seconds */
 const BUILD = {
   kick(ctx,p,out){
     const [L,R]=kickSignal(p.mode==='detailed'?p:kickResolve(p),ctx.sampleRate);
+    const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
+    const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
+    return L.length/ctx.sampleRate;
+  },
+  bass(ctx,p,out){
+    const [L,R]=bassSignal(p,ctx.sampleRate);
     const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
     const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
     return L.length/ctx.sampleRate;
@@ -2252,6 +2336,7 @@ async function render(type, p){
 function estimateLen(type,p){
   switch(type){
     case 'kick': if(p.mode!=='detailed') p=kickResolve(p); return Math.max((p.shellLvl||0)>0?shellLen(p):0, p.nearLvl>0?p.nearLen:0, p.farLvl>0?p.farDecay+p.farDelay+0.01:0, p.grit!=='off'&&p.gritLvl>0?p.gritDecay:0, 0.05)+0.03;
+    case 'bass': return bassLen(p);
     case 'snare': return 'headPitch' in p ? snareLen(p) : Math.max(p.toneDecay,p.nDecay)*2.4+0.02;
     case 'clap': return (Math.round(p.bursts)-1)*p.spread+p.decay*2.4+0.02;
     case 'hat': return p.decay*2.4+0.02;
@@ -2298,6 +2383,7 @@ function vary(t,p,amt,full){
       continue;
     }
     if(d.lock || d.kind==='bool' || d.k==='room' && !full) continue;
+    if(t==='bass' && (d.k==='space'||d.k==='room'||d.k==='drive')) continue;   // keep 808s dry and centred; it has its own saturation
     if(d.kind==='sel'){ const os=d.rndOpts||d.opts; if(Math.random()<(full?(d.rndOpts?1:0.5):amt)) o[d.k]=os[Math.floor(Math.random()*os.length)]; continue; }
     const hi = d.rmax!=null ? norm(d,d.rmax) : 0.95;
     const n = full ? 0.05+Math.random()*(hi-0.05) : clamp(norm(d,p[d.k])+(Math.random()*2-1)*amt, 0, d.rmax!=null?hi:1);
@@ -2392,7 +2478,7 @@ const schedule=(aud=true)=>{ clearTimeout(rT); rT=setTimeout(()=>rerender(aud),1
 function buildRail(){
   const r=$('#rail'); r.innerHTML='';
   ORDER.forEach((t,i)=>{
-    if(i===5||i===8){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); }
+    if(i===6||i===9){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); }
     const b=document.createElement('button'); b.type='button'; b.id='type-'+t; b.setAttribute('aria-pressed',String(S.type===t));
     b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:''}</span>`;
     b.onclick=()=>selectType(t); r.appendChild(b);
@@ -2462,7 +2548,7 @@ function buildParams(){
     pr.innerHTML='<span class="lbl">Start from</span>';
     for(const [name,vals] of Object.entries(T.presets)){
       const b=document.createElement('button'); b.type='button'; b.className='chip'; b.textContent=name;
-      b.onclick=()=>{ snap(t); S.params[t]={...defaults(t),...vals,sample:p.sample}; persist(); buildParams(); schedule(); };
+      b.onclick=()=>{ snap(t); S.params[t]={...defaults(t),...vals,sample:p.sample,...(p.key&&t==='bass'?{key:p.key}:{})}; persist(); buildParams(); schedule(); };
       pr.appendChild(b);
     }
   }
@@ -2481,7 +2567,7 @@ let uid=Date.now();
 const ICON={play:'<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>',del:'<svg viewBox="0 0 16 16"><path d="M4.2 3 3 4.2 6.8 8 3 11.8 4.2 13 8 9.2l3.8 3.8 1.2-1.2L9.2 8 13 4.2 11.8 3 8 6.8z"/></svg>'};
 function nextName(t){
   const ap=S.params.birds||{};
-  const base= t==='birds' ? ANIMAL_NAME(ap)||'Animal' : TYPES[t].label.split(' ')[0];
+  const base= t==='birds' ? ANIMAL_NAME(ap)||'Animal' : t==='bass' && (S.params.bass||{}).kind==='log' ? 'Log drum' : TYPES[t].label.split(' ')[0];
   let n=1; const used=new Set(S.pack.map(x=>x.name));
   while(used.has(`${base} ${String(n).padStart(2,'0')}`)) n++;
   return `${base} ${String(n).padStart(2,'0')}`;
@@ -2596,18 +2682,19 @@ async function unlinkDir(){ dirH=null; try{ await kv('readwrite',st=>st.delete('
 function dirReady(){ if(!dirH) return Promise.resolve(false);
   const o={mode:'readwrite'};
   return dirH.queryPermission(o).then(p=>p==='granted'?true:dirH.requestPermission(o).then(q=>q==='granted')).catch(()=>false); }
-async function writeToDir(type,name,buf){
+async function writeToDir(type,name,buf,params){
   const pn=safe(S.packName)||'Spice Drawer';
-  const d1=await dirH.getDirectoryHandle(pn,{create:true}), sub=TYPES[type].folder, d2=await d1.getDirectoryHandle(sub,{create:true});
+  const d1=await dirH.getDirectoryHandle(pn,{create:true}), sub=folderOf(type,params), d2=await d1.getDirectoryHandle(sub,{create:true});
   const base=safe(name); let n=base, k=2;
   for(;;){ try{ await d2.getFileHandle(n+'.wav'); n=base+' '+(k++); }catch(e){ break; } }
   const fh=await d2.getFileHandle(n+'.wav',{create:true}), w=await fh.createWritable();
   await w.write(new Blob([wav(buf)],{type:'audio/wav'})); await w.close();
   return pn+'/'+sub+'/'+n+'.wav'; }
-async function toDir(perm,type,name,buf){
+const folderOf=(type,params)=> type==='bass' && params && params.kind==='log' ? 'Log Drums' : TYPES[type].folder;
+async function toDir(perm,type,name,buf,params){
   if(!dirH) return null;
   if(!(await perm)){ toast('Allow access to '+dirH.name+' to save samples there.'); return null; }
-  try{ return await writeToDir(type,name,buf); }catch(e){ toast('Couldn’t write to '+dirH.name+'. Try linking the folder again.'); return null; } }
+  try{ return await writeToDir(type,name,buf,params); }catch(e){ toast('Couldn’t write to '+dirH.name+'. Try linking the folder again.'); return null; } }
 function folderUI(){
   const box=$('#folderBox'); if(!box) return;
   box.hidden=!CAN_LINK; if(!CAN_LINK) return;
@@ -2642,21 +2729,21 @@ $('#bRnd').onclick=()=>{ snap(); S.params[S.type]=vary(S.type,S.params[S.type],0
 $('#bReset').onclick=()=>{ snap(); S.params[S.type]=defaults(S.type); persist(); buildParams(); schedule(); };
 async function freshBuf(){ if(!curBuf || curKey!==editorKey()){ clearTimeout(rT); await rerender(false); } return curBuf; }
 $('#bAdd').onclick=async()=>{ const perm=dirReady(); const t=S.type, params={...S.params[t]}; const b=await freshBuf(); const it=addItem(t,params,b); toast('Added '+it.name);
-  const p=await toDir(perm,t,it.name,b); if(p) toast('Added '+it.name+' → '+dirH.name+'/'+p); };
+  const p=await toDir(perm,t,it.name,b,params); if(p) toast('Added '+it.name+' → '+dirH.name+'/'+p); };
 $('#bSave').onclick=async()=>{ const perm=dirReady(); const b=await freshBuf(); if(!b) return; const n=safe(nextName(S.type));
-  if(dirH){ const p=await toDir(perm,S.type,n,b); if(p){ toast('Saved '+dirH.name+'/'+p); return; } }
+  if(dirH){ const p=await toDir(perm,S.type,n,b,S.params[S.type]); if(p){ toast('Saved '+dirH.name+'/'+p); return; } }
   if(LOCAL) await saveFile(n+'.wav', new Blob([wav(b)],{type:'audio/wav'})); else await saveFile(n+'.zip', zip([{name:n+'.wav',data:wav(b)}])); };
 $('#bVar').onclick=async()=>{
   const perm=dirReady(); const b=$('#bVar'); b.disabled=true; const t=S.type, base=S.params[t];
-  for(let i=0;i<8;i++){ b.textContent=`Rendering ${i+1} of 8…`; const p=vary(t,base,0.16,false), buf=await render(t,p), it=addItem(t,p,buf); await toDir(perm,t,it.name,buf); }
+  for(let i=0;i<8;i++){ b.textContent=`Rendering ${i+1} of 8…`; const p=vary(t,base,0.16,false), buf=await render(t,p), it=addItem(t,p,buf); await toDir(perm,t,it.name,buf,p); }
   b.textContent='Make 8 variations'; b.disabled=false; toast('Added 8 '+TYPES[t].label.toLowerCase()+' variations');
 };
 $('#bExport').onclick=async()=>{
-  if(dirH){ const perm=dirReady(); let n=0; for(const it of S.pack){ if(it.buf && await toDir(perm,it.type,it.name,it.buf)) n++; else if(!dirH) break; }
+  if(dirH){ const perm=dirReady(); let n=0; for(const it of S.pack){ if(it.buf && await toDir(perm,it.type,it.name,it.buf,it.params)) n++; else if(!dirH) break; }
     if(n){ toast('Saved '+n+' sample'+(n===1?'':'s')+' to '+dirH.name+'/'+(safe(S.packName)||'Spice Drawer')); return; } }
   const pn=safe(S.packName), used=new Set(), files=[];
   for(const it of S.pack){
-    let path=`${pn}/${TYPES[it.type].folder}/${safe(it.name)}`, k=2, p=path;
+    let path=`${pn}/${folderOf(it.type,it.params)}/${safe(it.name)}`, k=2, p=path;
     while(used.has(p)) p=`${path} ${k++}`; used.add(p);
     files.push({name:p+'.wav', data:wav(it.buf)});
   }
