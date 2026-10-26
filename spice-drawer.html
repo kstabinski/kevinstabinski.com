@@ -77,6 +77,7 @@ dialog.info::backdrop{background:rgba(10,12,16,.55)}
 .info-body li b{font-weight:600}
 .info-body p{margin:0 0 8px;max-width:62ch}
 .info-body .src{font-size:12.5px;color:var(--muted)}
+.info-body .src a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
 .desc{color:var(--muted);font-size:13px;margin:0}
 .readout{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:14px}
 .wave{width:100%;height:150px;display:block;background:var(--sunk);border-radius:3px;cursor:pointer}
@@ -2752,7 +2753,7 @@ const INFO={
       '<b>Grit</b>. Any source (noise, a supersaw or your own sample) gets a huge bass boost, then distortion, a high-pass and a fade, for gritty or textured kicks.',
       'Noise comes from a generated ambience (rumble, room, crackle or wind) instead of plain white noise. Every kick is DC-blocked and faded so it never pops.'],
     tips:['<b>Texture</b> adds air and noise to the acoustic characters; <b>Room</b> moves the mic back.','Real kicks sit around 50–90 Hz with almost nothing below 45 Hz. Use <b>Tune</b> to match the song’s key.','Switch to <b>Detailed</b> to blend all three layers yourself.'],
-    src:'Near and far mic method from a kick design tutorial. The acoustic characters were tuned against real recorded kicks (Virtuosity Drums, close, mid and room mics).'},
+    src:'Inspired by Zion Jaymes: <a href="https://youtu.be/ndG-6-vONNc" target="_blank" rel="noopener">his kick design video</a> (the near and far mic method). The acoustic characters were tuned against real recorded kicks from the free Virtuosity Drums kit.'},
   bass:{lead:'Tuned low end in two flavors: the 808 and the amapiano log drum.',
     how:[
       '<b>808</b>. A sine at the note you pick. <b>Punch</b> starts the pitch a few semitones high and drops it onto the note over the punch time. The note holds briefly, then decays exponentially over <b>Length</b>.',
@@ -2769,7 +2770,7 @@ const INFO={
       '<b>Snare wires</b>. Filtered noise with its own decay, set to follow the head’s energy (<b>Follow head</b>), then spread in stereo.',
       'A room and master EQ finish it.'],
     tips:['Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
-    src:'Feedback-delay method from a snare design tutorial.'},
+    src:'Inspired by Zion Jaymes: <a href="https://youtu.be/1Db9rGbth_o" target="_blank" rel="noopener">his snare design video</a> (the feedback-delay drum head).'},
   clap:{lead:'Several hands that don’t quite land together.',
     how:['Short bursts of band-passed noise, one per hand, spread a few milliseconds apart (<b>Hands</b>, <b>Spread</b>).','The last burst is longer: the slap and its room.','<b>Tone</b> and <b>Focus</b> set the band-pass center and how narrow it is.'],
     tips:['More hands and wider spread gives a crowd clap; one or two tight hands is a snap.'],src:''},
@@ -2778,7 +2779,7 @@ const INFO={
     tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
   perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
-    tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Dispersion technique from a cymbal design tutorial.'},
+    tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
     how:['<b>Synth</b>. A detuned supersaw (anti-aliased) or a Shepard tone, whose stacked octaves seem to rise forever. Both climb to a target interval in your key.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Shepard mode works for builds that need to keep rising without getting higher.'],src:''},
@@ -2790,10 +2791,10 @@ const INFO={
     tips:['A lower boom end and a longer decay give a cinematic sub drop.'],src:''},
   city:{lead:'An urban bed with vinyl character, to sit under a track.',
     how:['<b>Traffic wash</b>. Filtered noise that rises and falls like distant traffic, with occasional cars passing by.','<b>Crowd murmur</b>. Shaped noise with the movement of a crowd but no voices.','<b>Hum</b>. Mains hum and its harmonics.','<b>Vinyl</b>. Crackle, hiss and wow and flutter, then tone, space and width.','<b>Seamless loop</b> crossfades the ends so it loops without a seam.'],
-    tips:['Keep it low in the mix; it works best as texture you feel more than hear.'],src:''},
+    tips:['Keep it low in the mix; it works best as texture you feel more than hear.'],src:'Inspired by Amfiviola: <a href="https://youtu.be/5HU8Jm6pNS0" target="_blank" rel="noopener">the BIOTA ambience video</a>.'},
   eco:{lead:'A generative forest, layered the way ecologists describe soundscapes.',
     how:['<b>Geophony</b>. Weather: wind and gusts, rain and droplets, distant thunder.','<b>Biophony</b>. Creatures that call by their own rules: birds (choose a species), crickets, frogs and alien calls. Some answer each other (<b>Call and answer</b>).','<b>Propagation</b>. Distance, depth spread and a forest reverb place each sound in space.','<b>Texture</b>. Vinyl crackle, hiss and wow tuck it under a track. <b>Seamless loop</b> makes it loop cleanly.'],
-    tips:['Lower <b>Presence</b> and more distance keep it in the background.'],src:'Soundscape layers (geophony and biophony) from a BIOTA ambience tutorial.'},
+    tips:['Lower <b>Presence</b> and more distance keep it in the background.'],src:'Inspired by Amfiviola: <a href="https://youtu.be/5HU8Jm6pNS0" target="_blank" rel="noopener">the BIOTA ambience video</a> (geophony, biophony and propagation).'},
   birds:{lead:'Individual birds and frogs, each modeled from its real song or call.',
     how:['<b>Birds</b>. Each species is built from its song’s structure: the pitch contour of every syllable, its harmonics, its rhythm and how phrases repeat.','<b>Frogs</b>. Pulse trains and resonant formants match each species’ call: trills, peeps, croaks and snores.','<b>Individuals</b> adds more of the same animal, each slightly different in pitch and timing, for a chorus.','Distance, depth, reverb and pan place them in the scene.'],
     tips:['Use one individual for a feature sound and several for a background chorus.'],src:'Species modeled from recordings in the Macaulay Library, Smithsonian Folkways’ Sounds of North American Frogs and earth.fm.'},
