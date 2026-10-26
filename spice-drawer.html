@@ -436,7 +436,6 @@ const ALL_FROGS=[...FROG_SPECIES,...WFROG_SPECIES];
 const FROG_LABELS=Object.fromEntries([...FROG_SPECIES.map(k=>[k,FROG_NAMES[k]]),...WFROG_SPECIES.map(k=>[k,WFROG_NAMES[k]+' ('+WFROG_REGION[k]+')'])]);
 const ALL_BIRDS=[...BIRD_SPECIES,...WBIRD_SPECIES];
 const BIRD_LABELS=Object.fromEntries([...BIRD_SPECIES.map(k=>[k,BIRD_NAMES[k]]),...WBIRD_SPECIES.map(k=>[k,WBIRD_NAMES[k]+' ('+WBIRD_REGION[k]+')'])]);
-const ANIMAL_NAME=(p)=>p.group==='frogs'?(FROG_NAMES[p.frog]||WFROG_NAMES[p.frog]):(BIRD_NAMES[p.species]||WBIRD_NAMES[p.species]);
 const FROG_GAP={moorfrog:[1.5,3],banjo:[0.8,1.8],marsh:[1.5,3],pacific:[0.7,1.3],whistling:[1,2],firebelly:[0.8,1.5],midwife:[1.5,3],olivetoad:[1,2],canyon:[2,4],peeper:[0.7,1.4],chorusfrog:[1.5,3],graytree:[2,4],greentree:[0.6,1.1],cricket:[1,2],amtoad:[1,2.5],fowler:[1,2],bullfrog:[2,4],greenfrog:[1,3],leopard:[1,3],narrowmouth:[1.5,3]};
 const TYPES = {
   kick:{label:'Kick',folder:'Kicks',c:'--kick',desc:'Pick a character, then shape it with six macros. The acoustic characters model a real drum: beater, head, shell and room mic. Detailed opens every layer.',
@@ -701,25 +700,6 @@ const TYPES = {
       P('tone','Tone',1000,18000,6500,'Hz',{log:true}),
       P('lowCut','Low cut',20,300,40,'Hz',{log:true}),
     ]},
-  birds:{label:'Animals',folder:'Animals',c:'--birds',desc:'Birds and frogs from the eastern US and around the world, each modeled from its real song or call structure. Add individuals for a chorus.',
-    post:{drive:0,space:0,room:1.5},
-    params:[
-      {k:'group',label:'Group',kind:'sel',opts:['birds','frogs'],labels:{birds:'Birds',frogs:'Frogs'},def:'birds',lock:true,rebuild:true},
-      {k:'species',label:'Species',kind:'sel',opts:ALL_BIRDS,labels:BIRD_LABELS,def:'cardinal',lock:true,when:p=>p.group!=='frogs'},
-      {k:'frog',label:'Species',kind:'sel',opts:ALL_FROGS,labels:FROG_LABELS,def:'peeper',lock:true,when:p=>p.group==='frogs'},
-      {k:'vocal',label:'Vocalization',kind:'sel',opts:['song','call'],def:'song',lock:true},
-      P('seed','Variation',0,999,7,'seed',{step:1}),
-      P('phrases','Repeats',1,6,1,'n',{step:1,lock:true}),
-      P('individuals','Individuals',1,8,1,'n',{step:1,lock:true}),
-      P('pitch','Pitch',-5,5,0,'st',{step:0.5,rnd:[-1.5,1.5]}),
-      P('speed','Speed',0.7,1.4,1,'x',{rnd:[0.9,1.12]}),
-      {kind:'head',label:'Space'},
-      P('distance','Distance',0,1,0.2,'%',{rnd:[0.05,0.5]}),
-      P('depth','Depth spread',0,1,0.4,'%',{when:p=>p.individuals>1}),
-      P('forest','Reverb',0,1,0.25,'%',{rnd:[0.1,0.45]}),
-      P('size','Reverb size',0.5,4,1.8,'s',{log:true}),
-      P('pan','Pan',-1,1,0,'pan',{when:p=>p.individuals===1}),
-    ]},
   city:{label:'City',folder:'City',c:'--city',desc:'A continuous urban bed with vinyl character: traffic wash, murmur, hum and crackle to sit under a track.',
     post:{drive:0,space:0,room:1.5},
     params:[
@@ -828,7 +808,7 @@ function percResolve(p){
 const OFFSET_MACROS={snare:['tune','snap','body','wires','lenX','toneX'],perc:['tune','stick','lenX','metal','toneX','widthX'],
   riser:['tension','widthX','grit','bright','spaceX','laserX'],down:['tension','widthX','grit','bright','spaceX','laserX']};
 function bakeMacros(t,p,resolved){ Object.assign(p,resolved); for(const k of OFFSET_MACROS[t]){ const d=TYPES[t].params.find(x=>x.k===k); p[k]=d.def; } p.mode='detailed'; }
-const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
+const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
 const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = d.def; return o; };   // Finish always starts dry and clean
 
@@ -839,8 +819,7 @@ let S = {type:'kick', params:{}, bpm:128, sr:48000, bits:24, aud:true, packName:
 try{ const raw = localStorage.getItem(KEY); if(raw){ const o=JSON.parse(raw); S = {...S, ...o}; } }catch(e){}
 if(S.params.kick && !('farPitch' in S.params.kick)) delete S.params.kick;
 for(const t of ['snare','perc']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
-const fixGroup=q=>{ if(q && q.group==='world frogs'){ q.group='frogs'; q.frog=q.wfrog||'midwife'; } if(q && q.group==='wbirds'){ q.group='birds'; q.species=q.wbird||'cuckoo'; } };
-fixGroup(S.params.birds); for(const it of (S.pack||[])) if(it.type==='birds') fixGroup(it.params);
+delete S.params.birds; S.pack=(S.pack||[]).filter(it=>it.type!=='birds'); if(S.type==='birds') S.type='eco';   // the Animals module was retired
 for(const t of ['riser','down']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
 if(S.params.hat && 'model' in S.params.hat) delete S.params.hat;
 if(S.params.perc && S.params.perc.model==='dispersion') delete S.params.perc;   // the dispersion cymbals were retired
@@ -986,13 +965,6 @@ const BUILD = {
   down(ctx,p,out){ return sweepBuild(ctx,p,out,true); },
   eco(ctx,p,out){
     const sr=ctx.sampleRate, {dL,dR,sL,sR,N}=ecoSignal(p,sr);
-    const mk=(a,b)=>{ const bf=ctx.createBuffer(2,N,sr); bf.copyToChannel(a,0); bf.copyToChannel(b,1); const s=ctx.createBufferSource(); s.buffer=bf; s.start(0); return s; };
-    mk(dL,dR).connect(out);
-    const cv=ctx.createConvolver(); cv.buffer=makeForestIR(ctx,p.size,p.seed); mk(sL,sR).connect(cv).connect(gainN(ctx,0.9)).connect(out);
-    return N/sr;
-  },
-  birds(ctx,p,out){
-    const sr=ctx.sampleRate, {dL,dR,sL,sR,N}=birdsSignal(p,sr);
     const mk=(a,b)=>{ const bf=ctx.createBuffer(2,N,sr); bf.copyToChannel(a,0); bf.copyToChannel(b,1); const s=ctx.createBufferSource(); s.buffer=bf; s.start(0); return s; };
     mk(dL,dR).connect(out);
     const cv=ctx.createConvolver(); cv.buffer=makeForestIR(ctx,p.size,p.seed); mk(sL,sR).connect(cv).connect(gainN(ctx,0.9)).connect(out);
@@ -1827,32 +1799,6 @@ function birdVoice(sp,R,sr,o={}){
   for(const s of out){ const o0=Math.floor(s.at*sr); for(let i=0;i<s.buf.length&&o0+i<N;i++) b[o0+i]+=s.buf[i]; }
   return b;
 }
-// the Animals module: one or more individuals of a species, each performing its song or call, placed in space
-const birdCache={key:'',val:null};
-function birdsSignal(p,sr){
-  const key=JSON.stringify(p)+sr; if(birdCache.key===key) return birdCache.val;
-  const frogs=p.group==='frogs', sp=frogs?p.frog:p.species, nInd=Math.max(1,p.individuals|0);
-  const voice=(R,o)=>frogs?frogVoice(sp,R,sr,o):birdVoice(sp,R,sr,o);
-  const gapR=frogs?FROG_GAP[sp]:(p.vocal==='call'?[0.4,1.2]:[1.2,3]);
-  const inds=[]; let end=0;
-  for(let k=0;k<nInd;k++){
-    const R=mulberry((p.seed|0)*7919+211+k*977), rr=(a,b)=>a+(b-a)*R();
-    const ip=k?rr(-0.8,0.8):0, parts=[]; let t=k?rr(0,Math.min(1.5,gapR[1])):0;
-    for(let r=0;r<p.phrases;r++){ const b=voice(R,{pitch:p.pitch+ip+(R()-0.5)*0.4,speed:p.speed,call:p.vocal==='call'}); parts.push({at:t,b}); t+=b.length/sr+rr(gapR[0],gapR[1])/p.speed; }
-    const last=parts[parts.length-1]; end=Math.max(end,last.at+last.b.length/sr);
-    inds.push({parts, pan: nInd===1?p.pan:(R()*2-1)*0.85, d: nInd===1?p.distance:clamp(p.distance+(R()-0.3)*p.depth,0,1)});
-  }
-  const N=Math.ceil((end+0.05)*sr)+Math.ceil((p.size+0.1)*sr);
-  const dL=new Float32Array(N), dR=new Float32Array(N), sL=new Float32Array(N), sR=new Float32Array(N);
-  let pk=0; for(const ind of inds) for(const q of ind.parts) for(const v of q.b) pk=Math.max(pk,Math.abs(v));
-  for(const ind of inds){
-    const d=ind.d, c=1-Math.exp(-2*Math.PI*Math.min(18000,16000*Math.pow(2,-4.5*d))/sr);
-    const gl=Math.cos((ind.pan+1)*Math.PI/4), gr=Math.sin((ind.pan+1)*Math.PI/4), g=1/(1+3*d)/(pk||1), dr=1-0.6*d, sn=p.forest*(0.2+0.8*d);
-    for(const q of ind.parts){ const o=Math.floor(q.at*sr); let a1=0,a2=0;
-      for(let i=0;i<q.b.length&&o+i<N;i++){ a1+=c*(q.b[i]-a1); a2+=c*(a1-a2); const v=a2*g; dL[o+i]+=v*gl*dr; dR[o+i]+=v*gr*dr; sL[o+i]+=v*gl*sn; sR[o+i]+=v*gr*sn; } }
-  }
-  const val={dL,dR,sL,sR,N}; birdCache.key=key; birdCache.val=val; return val;
-}
 /* ---------- Eastern frogs and toads: each species' advertisement call, modeled from its documented structure ---------- */
 function frogVoice(sp,R,sr,o={}){
   const ps=Math.pow(2,(o.pitch||0)/12), ts=1/(o.speed||1), rr=(a,b)=>a+(b-a)*R(), n2=()=>R()*2-1;
@@ -2275,7 +2221,6 @@ function estimateLen(type,p){
     case 'impact': return Math.max(p.bDecay,p.nDecay)*2.4+0.02;
     case 'eco': return ecoLen(p);
     case 'city': return cityLen(p);
-    case 'birds': return birdsSignal(p,S.sr).N/S.sr;
   }
 }
 function finish(buf,p){
@@ -2411,7 +2356,7 @@ function buildRail(){
   ORDER.forEach((t,i)=>{
     if(i===6||i===9){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); }
     const b=document.createElement('button'); b.type='button'; b.id='type-'+t; b.setAttribute('aria-pressed',String(S.type===t));
-    b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:''}</span>`;
+    b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:i===10?'-':''}</span>`;
     b.onclick=()=>selectType(t); r.appendChild(b);
   });
 }
@@ -2497,8 +2442,7 @@ function buildParams(){
 let uid=Date.now();
 const ICON={play:'<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>',del:'<svg viewBox="0 0 16 16"><path d="M4.2 3 3 4.2 6.8 8 3 11.8 4.2 13 8 9.2l3.8 3.8 1.2-1.2L9.2 8 13 4.2 11.8 3 8 6.8z"/></svg>'};
 function nextName(t){
-  const ap=S.params.birds||{};
-  const base= t==='birds' ? ANIMAL_NAME(ap)||'Animal' : t==='bass' && (S.params.bass||{}).kind==='log' ? 'Log drum' : TYPES[t].label.split(' ')[0];
+  const base= t==='bass' && (S.params.bass||{}).kind==='log' ? 'Log drum' : TYPES[t].label.split(' ')[0];
   let n=1; const used=new Set(S.pack.map(x=>x.name));
   while(used.has(`${base} ${String(n).padStart(2,'0')}`)) n++;
   return `${base} ${String(n).padStart(2,'0')}`;
@@ -2700,9 +2644,6 @@ const INFO={
   eco:{lead:'A generative forest, layered the way ecologists describe soundscapes.',
     how:['<b>Geophony</b>. Weather: wind and gusts, rain and droplets, distant thunder.','<b>Biophony</b>. Creatures that call by their own rules: birds (choose a species), crickets, frogs and alien calls. Some answer each other (<b>Call and answer</b>).','<b>Propagation</b>. Distance, depth spread and a forest reverb place each sound in space.','<b>Texture</b>. Vinyl crackle, hiss and wow tuck it under a track. <b>Seamless loop</b> makes it loop cleanly.'],
     tips:['Lower <b>Presence</b> and more distance keep it in the background.'],src:'Inspired by Amfiviola: <a href="https://youtu.be/5HU8Jm6pNS0" target="_blank" rel="noopener">the BIOTA ambience video</a> (geophony, biophony and propagation).'},
-  birds:{lead:'Individual birds and frogs, each modeled from its real song or call.',
-    how:['<b>Birds</b>. Each species is built from its song’s structure: the pitch contour of every syllable, its harmonics, its rhythm and how phrases repeat.','<b>Frogs</b>. Pulse trains and resonant formants match each species’ call: trills, peeps, croaks and snores.','<b>Individuals</b> adds more of the same animal, each slightly different in pitch and timing, for a chorus.','Distance, depth, reverb and pan place them in the scene.'],
-    tips:['Use one individual for a feature sound and several for a background chorus.'],src:'Species modeled from recordings in the Macaulay Library, Smithsonian Folkways’ Sounds of North American Frogs and earth.fm.'},
 };
 function openInfo(){
   const t=S.type, T=TYPES[t], I=INFO[t]; if(!I) return;
@@ -2778,6 +2719,7 @@ document.addEventListener('keydown',e=>{
   else if(k==='a') $('#bAdd').click();
   else if(/^[1-9]$/.test(k)) selectType(ORDER[+k-1]);
   else if(k==='0') selectType(ORDER[9]);
+  else if(k==='-') selectType(ORDER[10]);
 });
 
 async function rerenderPack(){
