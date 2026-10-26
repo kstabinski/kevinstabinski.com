@@ -642,17 +642,16 @@ const TYPES = {
       P('metal','Metal',0,1,0.6,'%'),
       P('tone','Brightness',3000,13000,7000,'Hz',{log:true}),
     ]},
-  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'Pick a character, then shape it with six macros. A stick or shaped noise excites a bank of resonators; cymbals add a blooming dispersion loop. Detailed opens every layer.',
+  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'Pick a character, then shape it with six macros. A stick and shaped noise excite a bank of tuned resonators. Detailed opens every layer.',
     post:{drive:0,space:0,room:1}, macroKeys:null,
     presets:{
       'Closed hat':{mode:'simple',character:'closed hat'}, 'Open hat':{mode:'simple',character:'open hat'}, 'Pedal chick':{mode:'simple',character:'pedal chick'},
-      'Money hat':{mode:'simple',character:'money hat'}, Ride:{mode:'simple',character:'ride'}, Crash:{mode:'simple',character:'crash'},
-      Splash:{mode:'simple',character:'splash'}, China:{mode:'simple',character:'china',drive:0.35}, Gong:{mode:'simple',character:'gong'},
+      'Money hat':{mode:'simple',character:'money hat'},
     },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
         onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,percResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
-      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat','ride','crash','splash','china','gong'],def:'closed hat',rebuild:true},
+      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat'],def:'closed hat',rebuild:true},
       P('tune','Tune',-12,12,0,'st',{step:1,rnd:[-5,5]}),
       P('stick','Stick',0,1,0.5,'%',{rnd:[0.3,0.75]}),
       P('lenX','Length',0.33,3,1,'x',{log:true,rnd:[0.7,1.5]}),
@@ -661,7 +660,6 @@ const TYPES = {
       P('widthX','Width',0,1,0.5,'%',{rnd:[0.3,0.8]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      {k:'model',label:'Model',kind:'sel',opts:['simple','dispersion'],def:'simple',lock:true,rebuild:true},
       ...AMB('crackle',false),
       {kind:'head',label:'Stick'},
       P('stickLvl','Level',0,1,0.5,'%'),
@@ -671,18 +669,9 @@ const TYPES = {
       P('stickLen','Length',0.0005,0.03,0.002,'s',{log:true}),
       P('stickTone','Tone',500,16000,9000,'Hz',{log:true}),
       {kind:'head',label:'Sizzle · shaped noise'},
-      P('nzLvl','Level',0,1,0.7,'%',{when:p=>p.model==='simple'}),
-      P('nzDecay','Decay',0.02,3,0.08,'s',{log:true,when:p=>p.model==='simple'}),
-      P('pedal','Pedal chick',0,1,0,'%',{when:p=>p.model==='simple'}),
-      {kind:'head',label:'Dispersion · feedback bloom'},
-      P('dTime','Delay',0.0002,0.006,0.0015,'s',{log:true,when:p=>p.model==='dispersion'}),
-      P('dSustain','Sustain',0.1,8,1.5,'s',{log:true,when:p=>p.model==='dispersion'}),
-      P('smear','Smear',0,0.95,0.6,'%',{when:p=>p.model==='dispersion'}),
-      P('wobble','Wobble',0,0.3,0.12,'%',{when:p=>p.model==='dispersion'}),
-      P('wobRate','Wobble rate',0.1,20,1.5,'Hz',{log:true,when:p=>p.model==='dispersion'}),
-      P('pdDrive','Bloom',0,1,0.4,'%',{when:p=>p.model==='dispersion'}),
-      P('pdTone','Sensitivity',0,1,0.5,'%',{when:p=>p.model==='dispersion'}),
-      P('stickToRes','Stick to modes',0,1,0.1,'%',{when:p=>p.model==='dispersion'}),
+      P('nzLvl','Level',0,1,0.7,'%'),
+      P('nzDecay','Decay',0.02,3,0.08,'s',{log:true}),
+      P('pedal','Pedal chick',0,1,0,'%'),
       {kind:'head',label:'Resonant modes'},
       P('fund','Fundamental',150,3000,1200,'Hz',{log:true}),
       P('spread','Low spread',0,1,0.3,'%'),
@@ -904,16 +893,6 @@ const PERC_CHARS={
   'open hat':{nzDecay:0.7,lowDecay:0.5,hiDecay:0.8,coin:0.1},
   'pedal chick':{pedal:0.8,nzDecay:0.05,lowDecay:0.06,hiDecay:0.07,stickLvl:0.2,lowCut:600},
   'money hat':{coin:0.7,nzDecay:0.2,hiDecay:0.3,lowDecay:0.15},
-  ride:{model:'dispersion',stickLvl:0.8,stickPitch:3000,stickTone:12000,stickLen:0.002,pdDrive:0.15,pdTone:0.5,dTime:0.0025,dSustain:5,smear:0.7,wobble:0.04,wobRate:2,
-    fund:600,spread:0.3,lowDecay:4,lowDamp:4000,lowLvl:0.35,hiMin:2500,hiMax:9000,hiDecay:4,hiHP:2500,hiLvl:0.7,shift:40,color:0.3,lowCut:350,stickToRes:0.15},
-  crash:{model:'dispersion',stickLvl:0.15,stickPitch:300,stickBend:12,stickFM:1,stickLen:0.015,stickTone:2000,pdDrive:0.75,pdTone:0.6,dTime:0.0012,dSustain:3.5,smear:0.85,wobble:0.15,wobRate:3,
-    fund:700,spread:0.6,lowDecay:3,lowDamp:8000,lowLvl:0.5,hiMin:3000,hiMax:15000,hiDecay:3,hiHP:2000,hiLvl:0.8,shift:120,color:0.4,lowCut:250},
-  splash:{model:'dispersion',stickLvl:0.2,stickPitch:400,stickBend:12,stickLen:0.01,stickTone:3000,pdDrive:0.7,pdTone:0.9,dTime:0.0007,dSustain:1.2,smear:0.8,wobble:0.12,wobRate:4,
-    fund:1100,spread:0.5,lowDecay:0.9,lowDamp:9000,hiMin:4000,hiMax:16000,hiDecay:1,hiHP:3000,shift:150,color:0.35,lowCut:400},
-  china:{model:'dispersion',stickLvl:0.2,stickPitch:350,stickBend:12,stickLen:0.012,stickTone:2500,pdDrive:0.8,pdTone:0.7,dTime:0.001,dSustain:2.5,smear:0.5,wobble:0.25,wobRate:5,
-    fund:800,spread:0.9,lowDecay:2,lowDamp:7000,hiMin:2500,hiMax:12000,hiDecay:2,hiHP:1500,shift:260,color:0.6,lowCut:500},
-  gong:{model:'dispersion',stickLvl:0.1,stickPitch:200,stickBend:6,stickLen:0.02,stickTone:1200,pdDrive:0.6,pdTone:0.1,dTime:0.005,dSustain:7,smear:0.75,wobble:0.08,wobRate:0.7,
-    fund:180,spread:0.25,lowDecay:6,lowDamp:3000,lowLvl:0.8,hiMin:1500,hiMax:6000,hiDecay:4,hiHP:1200,hiLvl:0.5,shift:20,color:0.2,lowCut:60},
 };
 const PERC_MACROS=new Set(['mode','character','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
 TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
@@ -942,9 +921,9 @@ function percResolve(p){
   const r=Math.pow(2,(p.tune||0)/12);
   for(const k of ['stickPitch','fund','hiMin','hiMax','hiHP','colorF']) b[k]=lim(k,b[k]*r);
   if(b.hiMax<b.hiMin*1.3) b.hiMax=lim('hiMax',b.hiMin*1.3);
-  const L=p.lenX??1; for(const k of ['nzDecay','lowDecay','hiDecay','dSustain']) b[k]=lim(k,b[k]*L);
+  const L=p.lenX??1; for(const k of ['nzDecay','lowDecay','hiDecay']) b[k]=lim(k,b[k]*L);
   const st=p.stick??0.5; b.stickLvl=lim('stickLvl',b.stickLvl*2*st); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,st-0.5));
-  const m=p.metal??0.5; b.shift=lim('shift',b.shift*2*m); b.coin=lim('coin',b.coin+(m-0.5)*0.3); b.pdDrive=lim('pdDrive',b.pdDrive+(m-0.5)*0.4); b.spread=lim('spread',b.spread+(m-0.5)*0.3);
+  const m=p.metal??0.5; b.shift=lim('shift',b.shift*2*m); b.coin=lim('coin',b.coin+(m-0.5)*0.3); b.spread=lim('spread',b.spread+(m-0.5)*0.3);
   const t=p.toneX??0; b.tone=lim('tone',b.tone*Math.pow(2,t*1.5)); b.hiHP=lim('hiHP',b.hiHP*Math.pow(2,t*0.5)); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,t)); b.color=lim('color',b.color+t*0.15);
   const w=p.widthX??0.5; b.width=lim('width',b.width*2*w);
   return finishResolve(b,p,PERC_MACROS);
@@ -963,7 +942,8 @@ for(const t of ['snare','perc']) if(S.params[t] && !('mode' in S.params[t])) del
 const fixGroup=q=>{ if(q && q.group==='world frogs'){ q.group='frogs'; q.frog=q.wfrog||'midwife'; } if(q && q.group==='wbirds'){ q.group='birds'; q.species=q.wbird||'cuckoo'; } };
 fixGroup(S.params.birds); for(const it of (S.pack||[])) if(it.type==='birds') fixGroup(it.params);
 for(const t of ['riser','down']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
-if(S.params.hat && 'model' in S.params.hat){ S.params.perc=S.params.hat; delete S.params.hat; }   // cymbal settings move to Perc
+if(S.params.hat && 'model' in S.params.hat) delete S.params.hat;
+if(S.params.perc && S.params.perc.model==='dispersion') delete S.params.perc;   // the dispersion cymbals were retired
 for(const it of (S.pack||[])) if(it.type==='hat' && it.params && 'model' in it.params) it.type='perc';
 for(const it of (S.pack||[])) if(it.params && !('noiseType' in it.params)) it.params.noiseType='white';
 for(const it of (S.pack||[])) if((it.type==='kick'||it.type==='snare'&&'headPitch' in (it.params||{})||it.type==='perc'&&'model' in (it.params||{})) && it.params && !('mode' in it.params)) it.params.mode='detailed';
@@ -2801,8 +2781,8 @@ const INFO={
     how:['Six square-wave oscillators at inharmonic ratios make the metallic clang (<b>Metal</b>, <b>Pitch</b>).','Noise is blended in, and both are high-passed and band-shaped for brightness.','A short exponential decay makes it closed; longer makes it open.'],
     tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
   perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
-    how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
-    tips:['In simple mode, pick a hat or cymbal and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and bloom), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
+    how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Inharmonic shift</b> nudges the high modes off their harmonic ratios for a metallic shimmer, and <b>Coin ring</b> adds a bright ringing overtone.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
+    tips:['In simple mode, pick a hat and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and coin ring), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
     how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. Steady noise runs through two filters, a high-pass that rises and a resonant low-pass that opens, both sweeping at a constant number of octaves per second so the sweep moves evenly from start to finish.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
