@@ -333,7 +333,7 @@ const AMB = (amb, own=true) => [
 const POST = [
   P('drive','Drive',0,1,0.2,'%'),
   P('space','Space',0,1,0,'%',{rmax:0.45}),
-  P('room','Room',0.2,2,1.2,'s',{log:true}),
+  P('room','Decay',0.2,2,1.2,'s',{log:true}),
   {k:'reverse',label:'Reverse',kind:'bool',def:false},
 ];
 
@@ -456,8 +456,8 @@ const TYPES = {
   kick:{label:'Kick',folder:'Kicks',c:'--kick',desc:'Pick a character, then shape it with six macros. The acoustic characters model a real drum: beater, head, shell and room mic. Detailed opens every layer.',
     post:{drive:0.03,space:0,room:0.8},
     presets:{
-      Studio:{mode:'simple',character:'studio'}, Vintage:{mode:'simple',character:'vintage'}, Open:{mode:'simple',character:'open'}, Jazz:{mode:'simple',character:'jazz'},
-      Breakbeat:{mode:'simple',character:'breakbeat',drive:0.15}, Thud:{mode:'simple',character:'thud'}, 'Live room':{mode:'simple',character:'live room'}, Noise:{mode:'simple',character:'noise'}, Ambience:{mode:'simple',character:'ambience'},
+      Studio:{mode:'simple',roomX:0,character:'studio'}, Vintage:{mode:'simple',roomX:0,character:'vintage'}, Open:{mode:'simple',roomX:0,character:'open'}, Jazz:{mode:'simple',roomX:0,character:'jazz'},
+      Breakbeat:{mode:'simple',roomX:0,character:'breakbeat',drive:0.15}, Thud:{mode:'simple',roomX:0,character:'thud'}, 'Live room':{mode:'simple',roomX:0,character:'live room'}, Noise:{mode:'simple',roomX:0,character:'noise'}, Ambience:{mode:'simple',roomX:0,character:'ambience'},
     },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
@@ -613,6 +613,13 @@ const TYPES = {
     ]},
   clap:{label:'Clap',folder:'Claps',c:'--clap',desc:'Stacked bandpassed noise bursts with a long last slap.',
     post:{drive:0.15,space:0.18,room:1.1},
+    presets:{
+      Studio:{}, Snap:{bursts:1,spread:0.004,decay:0.12,tone:2200,q:2.5,space:0.1},
+      Tight:{bursts:3,spread:0.006,decay:0.15,tone:1600,q:2},
+      Big:{bursts:6,spread:0.018,decay:0.5,tone:1100,q:1.2,space:0.3,room:1.6},
+      Crowd:{bursts:7,spread:0.028,decay:0.7,tone:1000,q:0.8,space:0.35,room:1.8},
+      'Lo-fi':{tone:900,q:3,decay:0.3,drive:0.45,amb:'crackle'},
+    },
     params:[
       ...AMB('room'),
       P('bursts','Hands',1,7,4,'n',{step:1}),
@@ -623,6 +630,11 @@ const TYPES = {
     ]},
   hat:{label:'Hat',folder:'Hats',c:'--hat',desc:'Six metallic square partials (808-style) blended with noise.',
     post:{drive:0.1,space:0,room:1},
+    presets:{
+      Closed:{}, Tight:{decay:0.035,tone:9000,metal:0.7}, Open:{decay:0.45},
+      '606 style':{pitch:1.25,decay:0.06,metal:0.75,tone:8000}, Shaker:{metal:0.1,decay:0.09,tone:6000},
+      Trashy:{metal:0.9,decay:0.2,pitch:0.8,drive:0.4},
+    },
     params:[
       ...AMB('crackle'),
       P('decay','Decay',0.02,2,0.07,'s',{log:true}),
@@ -701,6 +713,12 @@ const TYPES = {
     params:sweepParams(true)},
   impact:{label:'Impact',folder:'Impacts',c:'--impact',desc:'Sub boom, crack and a closing noise wash for drops and transitions.',
     post:{drive:0.35,space:0.4,room:2},
+    presets:{
+      Cinematic:{}, 'Sub boom':{sub:1,noise:0.2,crack:0.1,bDecay:3,bEnd:28},
+      Thunder:{noise:1,nDecay:3,bright:3000,crack:0.2,sub:0.6,amb:'rumble'},
+      Punch:{bStart:200,bDecay:0.8,nDecay:0.4,crack:0.8,space:0.25},
+      'Bright hit':{crack:1,bright:14000,nDecay:0.7,sub:0.5},
+    },
     params:[
       ...AMB('rumble'),
       P('bStart','Boom start',50,320,140,'Hz',{log:true}),
