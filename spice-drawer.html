@@ -559,18 +559,24 @@ const TYPES = {
       P('tone','Tone',200,12000,5000,'Hz',{log:true,rnd:[2500,8000],rndBy:{log:[350,12000]}}),
       P('seed','Variation',0,999,7,'seed',{step:1}),
     ]},
-  snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'A stick transient rings a feedback-delay drum head; snare wires and a room go on top.',
-    post:{drive:0.2,space:0.25,room:0.7},
+  snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'Pick a character, then shape it with six macros. A stick rings a feedback-delay drum head, with snare wires and a room on top. Detailed opens every layer.',
+    post:{drive:0.2,space:0.25,room:0.7}, macroKeys:null,
     presets:{
-      Studio:{},
-      Tight:{headPitch:230,ring:0.1,damp:3500,trLen:0.005,snDecay:0.14,snLvl:0.5,space:0.15},
-      Ringy:{headPitch:260,ring:0.55,damp:7000,dip:0.5,headLvl:0.85,snLvl:0.45,drive:0.3},
-      Fat:{headPitch:150,sqRatio:0.9,ring:0.25,damp:3000,snDecay:0.32,snTone:1600,trLen:0.012,space:0.35,room:1.1},
-      Piccolo:{headPitch:360,ring:0.16,damp:9000,snDecay:0.12,snTone:3200,trLen:0.004,headLow:200},
-      'Trash can':{headPitch:210,ring:0.9,damp:11000,dip:0,bend:3,drive:0.65,snLvl:0.7,couple:0.9,amb:'crackle'},
-      'Ghost note':{velocity:0.2},
+      Studio:{mode:'simple',character:'studio'}, Tight:{mode:'simple',character:'tight',space:0.15}, Ringy:{mode:'simple',character:'ringy',drive:0.3},
+      Fat:{mode:'simple',character:'fat',space:0.35,room:1.1}, Deep:{mode:'simple',character:'deep',space:0.3,room:1}, Piccolo:{mode:'simple',character:'piccolo'},
+      Rimshot:{mode:'simple',character:'rimshot',space:0.2}, 'Trash can':{mode:'simple',character:'trash can',drive:0.65,amb:'crackle'},
+      'Ghost note':{mode:'simple',character:'studio',velocity:0.2},
     },
     params:[
+      {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
+        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,snareResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
+      {k:'character',label:'Character',kind:'sel',opts:['studio','tight','ringy','fat','deep','piccolo','rimshot','trash can'],def:'studio',rebuild:true},
+      P('tune','Tune',-7,7,0,'st',{step:1,rnd:[-4,4]}),
+      P('snap','Snap',0,1,0.5,'%',{rnd:[0.3,0.75]}),
+      P('body','Body',0,1,0.5,'%',{rnd:[0.3,0.75]}),
+      P('wires','Wires',0,1,0.5,'%',{rnd:[0.25,0.8]}),
+      P('lenX','Length',0.5,2,1,'x',{log:true,rnd:[0.75,1.4]}),
+      P('toneX','Tone',-1,1,0,'bal',{rnd:[-0.4,0.4]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
       {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
@@ -624,25 +630,23 @@ const TYPES = {
       P('metal','Metal',0,1,0.6,'%'),
       P('tone','Brightness',3000,13000,7000,'Hz',{log:true}),
     ]},
-  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'A stick or shaped noise excites a bank of comb resonators; cymbals add a blooming dispersion loop.',
-    post:{drive:0,space:0,room:1},
+  perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'Pick a character, then shape it with six macros. A stick or shaped noise excites a bank of resonators; cymbals add a blooming dispersion loop. Detailed opens every layer.',
+    post:{drive:0,space:0,room:1}, macroKeys:null,
     presets:{
-      'Closed hat':{},
-      'Open hat':{nzDecay:0.7,lowDecay:0.5,hiDecay:0.8,coin:0.1},
-      'Pedal chick':{pedal:0.8,nzDecay:0.05,lowDecay:0.06,hiDecay:0.07,stickLvl:0.2,lowCut:600},
-      'Money hat':{coin:0.7,nzDecay:0.2,hiDecay:0.3,lowDecay:0.15},
-      Ride:{model:'dispersion',stickLvl:0.8,stickPitch:3000,stickTone:12000,stickLen:0.002,pdDrive:0.15,pdTone:0.5,dTime:0.0025,dSustain:5,smear:0.7,wobble:0.04,wobRate:2,
-        fund:600,spread:0.3,lowDecay:4,lowDamp:4000,lowLvl:0.35,hiMin:2500,hiMax:9000,hiDecay:4,hiHP:2500,hiLvl:0.7,shift:40,color:0.3,lowCut:350,stickToRes:0.15},
-      Crash:{model:'dispersion',stickLvl:0.15,stickPitch:300,stickBend:12,stickFM:1,stickLen:0.015,stickTone:2000,pdDrive:0.75,pdTone:0.6,dTime:0.0012,dSustain:3.5,smear:0.85,wobble:0.15,wobRate:3,
-        fund:700,spread:0.6,lowDecay:3,lowDamp:8000,lowLvl:0.5,hiMin:3000,hiMax:15000,hiDecay:3,hiHP:2000,hiLvl:0.8,shift:120,color:0.4,lowCut:250},
-      Splash:{model:'dispersion',stickLvl:0.2,stickPitch:400,stickBend:12,stickLen:0.01,stickTone:3000,pdDrive:0.7,pdTone:0.9,dTime:0.0007,dSustain:1.2,smear:0.8,wobble:0.12,wobRate:4,
-        fund:1100,spread:0.5,lowDecay:0.9,lowDamp:9000,hiMin:4000,hiMax:16000,hiDecay:1,hiHP:3000,shift:150,color:0.35,lowCut:400},
-      China:{model:'dispersion',stickLvl:0.2,stickPitch:350,stickBend:12,stickLen:0.012,stickTone:2500,pdDrive:0.8,pdTone:0.7,dTime:0.001,dSustain:2.5,smear:0.5,wobble:0.25,wobRate:5,
-        fund:800,spread:0.9,lowDecay:2,lowDamp:7000,hiMin:2500,hiMax:12000,hiDecay:2,hiHP:1500,shift:260,color:0.6,lowCut:500,drive:0.35},
-      Gong:{model:'dispersion',stickLvl:0.1,stickPitch:200,stickBend:6,stickLen:0.02,stickTone:1200,pdDrive:0.6,pdTone:0.1,dTime:0.005,dSustain:7,smear:0.75,wobble:0.08,wobRate:0.7,
-        fund:180,spread:0.25,lowDecay:6,lowDamp:3000,lowLvl:0.8,hiMin:1500,hiMax:6000,hiDecay:4,hiHP:1200,hiLvl:0.5,shift:20,color:0.2,lowCut:60},
+      'Closed hat':{mode:'simple',character:'closed hat'}, 'Open hat':{mode:'simple',character:'open hat'}, 'Pedal chick':{mode:'simple',character:'pedal chick'},
+      'Money hat':{mode:'simple',character:'money hat'}, Ride:{mode:'simple',character:'ride'}, Crash:{mode:'simple',character:'crash'},
+      Splash:{mode:'simple',character:'splash'}, China:{mode:'simple',character:'china',drive:0.35}, Gong:{mode:'simple',character:'gong'},
     },
     params:[
+      {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
+        onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,percResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
+      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat','ride','crash','splash','china','gong'],def:'closed hat',rebuild:true},
+      P('tune','Tune',-12,12,0,'st',{step:1,rnd:[-5,5]}),
+      P('stick','Stick',0,1,0.5,'%',{rnd:[0.3,0.75]}),
+      P('lenX','Length',0.33,3,1,'x',{log:true,rnd:[0.7,1.5]}),
+      P('metal','Metal',0,1,0.5,'%',{rnd:[0.3,0.75]}),
+      P('toneX','Tone',-1,1,0,'bal',{rnd:[-0.4,0.4]}),
+      P('widthX','Width',0,1,0.5,'%',{rnd:[0.3,0.8]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
       {k:'model',label:'Model',kind:'sel',opts:['simple','dispersion'],def:'simple',lock:true,rebuild:true},
@@ -866,6 +870,67 @@ function kickResolve(p){
   for(const k of ['drive','space','room','reverse','sample','srcStart','gritWidth']) if(k in p) b[k]=p[k];
   return b;
 }
+const SNARE_CHARS={
+  studio:{},
+  tight:{headPitch:230,ring:0.1,damp:3500,trLen:0.005,snDecay:0.14,snLvl:0.5},
+  ringy:{headPitch:260,ring:0.55,damp:7000,dip:0.5,headLvl:0.85,snLvl:0.45},
+  fat:{headPitch:150,sqRatio:0.9,ring:0.25,damp:3000,snDecay:0.32,snTone:1600,trLen:0.012},
+  deep:{headPitch:125,sqRatio:0.85,ring:0.35,damp:2600,snDecay:0.34,snTone:1300,snLvl:0.5,trLen:0.01,headLow:50,lowCut:40},
+  piccolo:{headPitch:360,ring:0.16,damp:9000,snDecay:0.12,snTone:3200,trLen:0.004,headLow:200},
+  rimshot:{headPitch:330,ring:0.09,damp:9000,trLvl:1,trLen:0.003,trBoost:14,trColor:9000,snLvl:0.2,snDecay:0.1,headLvl:0.8},
+  'trash can':{headPitch:210,ring:0.9,damp:11000,dip:0,bend:3,snLvl:0.7,couple:0.9},
+};
+const SNARE_MACROS=new Set(['mode','character','tune','snap','body','wires','lenX','toneX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const PERC_CHARS={
+  'closed hat':{},
+  'open hat':{nzDecay:0.7,lowDecay:0.5,hiDecay:0.8,coin:0.1},
+  'pedal chick':{pedal:0.8,nzDecay:0.05,lowDecay:0.06,hiDecay:0.07,stickLvl:0.2,lowCut:600},
+  'money hat':{coin:0.7,nzDecay:0.2,hiDecay:0.3,lowDecay:0.15},
+  ride:{model:'dispersion',stickLvl:0.8,stickPitch:3000,stickTone:12000,stickLen:0.002,pdDrive:0.15,pdTone:0.5,dTime:0.0025,dSustain:5,smear:0.7,wobble:0.04,wobRate:2,
+    fund:600,spread:0.3,lowDecay:4,lowDamp:4000,lowLvl:0.35,hiMin:2500,hiMax:9000,hiDecay:4,hiHP:2500,hiLvl:0.7,shift:40,color:0.3,lowCut:350,stickToRes:0.15},
+  crash:{model:'dispersion',stickLvl:0.15,stickPitch:300,stickBend:12,stickFM:1,stickLen:0.015,stickTone:2000,pdDrive:0.75,pdTone:0.6,dTime:0.0012,dSustain:3.5,smear:0.85,wobble:0.15,wobRate:3,
+    fund:700,spread:0.6,lowDecay:3,lowDamp:8000,lowLvl:0.5,hiMin:3000,hiMax:15000,hiDecay:3,hiHP:2000,hiLvl:0.8,shift:120,color:0.4,lowCut:250},
+  splash:{model:'dispersion',stickLvl:0.2,stickPitch:400,stickBend:12,stickLen:0.01,stickTone:3000,pdDrive:0.7,pdTone:0.9,dTime:0.0007,dSustain:1.2,smear:0.8,wobble:0.12,wobRate:4,
+    fund:1100,spread:0.5,lowDecay:0.9,lowDamp:9000,hiMin:4000,hiMax:16000,hiDecay:1,hiHP:3000,shift:150,color:0.35,lowCut:400},
+  china:{model:'dispersion',stickLvl:0.2,stickPitch:350,stickBend:12,stickLen:0.012,stickTone:2500,pdDrive:0.8,pdTone:0.7,dTime:0.001,dSustain:2.5,smear:0.5,wobble:0.25,wobRate:5,
+    fund:800,spread:0.9,lowDecay:2,lowDamp:7000,hiMin:2500,hiMax:12000,hiDecay:2,hiHP:1500,shift:260,color:0.6,lowCut:500},
+  gong:{model:'dispersion',stickLvl:0.1,stickPitch:200,stickBend:6,stickLen:0.02,stickTone:1200,pdDrive:0.6,pdTone:0.1,dTime:0.005,dSustain:7,smear:0.75,wobble:0.08,wobRate:0.7,
+    fund:180,spread:0.25,lowDecay:6,lowDamp:3000,lowLvl:0.8,hiMin:1500,hiMax:6000,hiDecay:4,hiHP:1200,hiLvl:0.5,shift:20,color:0.2,lowCut:60},
+};
+const PERC_MACROS=new Set(['mode','character','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
+for(const [t,M] of [['snare',SNARE_MACROS],['perc',PERC_MACROS]])
+  for(const d of TYPES[t].params){ const w=d.when;
+    if(M.has(d.k)){ if(d.k!=='mode'&&!['velocity','seed','noiseType','amb','ambMotion','ambEvents'].includes(d.k)) d.when = w ? (p=>p.mode!=='detailed'&&w(p)) : (p=>p.mode!=='detailed'); }
+    else d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
+function macroBase(t,M,chars,p){
+  const raw={}; for(const d of TYPES[t].params) if(d.k&&!M.has(d.k)&&'def' in d) raw[d.k]=d.def;
+  return {...raw,...(chars[p.character]||{})};
+}
+const limOf=t=>(k,v)=>{ const d=TYPES[t].params.find(x=>x.k===k); return d&&d.min!=null?clamp(v,d.min,d.max):v; };
+function finishResolve(b,p,M){ for(const k of M) if(k!=='mode') b[k]=p[k]; b.mode='detailed'; for(const k of ['drive','space','room','reverse']) if(k in p) b[k]=p[k]; return b; }
+function snareResolve(p){
+  const b=macroBase('snare',SNARE_MACROS,SNARE_CHARS,p), lim=limOf('snare');
+  const r=Math.pow(2,(p.tune||0)/12); b.headPitch=lim('headPitch',b.headPitch*r); b.snTone=lim('snTone',b.snTone*Math.sqrt(r));
+  const sn=p.snap??0.5; b.trLvl=lim('trLvl',b.trLvl*2*sn); b.trBoost=lim('trBoost',b.trBoost+(sn-0.5)*8); b.trLen=lim('trLen',b.trLen*(1.5-sn));
+  const bo=p.body??0.5; b.headLvl=lim('headLvl',b.headLvl*2*bo); b.bend=lim('bend',b.bend*(0.5+bo));
+  const w=p.wires??0.5; b.snLvl=lim('snLvl',b.snLvl*2*w); b.snWidth=lim('snWidth',b.snWidth*(0.5+w));
+  const L=p.lenX??1; b.ring=lim('ring',b.ring*L); b.snDecay=lim('snDecay',b.snDecay*L);
+  const t=p.toneX??0; b.tone=lim('tone',b.tone*Math.pow(2,t*1.5)); b.damp=lim('damp',b.damp*Math.pow(2,t*0.8)); b.snTone=lim('snTone',b.snTone*Math.pow(2,t*0.5)); b.trColor=lim('trColor',b.trColor*Math.pow(2,t));
+  return finishResolve(b,p,SNARE_MACROS);
+}
+function percResolve(p){
+  const b=macroBase('perc',PERC_MACROS,PERC_CHARS,p), lim=limOf('perc');
+  const r=Math.pow(2,(p.tune||0)/12);
+  for(const k of ['stickPitch','fund','hiMin','hiMax','hiHP','colorF']) b[k]=lim(k,b[k]*r);
+  if(b.hiMax<b.hiMin*1.3) b.hiMax=lim('hiMax',b.hiMin*1.3);
+  const L=p.lenX??1; for(const k of ['nzDecay','lowDecay','hiDecay','dSustain']) b[k]=lim(k,b[k]*L);
+  const st=p.stick??0.5; b.stickLvl=lim('stickLvl',b.stickLvl*2*st); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,st-0.5));
+  const m=p.metal??0.5; b.shift=lim('shift',b.shift*2*m); b.coin=lim('coin',b.coin+(m-0.5)*0.3); b.pdDrive=lim('pdDrive',b.pdDrive+(m-0.5)*0.4); b.spread=lim('spread',b.spread+(m-0.5)*0.3);
+  const t=p.toneX??0; b.tone=lim('tone',b.tone*Math.pow(2,t*1.5)); b.hiHP=lim('hiHP',b.hiHP*Math.pow(2,t*0.5)); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,t)); b.color=lim('color',b.color+t*0.15);
+  const w=p.widthX??0.5; b.width=lim('width',b.width*2*w);
+  return finishResolve(b,p,PERC_MACROS);
+}
 const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','birds'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
 const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = (d.k in (TYPES[t].post||{})) ? TYPES[t].post[d.k] : d.def; return o; };
@@ -876,15 +941,15 @@ const SRC={};   // loaded sounds for the kick resonator: id -> {data, sr, name}
 let S = {type:'kick', params:{}, bpm:128, sr:48000, bits:24, aud:true, packName:'Spice Drawer Vol 1', pack:[]};
 try{ const raw = localStorage.getItem(KEY); if(raw){ const o=JSON.parse(raw); S = {...S, ...o}; } }catch(e){}
 if(S.params.kick && !('farPitch' in S.params.kick)) delete S.params.kick;
-if(S.params.snare && !('headPitch' in S.params.snare)) delete S.params.snare;
+for(const t of ['snare','perc']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
 const fixGroup=q=>{ if(q && q.group==='world frogs'){ q.group='frogs'; q.frog=q.wfrog||'midwife'; } if(q && q.group==='wbirds'){ q.group='birds'; q.species=q.wbird||'cuckoo'; } };
 fixGroup(S.params.birds); for(const it of (S.pack||[])) if(it.type==='birds') fixGroup(it.params);
 for(const t of ['riser','down']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
 if(S.params.hat && 'model' in S.params.hat){ S.params.perc=S.params.hat; delete S.params.hat; }   // cymbal settings move to Perc
-else if(S.params.perc && !('model' in S.params.perc)) delete S.params.perc;                    // old FM perc settings retire
 for(const it of (S.pack||[])) if(it.type==='hat' && it.params && 'model' in it.params) it.type='perc';
 for(const it of (S.pack||[])) if(it.params && !('noiseType' in it.params)) it.params.noiseType='white';
-for(const it of (S.pack||[])) if(it.type==='kick' && it.params && !('mode' in it.params)) it.params.mode='detailed';
+for(const it of (S.pack||[])) if((it.type==='kick'||it.type==='snare'&&'headPitch' in (it.params||{})||it.type==='perc'&&'model' in (it.params||{})) && it.params && !('mode' in it.params)) it.params.mode='detailed';
+S.pack=(S.pack||[]).filter(it=>!((it.type==='snare'||it.type==='perc') && it.params && !('mode' in it.params)));   // retired engines
 for(const it of (S.pack||[])) if(it.type==='eco' && it.params && !('birdType' in it.params)) it.params.birdType='generic';
 for(const it of (S.pack||[])) if(it.type==='eco' && it.params && !('frogType' in it.params)) it.params.frogType='generic';
 for(const it of (S.pack||[])) if(it.type==='eco' && it.params && !('presence' in it.params)) Object.assign(it.params,{presence:1,crackle:0,hiss:0,wow:0,tone:18000,lowCut:20});
@@ -987,23 +1052,10 @@ const BUILD = {
     return L.length/ctx.sampleRate;
   },
   snare(ctx,p,out){
-    if('headPitch' in p){
-      const [L,R]=snareSignal(p,ctx.sampleRate);
-      const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
-      const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
-      return L.length/ctx.sampleRate;
-    }
-    return BUILD.snareLegacy(ctx,p,out);
-  },
-  snareLegacy(ctx,p,out){
-    const len = Math.max(p.toneDecay,p.nDecay)*2.4+0.02;
-    const mk=(type,mult,lvl)=>{ const o=ctx.createOscillator(); o.type=type;
-      o.frequency.setValueAtTime(p.tone*mult*(1+p.snap*1.4),0); o.frequency.setTargetAtTime(p.tone*mult,0,0.012);
-      const g=gainN(ctx,0); envAD(g.gain,lvl,0.001,p.toneDecay); chain(o,g,out); o.start(0); o.stop(len); };
-    mk('triangle',1,p.body); mk('sine',1.62,p.body*0.5);
-    const n=noiseSrc(ctx,len), hp=filt(ctx,'highpass',p.nColor*0.3), pk=filt(ctx,'peaking',p.nColor,1.2,7), g=gainN(ctx,0);
-    envAD(g.gain,(1-p.body*0.45)*0.9,0.001,p.nDecay); chain(n,hp,pk,g,out); n.start(0);
-    return len;
+    const [L,R]=snareSignal(p.mode==='detailed'?p:snareResolve(p),ctx.sampleRate);
+    const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
+    const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
+    return L.length/ctx.sampleRate;
   },
   clap(ctx,p,out){
     const b=Math.round(p.bursts), last=(b-1)*p.spread, len=last+p.decay*2.4+0.02;
@@ -1026,26 +1078,12 @@ const BUILD = {
     return len;
   },
   perc(ctx,p,out){
-    if('model' in p){
-      const [L,R]=cymbalSignal(p,ctx.sampleRate);
-      const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
-      const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
-      return L.length/ctx.sampleRate;
-    }
-    return BUILD.percFM(ctx,p,out);
+    const [L,R]=cymbalSignal(p.mode==='detailed'?p:percResolve(p),ctx.sampleRate);
+    const b=ctx.createBuffer(2,L.length,ctx.sampleRate); b.copyToChannel(L,0); b.copyToChannel(R,1);
+    const src=ctx.createBufferSource(); src.buffer=b; src.connect(out); src.start(0);
+    return L.length/ctx.sampleRate;
   },
-  percFM(ctx,p,out){
-    const len=p.decay*2.4+0.02;
-    const c=ctx.createOscillator(), m=ctx.createOscillator(), mg=gainN(ctx,0), g=gainN(ctx,0);
-    const start=p.freq*Math.pow(2,p.drop/12);
-    c.frequency.setValueAtTime(start,0); c.frequency.setTargetAtTime(p.freq,0,0.018);
-    m.frequency.setValueAtTime(start*p.ratio,0); m.frequency.setTargetAtTime(p.freq*p.ratio,0,0.018);
-    envAD(mg.gain,p.index*p.freq*p.ratio,0.0005,p.mDecay);
-    envAD(g.gain,1,0.0008,p.decay);
-    chain(m,mg,c.frequency); chain(c,g,out);
-    c.start(0); m.start(0); c.stop(len); m.stop(len);
-    return len;
-  },
+
   riser(ctx,p,out){ return sweepBuild(ctx,p,out,false); },
   down(ctx,p,out){ return sweepBuild(ctx,p,out,true); },
   eco(ctx,p,out){
@@ -2331,10 +2369,10 @@ function estimateLen(type,p){
   switch(type){
     case 'kick': if(p.mode!=='detailed') p=kickResolve(p); return Math.max((p.shellLvl||0)>0?shellLen(p):0, p.nearLvl>0?p.nearLen:0, p.farLvl>0?p.farDecay+p.farDelay+0.01:0, p.grit!=='off'&&p.gritLvl>0?p.gritDecay:0, 0.05)+0.03;
     case 'bass': return bassLen(p);
-    case 'snare': return 'headPitch' in p ? snareLen(p) : Math.max(p.toneDecay,p.nDecay)*2.4+0.02;
+    case 'snare': return snareLen(p.mode==='detailed'?p:snareResolve(p));
     case 'clap': return (Math.round(p.bursts)-1)*p.spread+p.decay*2.4+0.02;
     case 'hat': return p.decay*2.4+0.02;
-    case 'perc': return 'model' in p ? cymbalLen(p) : p.decay*2.4+0.02;
+    case 'perc': return cymbalLen(p.mode==='detailed'?p:percResolve(p));
     case 'riser': case 'down': { const dn=type==='down'; return sweepLen(p.mode==='detailed'?p:sweepResolve(p,dn),dn); }
     case 'impact': return Math.max(p.bDecay,p.nDecay)*2.4+0.02;
     case 'eco': return ecoLen(p);
@@ -2645,8 +2683,6 @@ let dragItem=null;   // pack item being dragged (its settings load when dropped 
 document.addEventListener('dragend',()=>{ selfDrag=false; dragItem=null; cv.classList.remove('drop'); });
 function loadItem(it){
   if(!it || !it.params || !TYPES[it.type]) return;
-  const legacy = (it.type==='snare' && !('headPitch' in it.params)) || (it.type==='perc' && !('model' in it.params));
-  if(legacy){ toast(it.name+' was made with an older engine, so its settings can’t be loaded.'); return; }
   const t=it.type; if(S.type!==t) selectType(t);
   snap(t);
   const {_bpm,...p}=it.params;
@@ -2738,7 +2774,7 @@ const INFO={
       '<b>Drum head</b>. The strike rings a delay line fed back into itself. The loop length sets the head’s pitch, and filters inside the loop set how long it rings (<b>Ring</b>, <b>Damping</b>). The loop is corrected so the pitch stays where you set it. <b>Overtone dip</b> notches out a ringy overtone and <b>Hit bend</b> bends the pitch on impact, like a real head under tension.',
       '<b>Snare wires</b>. Filtered noise with its own decay, set to follow the head’s energy (<b>Follow head</b>), then spread in stereo.',
       'A room and master EQ finish it.'],
-    tips:['Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
+    tips:['In simple mode, pick a character and shape it with six macros: <b>Tune</b>, <b>Snap</b> (the stick), <b>Body</b> (the head), <b>Wires</b>, <b>Length</b> and <b>Tone</b>. Switch to detailed to see what they set.','Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
     src:'Inspired by Zion Jaymes: <a href="https://youtu.be/1Db9rGbth_o" target="_blank" rel="noopener">his snare design video</a> (the feedback-delay drum head).'},
   clap:{lead:'Several hands that don’t quite land together.',
     how:['Short bursts of band-passed noise, one per hand, spread a few milliseconds apart (<b>Hands</b>, <b>Spread</b>).','The last burst is longer: the slap and its room.','<b>Tone</b> and <b>Focus</b> set the band-pass center and how narrow it is.'],
@@ -2748,7 +2784,7 @@ const INFO={
     tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
   perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
-    tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
+    tips:['In simple mode, pick a hat or cymbal and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and bloom), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
     how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. Steady noise runs through two filters, a high-pass that rises and a resonant low-pass that opens, both sweeping at a constant number of octaves per second so the sweep moves evenly from start to finish.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
@@ -2845,11 +2881,8 @@ document.addEventListener('keydown',e=>{
 });
 
 async function rerenderPack(){
-  const LEGACY_SNARE={tone:190,toneDecay:0.12,snap:0.4,body:0.5,nColor:3600,nDecay:0.22,drive:0.25,space:0.12,room:0.9,reverse:false};
   for(const it of S.pack){ if(!it.id) it.id=++uid;
-    const legacy = it.type==='snare' && it.params && !('headPitch' in it.params);
-    const legacyFM = it.type==='perc' && it.params && !('model' in it.params);
-    it.buf=await render(it.type, legacy ? {...LEGACY_SNARE,...it.params} : legacyFM ? {freq:520,ratio:2.76,index:6,mDecay:0.04,decay:0.18,drop:5,drive:0.15,space:0.1,room:0.8,reverse:false,...it.params} : {...defaults(it.type),...it.params}); }
+    it.buf=await render(it.type, {...defaults(it.type),...it.params}); }
   drawPack();
 }
 
