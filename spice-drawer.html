@@ -647,11 +647,13 @@ const TYPES = {
     presets:{
       'Closed hat':{mode:'simple',character:'closed hat'}, 'Open hat':{mode:'simple',character:'open hat'}, 'Pedal chick':{mode:'simple',character:'pedal chick'},
       'Money hat':{mode:'simple',character:'money hat'},
+      Woodblock:{mode:'simple',character:'woodblock'}, Clave:{mode:'simple',character:'clave'}, Tom:{mode:'simple',character:'tom'},
+      'Floor tom':{mode:'simple',character:'floor tom'}, Cowbell:{mode:'simple',character:'cowbell'},
     },
     params:[
       {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
         onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,percResolve({...p,mode:'simple'}),{mode:'detailed'}); }},
-      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat'],def:'closed hat',rebuild:true},
+      {k:'character',label:'Character',kind:'sel',opts:['closed hat','open hat','pedal chick','money hat','woodblock','clave','tom','floor tom','cowbell'],def:'closed hat',rebuild:true},
       P('tune','Tune',-12,12,0,'st',{step:1,rnd:[-5,5]}),
       P('stick','Stick',0,1,0.5,'%',{rnd:[0.3,0.75]}),
       P('lenX','Length',0.33,3,1,'x',{log:true,rnd:[0.7,1.5]}),
@@ -673,7 +675,7 @@ const TYPES = {
       P('nzDecay','Decay',0.02,3,0.08,'s',{log:true}),
       P('pedal','Pedal chick',0,1,0,'%'),
       {kind:'head',label:'Resonant modes'},
-      P('fund','Fundamental',150,3000,1200,'Hz',{log:true}),
+      P('fund','Fundamental',60,3000,1200,'Hz',{log:true}),
       P('spread','Low spread',0,1,0.3,'%'),
       P('lowDecay','Low decay',0.03,6,0.08,'s',{log:true}),
       P('lowDamp','Low damping',1000,16000,5000,'Hz',{log:true}),
@@ -689,7 +691,7 @@ const TYPES = {
       {kind:'head',label:'Master'},
       P('colorF','Color pitch',1000,12000,5000,'Hz',{log:true}),
       P('color','Color',0,1,0.3,'%'),
-      P('lowCut','Low cut',60,6000,400,'Hz',{log:true}),
+      P('lowCut','Low cut',30,6000,400,'Hz',{log:true}),
       P('tone','Tone',2000,20000,18000,'Hz',{log:true}),
     ]},
   riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser build with a steady resonant noise sweep and a reverse suck into the drop, in your key.',
@@ -893,6 +895,17 @@ const PERC_CHARS={
   'open hat':{nzDecay:0.7,lowDecay:0.5,hiDecay:0.8,coin:0.1},
   'pedal chick':{pedal:0.8,nzDecay:0.05,lowDecay:0.06,hiDecay:0.07,stickLvl:0.2,lowCut:600},
   'money hat':{coin:0.7,nzDecay:0.2,hiDecay:0.3,lowDecay:0.15},
+  // pitched, mostly harmonic hits: the low resonator bank is the instrument, the noise sizzle is off or nearly off
+  woodblock:{stickLvl:0.45,stickPitch:950,stickBend:7,stickFM:0.5,stickLen:0.004,stickTone:5000,nzLvl:0,fund:900,spread:0.03,lowDecay:0.2,lowDamp:9000,lowLvl:1,
+    hiMin:2500,hiMax:5000,hiDecay:0.03,hiHP:2000,hiLvl:0.05,shift:0,coin:0,width:0.2,color:0,lowCut:300,tone:12000},
+  clave:{stickLvl:0.3,stickPitch:2400,stickBend:4,stickFM:0.3,stickLen:0.002,stickTone:9000,nzLvl:0,fund:2400,spread:0,lowDecay:0.5,lowDamp:16000,lowLvl:1,
+    hiMin:5000,hiMax:9000,hiDecay:0.03,hiHP:4000,hiLvl:0.03,shift:0,coin:0,width:0.15,color:0,lowCut:800,tone:14000},
+  tom:{stickLvl:0.6,stickPitch:165,stickBend:2,stickFM:0.3,stickLen:0.025,stickTone:1500,nzLvl:0.12,nzDecay:0.04,fund:160,spread:0.3,lowDecay:0.55,lowDamp:500,lowLvl:1,
+    hiMin:1500,hiMax:4000,hiDecay:0.05,hiHP:1500,hiLvl:0.08,shift:0,coin:0,width:0.3,color:0,lowCut:50,tone:9000},
+  'floor tom':{stickLvl:0.6,stickPitch:98,stickBend:2,stickFM:0.3,stickLen:0.03,stickTone:1200,nzLvl:0.1,nzDecay:0.05,fund:95,spread:0.3,lowDecay:0.9,lowDamp:300,lowLvl:1,
+    hiMin:1500,hiMax:3500,hiDecay:0.05,hiHP:1500,hiLvl:0.06,shift:0,coin:0,width:0.35,color:0,lowCut:35,tone:8000},
+  cowbell:{stickLvl:0.4,stickPitch:800,stickBend:5,stickFM:1.5,stickLen:0.004,stickTone:6000,nzLvl:0,fund:560,spread:1,lowDecay:0.45,lowDamp:6000,lowLvl:1,
+    hiMin:2500,hiMax:5000,hiDecay:0.12,hiHP:2000,hiLvl:0.15,shift:0,coin:0,width:0.2,color:0,lowCut:400,tone:9000},
 };
 const PERC_MACROS=new Set(['mode','character','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
 TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
@@ -923,7 +936,7 @@ function percResolve(p){
   if(b.hiMax<b.hiMin*1.3) b.hiMax=lim('hiMax',b.hiMin*1.3);
   const L=p.lenX??1; for(const k of ['nzDecay','lowDecay','hiDecay']) b[k]=lim(k,b[k]*L);
   const st=p.stick??0.5; b.stickLvl=lim('stickLvl',b.stickLvl*2*st); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,st-0.5));
-  const m=p.metal??0.5; b.shift=lim('shift',b.shift*2*m); b.coin=lim('coin',b.coin+(m-0.5)*0.3); b.spread=lim('spread',b.spread+(m-0.5)*0.3);
+  const m=p.metal??0.5; b.shift=lim('shift',b.shift*2*m); b.coin=lim('coin',b.coin*2*m); b.spread=lim('spread',b.spread+(m-0.5)*0.3);
   const t=p.toneX??0; b.tone=lim('tone',b.tone*Math.pow(2,t*1.5)); b.hiHP=lim('hiHP',b.hiHP*Math.pow(2,t*0.5)); b.stickTone=lim('stickTone',b.stickTone*Math.pow(2,t)); b.color=lim('color',b.color+t*0.15);
   const w=p.widthX??0.5; b.width=lim('width',b.width*2*w);
   return finishResolve(b,p,PERC_MACROS);
@@ -2782,7 +2795,7 @@ const INFO={
     tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
   perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Inharmonic shift</b> nudges the high modes off their harmonic ratios for a metallic shimmer, and <b>Coin ring</b> adds a bright ringing overtone.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
-    tips:['In simple mode, pick a hat and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and coin ring), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
+    tips:['In simple mode, pick a hat or a pitched hit (woodblock, clave, toms, cowbell) and shape it with six macros: <b>Tune</b>, <b>Stick</b>, <b>Length</b>, <b>Metal</b> (inharmonic shimmer and coin ring), <b>Tone</b> and <b>Width</b>. Switch to detailed to see what they set.','Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
     how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. Steady noise runs through two filters, a high-pass that rises and a resonant low-pass that opens, both sweeping at a constant number of octaves per second so the sweep moves evenly from start to finish.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
