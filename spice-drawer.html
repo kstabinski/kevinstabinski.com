@@ -337,28 +337,12 @@ const POST = [
   {k:'reverse',label:'Reverse',kind:'bool',def:false},
 ];
 
-const riserParams = (down) => [
-  ...AMB('wind'),
-  P('bars','Length',0.5,8,down?1:2,'bars',{step:0.5,lock:true}),
-  P('root','Root pitch',40,440,down?110:110,'Hz',{log:true}),
-  P('semis',down?'Pitch fall':'Pitch rise',0,36,24,'st',{step:1}),
-  P('noise','Noise',0,1,down?0.8:0.75,'%'),
-  P('synth','Synth',0,1,down?0.35:0.45,'%'),
-  P('detune','Detune',0,60,20,'ct',{step:1}),
-  P('low','Low cutoff',80,3000,down?150:250,'Hz',{log:true}),
-  P('high','High cutoff',2000,18000,12000,'Hz',{log:true}),
-  P('reso','Resonance',0.5,14,down?2.5:4,'Q',{log:true}),
-  P('curve','Curve',0.5,4,down?2:2.2,'x'),
-  P('gate','Gate rate',0,32,down?0:12,'Hz',{step:0.5}),
-  P('depth','Gate depth',0,1,0.7,'%'),
-];
-
 /* ---------- risers & downlifters: parameters, characters and the simple-mode resolver ---------- */
 const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const INTERVALS={'none':0,'fourth':5,'fifth':7,'octave':12,'2 octaves':24};
 const SWEEP_MACROS=new Set(['mode','character','tension','widthX','grit','bright','spaceX','laserX','bars','key','octave','interval','seed','noiseType','amb','ambMotion','ambEvents']);
 const sweepParams=(down)=>{
-  const chars=down?['impact tail','laser fall','sub drop','noise fall','synth fall','shepard down']:['supersaw','laser','noise sweep','shepard','stutter build','dark tension','airy'];
+  const chars=down?['laser fall','impact tail','sub drop','noise fall','shepard down']:['laser','noise sweep','shepard','stutter build','dark tension','airy'];
   const L=[
     {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
       onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,sweepResolve({...p,mode:'simple'},down),{mode:'detailed'}); }},
@@ -375,22 +359,21 @@ const sweepParams=(down)=>{
     {k:'interval',label:down?'Fall':'Rise',kind:'sel',opts:Object.keys(INTERVALS),def:down?'2 octaves':'octave',lock:true},
     P('seed','Variation',0,999,7,'seed',{step:1}),
     ...AMB('wind',false),
-    {kind:'head',label:'Engine',detail:true},
-    {k:'engine',label:'Engine',kind:'sel',opts:['sweep','shepard'],def:'sweep',detail:true},
+    {kind:'head',label:'Shape',detail:true},
     P('curve','Curve',0.5,5,down?2:2.2,'x',{detail:true}),
-    {kind:'head',label:'Synth',detail:true},
-    P('sawLvl','Level',0,1,down?0:0.8,'%',{detail:true}),
-    P('detune0','Detune start',0,60,down?30:8,'ct',{step:1,detail:true}),
-    P('detune1','Detune end',0,60,down?8:35,'ct',{step:1,detail:true}),
+    {kind:'head',label:'Shepard',detail:true},
+    P('sawLvl','Level',0,1,0,'%',{detail:true}),
     {kind:'head',label:'Laser',detail:true},
-    P('laserLvl','Level',0,1,down?0.4:0.45,'%',{detail:true}),
+    P('laserLvl','Level',0,1,1,'%',{detail:true}),
+    P('laserRange','Range',1,10,8,'oct',{step:0.5,detail:true}),
+    P('laserFade','Fade',0,48,22,'dB',{step:1,detail:true}),
     {k:'laserStack',label:'Stack',kind:'sel',opts:['harmonic','major','dom 7','fifths','cluster'],def:'harmonic',detail:true},
-    P('laserVoices','Streams',2,14,down?8:10,'n',{step:1,detail:true}),
-    P('laserBloom','Bloom',0,1,0.6,'%',{detail:true}),
-    P('laserZap','Zap',0,1,down?0.35:0.25,'%',{detail:true}),
+    P('laserVoices','Streams',1,14,2,'n',{step:1,detail:true}),
+    P('laserBloom','Bloom',0,1,0,'%',{detail:true}),
+    P('laserZap','Zap',0,1,0,'%',{detail:true}),
     P('laserShimmer','Shimmer',0,1,0.4,'%',{detail:true}),
     {kind:'head',label:'Noise',detail:true},
-    P('noiseLvl','Level',0,1,down?1:0.4,'%',{detail:true}),
+    P('noiseLvl','Level',0,1,down?0.25:0.25,'%',{detail:true}),
     P('color0','Color start',0,1,down?1:0.2,'%',{detail:true}),
     P('color1','Color end',0,1,down?0.3:1,'%',{detail:true}),
     {kind:'head',label:'Filters',detail:true},
@@ -432,21 +415,19 @@ const sweepParams=(down)=>{
 };
 const SWEEP_CHARS={
   riser:{
-    'supersaw':{},
-    'laser':{laserLvl:1,laserVoices:12,laserZap:0.55,laserBloom:0.7,sawLvl:0.15,noiseLvl:0.25,lp0:1500,lp1:16000,hp0:80,hp1:400,reso:3,interval:'2 octaves',curve:1.8,verb0:0.15,verb1:0.45,width0:0.4,width1:1},
-    'noise sweep':{laserLvl:0.2,laserZap:0.1,sawLvl:0,noiseLvl:1,color0:0.2,color1:1,lp0:300,lp1:16000,hp0:100,hp1:2000,reso:3,curve:2,verb0:0.15,verb1:0.5,suck:0.5,width0:0.3,width1:1},
-    'shepard':{laserLvl:0.3,laserStack:'fifths',engine:'shepard',sawLvl:0.75,noiseLvl:0.2,lp0:800,lp1:12000,hp0:80,hp1:300,verb0:0.2,verb1:0.5,curve:1.2},
-    'stutter build':{laserLvl:0.6,laserZap:0.5,laserStack:'major',gate:'synced',gateDepth:0.9,div0:'1/4',div1:'1/32',noiseLvl:0.5,drive0:0.1,drive1:0.5,curve:1.8},
-    'dark tension':{laserLvl:0.4,laserStack:'cluster',laserVoices:6,interval:'fifth',sawLvl:0.7,detune0:5,detune1:20,lp0:200,lp1:3500,hp0:40,hp1:200,reso:6,curve:3,verb0:0.3,verb1:0.6,width0:0.5,width1:0.8,drive0:0.2,drive1:0.6},
-    'airy':{laserLvl:0.15,laserStack:'fifths',laserZap:0,sawLvl:0.3,noiseLvl:0.9,color0:0.5,color1:1,lp0:2000,lp1:18000,hp0:600,hp1:5000,verb0:0.4,verb1:0.8,width0:0.6,width1:1,curve:1.5,suck:0.6},
+    'laser':{laserLvl:1,laserVoices:2,noiseLvl:0.1,lp0:6000,lp1:18000,hp0:20,hp1:150,reso:0.8,curve:1.5,verb0:0.08,verb1:0.3,width0:0.15,width1:0.4,suck:0.3},
+    'noise sweep':{laserLvl:0.3,laserVoices:1,laserRange:6,noiseLvl:1,color0:0.2,color1:1,lp0:300,lp1:16000,hp0:100,hp1:2000,reso:3,curve:2,verb0:0.15,verb1:0.5,suck:0.5,width0:0.3,width1:1},
+    'shepard':{laserLvl:0.35,laserStack:'fifths',laserVoices:3,sawLvl:0.75,noiseLvl:0.2,lp0:800,lp1:12000,hp0:80,hp1:300,verb0:0.2,verb1:0.5,curve:1.2},
+    'stutter build':{laserLvl:1,laserZap:0.5,laserStack:'major',laserVoices:4,gate:'synced',gateDepth:0.9,div0:'1/4',div1:'1/32',noiseLvl:0.5,lp0:2000,lp1:16000,drive0:0.1,drive1:0.5,curve:1.8},
+    'dark tension':{laserLvl:0.9,laserStack:'cluster',laserVoices:6,laserRange:5,laserFade:12,interval:'fifth',sawLvl:0.4,noiseLvl:0.3,lp0:200,lp1:3500,hp0:40,hp1:200,reso:6,curve:3,verb0:0.3,verb1:0.6,width0:0.5,width1:0.8,drive0:0.2,drive1:0.6},
+    'airy':{laserLvl:0.2,laserStack:'fifths',laserVoices:3,sawLvl:0.3,noiseLvl:0.9,color0:0.5,color1:1,lp0:2000,lp1:18000,hp0:600,hp1:5000,verb0:0.4,verb1:0.8,width0:0.6,width1:1,curve:1.5,suck:0.6},
   },
   down:{
-    'impact tail':{},
-    'laser fall':{laserLvl:1,laserVoices:10,laserZap:0.65,laserBloom:0.7,sawLvl:0.1,noiseLvl:0.25,subLvl:0.4,hitLvl:0.35,lp0:16000,lp1:1200,hp0:200,hp1:40,width0:1,width1:0.4,curve:1.6,verb0:0.25,verb1:0.6},
-    'sub drop':{laserLvl:0.25,subLvl:1,subDrop:24,subLen:2,noiseLvl:0.3,hitLvl:0.4,verb0:0.2,verb1:0.4,tail:1.5},
-    'noise fall':{laserLvl:0.15,noiseLvl:1,color0:1,color1:0.2,lp0:14000,lp1:250,hp0:1500,hp1:60,subLvl:0,hitLvl:0,verb0:0.3,verb1:0.7},
-    'synth fall':{laserLvl:0.5,laserStack:'major',sawLvl:0.8,detune0:30,detune1:8,lp0:12000,lp1:400,noiseLvl:0.4,subLvl:0.3,hitLvl:0.3,width0:1,width1:0.2},
-    'shepard down':{laserLvl:0.3,laserStack:'fifths',engine:'shepard',sawLvl:0.7,noiseLvl:0.2,subLvl:0.2,hitLvl:0.3,lp0:12000,lp1:800,verb0:0.3,verb1:0.6,curve:1.2},
+    'laser fall':{laserLvl:1,laserVoices:2,noiseLvl:0,subLvl:0,hitLvl:0,lp0:18000,lp1:12000,hp0:30,hp1:20,reso:0.8,curve:1,width0:0.3,width1:0.15,verb0:0.1,verb1:0.3,tail:1},
+    'impact tail':{laserLvl:0.35,laserVoices:1,noiseLvl:1},
+    'sub drop':{laserLvl:0.25,laserVoices:1,subLvl:1,subDrop:24,subLen:2,noiseLvl:0.3,hitLvl:0.4,verb0:0.2,verb1:0.4,tail:1.5},
+    'noise fall':{laserLvl:0.15,laserVoices:1,noiseLvl:1,color0:1,color1:0.2,lp0:14000,lp1:250,hp0:1500,hp1:60,subLvl:0,hitLvl:0,verb0:0.3,verb1:0.7},
+    'shepard down':{laserLvl:0.3,laserStack:'fifths',laserVoices:3,sawLvl:0.7,noiseLvl:0.2,subLvl:0.2,hitLvl:0.3,lp0:12000,lp1:800,verb0:0.3,verb1:0.6,curve:1.2},
   },
 };
 function sweepResolve(p,down){
@@ -456,7 +437,7 @@ function sweepResolve(p,down){
   const lim=(k,v)=>{ const d=defs.find(x=>x.k===k); return d&&d.min!=null?clamp(v,d.min,d.max):v; };
   const te=p.tension??0.5, w=p.widthX??0.5, g=p.grit??0.4, br=p.bright??0, s=p.spaceX??0.5;
   b.curve=lim('curve',b.curve*Math.pow(2,(te-0.5)*1.2)); b.gateDepth=lim('gateDepth',b.gateDepth*(0.5+te)); b.drive1=lim('drive1',b.drive1+(te-0.5)*0.5);
-  if(down){ b.width0=lim('width0',b.width0*(0.5+w)); } else { b.width1=lim('width1',b.width1*(0.5+w)); b.detune1=lim('detune1',b.detune1*(0.6+0.8*w)); }
+  if(down){ b.width0=lim('width0',b.width0*(0.5+w)); } else { b.width1=lim('width1',b.width1*(0.5+w)); }
   b.drive0=lim('drive0',b.drive0+(g-0.4)*0.4); b.drive1=lim('drive1',b.drive1+(g-0.4)*0.6); b.noiseLvl=lim('noiseLvl',b.noiseLvl*(0.6+g));
   b[down?'color0':'color1']=lim('color1',b[down?'color0':'color1']+(g-0.4)*0.4);
   const lk=down?'lp0':'lp1', hk=down?'hp0':'hp1'; b[lk]=lim(lk,b[lk]*Math.pow(2,br*1.5)); b[hk]=lim(hk,b[hk]*Math.pow(2,br));
@@ -720,15 +701,15 @@ const TYPES = {
       P('lowCut','Low cut',60,6000,400,'Hz',{log:true}),
       P('tone','Tone',2000,20000,18000,'Hz',{log:true}),
     ]},
-  riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A supersaw, laser or Shepard build with dual filters, synced stutter and a reverse suck into the drop, in your key.',
+  riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser or Shepard build with dual filters, synced stutter and a reverse suck into the drop, in your key.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
-    presets:{'Supersaw':{mode:'simple',character:'supersaw'},'Laser':{mode:'simple',character:'laser'},'Noise sweep':{mode:'simple',character:'noise sweep'},'Shepard':{mode:'simple',character:'shepard'},
+    presets:{'Laser':{mode:'simple',character:'laser'},'Noise sweep':{mode:'simple',character:'noise sweep'},'Shepard':{mode:'simple',character:'shepard'},
       'Stutter build':{mode:'simple',character:'stutter build'},'Dark tension':{mode:'simple',character:'dark tension'},'Airy':{mode:'simple',character:'airy'}},
     params:sweepParams(false)},
-  down:{label:'Downlifter',folder:'Downlifters',c:'--down',desc:'An impact tail: a hit, a laser fall, a sub drop and a noise wash falling away into a growing reverb.',
+  down:{label:'Downlifter',folder:'Downlifters',c:'--down',desc:'A laser fall, or an impact tail: a hit, a sub drop and a noise wash falling away into a growing reverb.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
-    presets:{'Impact tail':{mode:'simple',character:'impact tail'},'Laser fall':{mode:'simple',character:'laser fall'},'Sub drop':{mode:'simple',character:'sub drop'},'Noise fall':{mode:'simple',character:'noise fall'},
-      'Synth fall':{mode:'simple',character:'synth fall'},'Shepard down':{mode:'simple',character:'shepard down'}},
+    presets:{'Laser fall':{mode:'simple',character:'laser fall'},'Impact tail':{mode:'simple',character:'impact tail'},'Sub drop':{mode:'simple',character:'sub drop'},'Noise fall':{mode:'simple',character:'noise fall'},
+      'Shepard down':{mode:'simple',character:'shepard down'}},
     params:sweepParams(true)},
   impact:{label:'Impact',folder:'Impacts',c:'--impact',desc:'Sub boom, crack and a closing noise wash for drops and transitions.',
     post:{drive:0.35,space:0.4,room:2},
@@ -915,7 +896,6 @@ if(S.params.snare && !('headPitch' in S.params.snare)) delete S.params.snare;
 const fixGroup=q=>{ if(q && q.group==='world frogs'){ q.group='frogs'; q.frog=q.wfrog||'midwife'; } if(q && q.group==='wbirds'){ q.group='birds'; q.species=q.wbird||'cuckoo'; } };
 fixGroup(S.params.birds); for(const it of (S.pack||[])) if(it.type==='birds') fixGroup(it.params);
 for(const t of ['riser','down']) if(S.params[t] && !('mode' in S.params[t])) delete S.params[t];
-for(const it of (S.pack||[])) if((it.type==='riser'||it.type==='down') && it.params && !('mode' in it.params)) it.params.legacy=true;
 if(S.params.hat && 'model' in S.params.hat){ S.params.perc=S.params.hat; delete S.params.hat; }   // cymbal settings move to Perc
 else if(S.params.perc && !('model' in S.params.perc)) delete S.params.perc;                    // old FM perc settings retire
 for(const it of (S.pack||[])) if(it.type==='hat' && it.params && 'model' in it.params) it.type='perc';
@@ -1082,8 +1062,8 @@ const BUILD = {
     c.start(0); m.start(0); c.stop(len); m.stop(len);
     return len;
   },
-  riser(ctx,p,out){ return p.legacy ? sweep(ctx,p,out,true) : sweepBuild(ctx,p,out,false); },
-  down(ctx,p,out){ return p.legacy ? sweep(ctx,p,out,false) : sweepBuild(ctx,p,out,true); },
+  riser(ctx,p,out){ return sweepBuild(ctx,p,out,false); },
+  down(ctx,p,out){ return sweepBuild(ctx,p,out,true); },
   eco(ctx,p,out){
     const sr=ctx.sampleRate, {dL,dR,sL,sR,N}=ecoSignal(p,sr);
     const mk=(a,b)=>{ const bf=ctx.createBuffer(2,N,sr); bf.copyToChannel(a,0); bf.copyToChannel(b,1); const s=ctx.createBufferSource(); s.buffer=bf; s.start(0); return s; };
@@ -2228,28 +2208,19 @@ function sweepSignal(p,sr,down){
   const root=440*Math.pow(2,(NOTES.indexOf(p.key)+12*(p.octave+1)-69)/12), semis=INTERVALS[p.interval]??12;
   const shape=x=> down ? 1-Math.pow(1-x,p.curve) : Math.pow(x,p.curve);          // 0 -> 1 over the length; risers build late, downlifters move early
   const lerp=(a,b,u)=>a+(b-a)*u;
-  // ---- tonal source: widening supersaw, or a Shepard stack ----
+  // ---- tonal source: a Shepard stack ----
   const sawL=new Float32Array(Nd), sawR=new Float32Array(Nd);
   if(p.sawLvl>0){
-    if(p.engine==='shepard'){
       const K=9, oct=Math.max(1,semis/12)*(down?-1:1), lo=Math.log2(root/4), center=Math.log2(root*2), ph=new Float64Array(K).map(()=>R());
       for(let i=0;i<Nd;i++){ const x=i/Nd, sh=oct*x, w=lerp(p.width0,p.width1,shape(x));
         for(let k=0;k<K;k++){ let lf=lo+((k+sh)%K+K)%K, f=Math.pow(2,lf); if(f>sr*0.4) continue;
           const a=Math.exp(-Math.pow(lf-center,2)/(2*1.3*1.3)); ph[k]+=f/sr; ph[k]-=Math.floor(ph[k]);
           const v=(Math.sin(2*Math.PI*ph[k])+0.18*Math.sin(6*Math.PI*ph[k]))*a, pan=(k%2?1:-1)*w*0.7;
           sawL[i]+=v*(1-Math.max(0,pan)); sawR[i]+=v*(1-Math.max(0,-pan)); } }
-    } else {
-      const pos=[-1,-0.66,-0.33,0,0.33,0.66,1], ph=pos.map(()=>R());
-      for(let i=0;i<Nd;i++){ const x=i/Nd, u=shape(x), f0=root*Math.pow(2,(down?semis*(1-u):semis*u)/12), det=lerp(p.detune0,p.detune1,x), w=lerp(p.width0,p.width1,x);
-        for(let k=0;k<7;k++){ const f=f0*Math.pow(2,pos[k]*det/1200), dt=f/sr; ph[k]+=dt; if(ph[k]>=1) ph[k]-=1;
-          let v=2*ph[k]-1; const t=ph[k];                                     // polyBLEP anti-aliased saw
-          if(t<dt){ const q=t/dt; v-=q+q-q*q-1; } else if(t>1-dt){ const q=(t-1)/dt; v-=q*q+q+q+1; }
-          const pan=pos[k]*w; sawL[i]+=v*(1-Math.max(0,pan))*0.38; sawR[i]+=v*(1-Math.max(0,-pan))*0.38; } }
-    }
   }
   // ---- laser: band-limited click streams in whole-number ratios (the Harmony Voice Box engine), sweeping with the pitch ----
   const lzL=new Float32Array(Nd), lzR=new Float32Array(Nd);
-  if(p.laserLvl>0) laserStreams(p,sr,Nd,root,semis,shape,down,R,lzL,lzR);
+  if(p.laserLvl>0) laserStreams(p,sr,Nd,root,down,R,lzL,lzR);
   // ---- noise: white or ambience, color moving between pink and white, width opening or closing ----
   const nzL=new Float32Array(Nd), nzR=new Float32Array(Nd);
   if(p.noiseLvl>0){
@@ -2271,13 +2242,13 @@ function sweepSignal(p,sr,down){
   for(let i=0;i<Nd;i++){
     const x=i/Nd, u=shape(x), t=i/sr;
     if((i&15)===0){ gL=Math.tan(Math.PI*Math.min(p.lp0*Math.pow(p.lp1/p.lp0,u),sr*0.45)/sr); gH=Math.tan(Math.PI*Math.min(p.hp0*Math.pow(p.hp1/p.hp0,u),sr*0.45)/sr); }
-    let amp = down ? Math.pow(1-u,0.8) : 0.05+0.95*Math.pow(u,0.7);
+    const amp0 = down ? Math.pow(1-u,0.8) : 0.05+0.95*Math.pow(u,0.7); let amp=1;
     if(p.gate==='synced'){ const si=Math.min(stages.length-1,Math.floor(x*stages.length)), per=beat*4/stages[si], f=(t/per)%1, e=0.0015/per;
       const on = f<0.5 ? Math.min(1,f/e) : Math.max(0,1-(f-0.5)/e); amp*=1-p.gateDepth*(1-on); }
     else if(p.gate==='free'){ gph+=p.freeRate*(0.15+0.85*(down?1-u:u))/sr; amp*=1-p.gateDepth*(0.5-0.5*Math.cos(2*Math.PI*gph)); }
     const drv=lerp(p.drive0,p.drive1,u), kd=1+drv*8, td=Math.tanh(kd), vs=lerp(p.verb0,p.verb1,u);
     for(let c=0;c<2;c++){
-      let v=(c?sawR[i]:sawL[i])*p.sawLvl+(c?nzR[i]:nzL[i])*p.noiseLvl*0.5+(c?lzR[i]:lzL[i])*(p.laserLvl||0);
+      let v=((c?sawR[i]:sawL[i])*p.sawLvl+(c?nzR[i]:nzL[i])*p.noiseLvl*0.5)*amp0+(c?lzR[i]:lzL[i])*(p.laserLvl||0);
       const h=st[c][0], vh=(v-(gH+kh)*h.i1-h.i2)/(1+gH*(gH+kh)), bh=gH*vh+h.i1; h.i1=2*bh-h.i1; const lh=gH*bh+h.i2; h.i2=2*lh-h.i2; v=v-kh*bh-lh;   // high-pass
       const l=st[c][1], vl=(v-(gL+k)*l.i1-l.i2)/(1+gL*(gL+k)), bl=gL*vl+l.i1; l.i1=2*bl-l.i1; const ll=gL*bl+l.i2; l.i2=2*ll-l.i2; v=ll;      // resonant low-pass
       v*=amp; if(drv>0.001) v=Math.tanh(kd*v)/td;
@@ -2310,26 +2281,30 @@ const LZ_KH=14, LZ_OS=256, LZ_KTAB=(()=>{ const W=2*LZ_KH+1, t=new Float32Array(
     const w=0.42+0.5*Math.cos(Math.PI*x/(LZ_KH+1))+0.08*Math.cos(2*Math.PI*x/(LZ_KH+1)); t[q*W+j]=0.9*s*w; } } return t; })();
 const LZ_STACKS={'harmonic':[1,2,3,4,5,6,7,8,9,10,11,12,13,14],'major':[4,5,6,8,10,12,15,16,20,24,30,32,40,48],'dom 7':[4,5,6,7,8,10,12,14,16,20,24,28,32,40],
   'fifths':[2,3,4,6,8,12,16,24,32,48,64,96,128,192],'cluster':[8,9,10,11,12,13,14,15,16,18,20,22,24,26]};
-function laserStreams(p,sr,Nd,root,semis,shape,down,R,outL,outR){
+function laserStreams(p,sr,Nd,root,down,R,outL,outR){
+  // The lowest stream runs between root/8 and Range octaves above it, straight in log pitch (a constant
+  // number of octaves per second), like a click train pitched down in a sampler. Fade is the level change
+  // across the length, on top of the natural loss of energy as the click rate falls.
   const W=2*LZ_KH+1, pad=LZ_KH+2, L=new Float32Array(Nd+2*pad), Rr=new Float32Array(Nd+2*pad);
-  const ratios=(LZ_STACKS[p.laserStack]||LZ_STACKS.harmonic).slice(0,Math.round(p.laserVoices||8)), H=ratios.length;
-  const fb=(p.laserStack==='harmonic'||!LZ_STACKS[p.laserStack]?root/2:root/ratios[0]);
-  const beat=60/(p._bpm||S.bpm), step=beat/4, zap=p.laserZap||0, bloom=p.laserBloom??0.6, shim=p.laserShimmer??0.4;
+  const ratios=(LZ_STACKS[p.laserStack]||LZ_STACKS.harmonic).slice(0,Math.round(p.laserVoices||1)), H=ratios.length;
+  const lo=root/8, range=p.laserRange??8, fade=p.laserFade??22;
+  const beat=60/(p._bpm||S.bpm), step=beat/4, zap=p.laserZap||0, bloom=p.laserBloom||0, shim=p.laserShimmer??0.4;
   const lerp=(a,b,u)=>a+(b-a)*u, sm=x=>{ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); };
   for(let k=0;k<H;k++){
-    const rk=ratios[k]*(1+(R()-0.5)*0.006*shim), side=k%2?1:-1, lvl=1/(1+0.07*k), ent=down?0:bloom*k/Math.max(1,H-1)*0.8, ext=down?1-bloom*0.75*k/Math.max(1,H-1):1;
+    const rk=ratios[k]/ratios[0]*(k?1+(R()-0.5)*0.006*shim:1), side=k%2?1:-1, lvl=1/(1+0.15*k);
+    const ent=down?0:bloom*k/Math.max(1,H-1)*0.8, ext=down?1-bloom*0.75*k/Math.max(1,H-1):1;
     let ph=R(), vibPh=R();
     for(let i=0;i<Nd;i++){
-      const x=i/Nd, u=shape(x), t=i/sr;
-      const za=zap*(down?1-0.7*u:0.3+0.7*u), zf=(t/step)%1, zm=Math.pow(2,za*1.5*Math.exp(-zf/0.22)*(1-Math.exp(-zf/0.004)));
+      const x=i/Nd, t=i/sr;
+      const za=zap*(down?1-0.7*x:0.3+0.7*x), zf=(t/step)%1, zm=za>0?Math.pow(2,za*1.5*Math.exp(-zf/0.22)*(1-Math.exp(-zf/0.004))):1;
       vibPh+=(5+2*k%3)/sr;
-      const f=rk*fb*Math.pow(2,(down?semis*(1-u):semis*u)/12)*zm*(1+0.004*shim*Math.sin(2*Math.PI*vibPh));
+      const f=rk*lo*Math.pow(2,range*(down?1-x:x))*zm*(1+0.004*shim*Math.sin(2*Math.PI*vibPh));
       if(f>sr*0.42){ ph+=f/sr; continue; }
       const ph1=ph+f/sr, m0=Math.floor(ph), m1=Math.floor(ph1);
       if(m1>m0){
-        const env=down? sm((ext-x)/0.15)*Math.min(1,t/0.003) : sm((x-ent)/0.12);
+        const env=(down? sm((ext-x)/0.12)*Math.min(1,t/0.002)*Math.min(1,(1-x)*Nd/(0.02*sr)) : sm((x-ent)/0.12))*Math.pow(10,-fade*Math.pow(down?x:1-x,2.5)/20);
         const amp=env*lvl;
-        if(amp>1e-4){ const w=lerp(p.width0,p.width1,x), pan=side*w*(0.3+0.7*k/Math.max(1,H-1)), gl=Math.cos((pan+1)*Math.PI/4), gr=Math.sin((pan+1)*Math.PI/4);
+        if(amp>1e-5){ const w=lerp(p.width0,p.width1,x), pan=H>1?side*w*(0.3+0.7*k/Math.max(1,H-1)):0, gl=Math.cos((pan+1)*Math.PI/4), gr=Math.sin((pan+1)*Math.PI/4);
           for(let m=m0+1;m<=m1;m++){ const pos=i+(m-ph)/(ph1-ph), base=Math.floor(pos), off=Math.round((pos-base)*LZ_OS)*W, o=base+pad-LZ_KH;
             for(let j=0;j<W;j++){ const kv=LZ_KTAB[off+j]*amp; L[o+j]+=kv*gl; Rr[o+j]+=kv*gr; } } }
       }
@@ -2337,9 +2312,9 @@ function laserStreams(p,sr,Nd,root,semis,shape,down,R,outL,outR){
     }
   }
   // remove the click trains' DC, then normalize so the laser sits level with the other layers
-  const a=Math.exp(-2*Math.PI*25/sr); let pk=1e-9;
+  const a=Math.exp(-2*Math.PI*20/sr); let pk=1e-9;
   for(const [src,dst] of [[L,outL],[Rr,outR]]){ let xp=0,y=0; for(let i=0;i<Nd;i++){ const xv=src[i+pad]; y=a*(y+xv-xp); xp=xv; dst[i]=y; pk=Math.max(pk,Math.abs(y)); } }
-  const g=0.9/pk; for(let i=0;i<Nd;i++){ outL[i]=Math.tanh(outL[i]*g*1.3)/Math.tanh(1.3); outR[i]=Math.tanh(outR[i]*g*1.3)/Math.tanh(1.3); }
+  const g=0.9/pk; for(let i=0;i<Nd;i++){ outL[i]*=g; outR[i]*=g; }
 }
 
 function sweepBuild(ctx,p,out,down){
@@ -2350,38 +2325,6 @@ function sweepBuild(ctx,p,out,down){
   if(!down && q.cut){ const d=sweepDur(q); wet.gain.setValueAtTime(0.8,Math.max(0,d-0.01)); wet.gain.linearRampToValueAtTime(0,d); }
   return N/sr;
 }
-function sweep(ctx,p,out,up){
-  const dur = p.bars*240/(p._bpm||S.bpm);
-  const N = Math.max(256, Math.ceil(dur*600));
-  const fA=new Float32Array(N), cA=new Float32Array(N), aA=new Float32Array(N);
-  let phase=0; const dt=dur/(N-1);
-  for(let i=0;i<N;i++){
-    const x=i/(N-1);
-    const u = up ? Math.pow(x,p.curve) : Math.pow(1-x,p.curve);
-    fA[i] = p.root*Math.pow(2,p.semis*u/12);
-    cA[i] = p.low*Math.pow(p.high/p.low,u);
-    let a = up ? 0.02+0.98*Math.pow(u,0.6) : Math.pow(u,0.7);
-    if(p.gate>0){ const r=p.gate*(0.15+0.85*u); phase+=2*Math.PI*r*dt; a*=1-p.depth*(0.5-0.5*Math.cos(phase)); }
-    aA[i]=a;
-  }
-  // 15 ms raised-cosine fades at both ends of the sweep
-  const fk=Math.max(2,Math.ceil(0.015/dt));
-  for(let k=0;k<fk&&k<N;k++){ const g=0.5-0.5*Math.cos(Math.PI*k/fk); aA[k]*=g; aA[N-1-k]*=g; }
-  const lp=filt(ctx,'lowpass',cA[0],p.reso); lp.frequency.setValueCurveAtTime(cA,0,dur);
-  const amp=gainN(ctx,0); amp.gain.setValueCurveAtTime(aA,0,dur);
-  chain(lp,amp,out);
-  if(p.noise>0){ const n=noiseSrc(ctx,dur,p,5,1,0), g=gainN(ctx,p.noise); chain(n,g,lp); n.start(0); }
-  if(p.synth>0){
-    [[-1,-0.6],[0,0],[1,0.6]].forEach(([d,pan])=>{
-      const o=ctx.createOscillator(); o.type='sawtooth'; o.detune.value=d*p.detune;
-      o.frequency.setValueCurveAtTime(fA,0,dur);
-      const sp=ctx.createStereoPanner(); sp.pan.value=pan;
-      chain(o,gainN(ctx,p.synth*0.3),sp,lp); o.start(0); o.stop(dur);
-    });
-  }
-  return dur;
-}
-
 function makeIR(ctx,room){
   const len=Math.ceil(room*ctx.sampleRate), b=ctx.createBuffer(2,len,ctx.sampleRate);
   for(let c=0;c<2;c++){ const d=b.getChannelData(c); let lp=0;
@@ -2417,7 +2360,7 @@ function estimateLen(type,p){
     case 'clap': return (Math.round(p.bursts)-1)*p.spread+p.decay*2.4+0.02;
     case 'hat': return p.decay*2.4+0.02;
     case 'perc': return 'model' in p ? cymbalLen(p) : p.decay*2.4+0.02;
-    case 'riser': case 'down': if(p.legacy) return p.bars*240/(p._bpm||S.bpm); { const dn=type==='down'; return sweepLen(p.mode==='detailed'?p:sweepResolve(p,dn),dn); }
+    case 'riser': case 'down': { const dn=type==='down'; return sweepLen(p.mode==='detailed'?p:sweepResolve(p,dn),dn); }
     case 'impact': return Math.max(p.bDecay,p.nDecay)*2.4+0.02;
     case 'eco': return ecoLen(p);
     case 'city': return cityLen(p);
@@ -2832,10 +2775,10 @@ const INFO={
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
     tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
-    how:['<b>Synth</b>. A detuned supersaw (anti-aliased) or a Shepard tone, whose stacked octaves seem to rise forever. Both climb to a target interval in your key.','<b>Laser</b>. The click-stream engine from the Harmony Voice Box: band-limited pulse trains at low pitches, stacked in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster). The streams enter one by one, then sweep up together, and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
+    how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Shepard</b>. Stacked octaves that seem to rise forever, climbing to a target interval in your key.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Shepard mode works for builds that need to keep rising without getting higher.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
   down:{lead:'The release after a drop: a fall in your key with a sub dive.',
-    how:['The same supersaw, laser or Shepard engine as the riser, falling instead of rising.','<b>Laser</b>. Click streams in whole-number ratios dive together, the top streams dropping out first, with synced zaps that fade as it falls.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
+    how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to slow ticks, fading as it goes. More streams can stack in whole-number ratios.','<b>Shepard</b>. The riser\'s endless octave stack, falling instead of rising.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
     tips:['A two-octave fall over one bar is a classic transition; shorter falls work as fills.'],src:''},
   impact:{lead:'A hit for drops and transitions: boom, crack and wash.',
     how:['<b>Boom</b>. A sine sweeping down from a start pitch to an end pitch, with a long decay.','<b>Crack</b>. A sharp broadband transient on top.','<b>Wash</b>. Noise from the generated ambience with a filter closing over its decay.','Drive and a large room glue it together.'],
