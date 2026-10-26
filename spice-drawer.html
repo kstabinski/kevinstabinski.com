@@ -339,9 +339,9 @@ const POST = [
 
 /* ---------- risers & downlifters: parameters, characters and the simple-mode resolver ---------- */
 const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const SWEEP_MACROS=new Set(['mode','character','tension','widthX','grit','bright','spaceX','laserX','bars','key','octave','seed','noiseType','amb','ambMotion','ambEvents']);
+const SWEEP_MACROS=new Set(['mode','character','tension','widthX','grit','bright','spaceX','laserX','bars','key','octave','seed']);
 const sweepParams=(down)=>{
-  const chars=down?['laser fall','impact tail','sub drop','noise fall']:['laser','noise sweep','stutter build','dark tension','airy'];
+  const chars=down?['laser fall','impact tail','sub drop','noise fall']:['laser','noise sweep','dark tension','airy'];
   const L=[
     {k:'mode',label:'Controls',kind:'sel',opts:['simple','detailed'],def:'simple',lock:true,rebuild:true,
       onset:(p,prev,o)=>{ if(o==='detailed'&&prev!=='detailed') Object.assign(p,sweepResolve({...p,mode:'simple'},down),{mode:'detailed'}); }},
@@ -356,7 +356,6 @@ const sweepParams=(down)=>{
     {k:'key',label:'Key',kind:'sel',opts:NOTES,def:'A',lock:true},
     P('octave','Octave',1,5,2,'n',{step:1,lock:true}),
     P('seed','Variation',0,999,7,'seed',{step:1}),
-    ...AMB('wind',false),
     {kind:'head',label:'Shape',detail:true},
     P('curve','Curve',0.5,5,down?2:2.2,'x',{detail:true}),
     {kind:'head',label:'Laser',detail:true},
@@ -378,13 +377,7 @@ const sweepParams=(down)=>{
     P('lp1','Low-pass end',150,18000,down?300:14000,'Hz',{log:true,detail:true}),
     P('hp0','High-pass start',20,5000,down?400:60,'Hz',{log:true,detail:true}),
     P('hp1','High-pass end',20,5000,down?40:600,'Hz',{log:true,detail:true}),
-    P('reso','Resonance',0.5,10,2,'Q',{log:true,detail:true}),
-    {kind:'head',label:'Stutter',detail:true},
-    {k:'gate',label:'Stutter',kind:'sel',opts:['off','synced','free'],def:'off',rebuild:true,detail:true},
-    P('gateDepth','Depth',0,1,0.85,'%',{detail:true,when:p=>p.gate!=='off'}),
-    {k:'div0',label:down?'Slows to':'Starts at',kind:'sel',opts:['1/4','1/8','1/16'],def:'1/4',detail:true,when:p=>p.gate==='synced'},
-    {k:'div1',label:down?'Starts at':'Ends at',kind:'sel',opts:['1/16','1/32','1/64'],def:'1/32',detail:true,when:p=>p.gate==='synced'},
-    P('freeRate','Rate',1,32,12,'Hz',{detail:true,when:p=>p.gate==='free'}),
+    P('reso','Resonance',0.5,10,3.5,'Q',{log:true,detail:true}),
     {kind:'head',label:'Movement',detail:true},
     P('width0','Width start',0,1,down?1:0.2,'%',{detail:true}),
     P('width1','Width end',0,1,down?0.3:1,'%',{detail:true}),
@@ -413,8 +406,7 @@ const sweepParams=(down)=>{
 const SWEEP_CHARS={
   riser:{
     'laser':{laserLvl:1,laserVoices:2,noiseLvl:0.1,lp0:6000,lp1:18000,hp0:20,hp1:150,reso:0.8,curve:1.5,verb0:0.08,verb1:0.3,width0:0.15,width1:0.4,suck:0.3},
-    'noise sweep':{laserLvl:0.3,laserVoices:1,laserRange:6,noiseLvl:1,color0:0.2,color1:1,lp0:300,lp1:16000,hp0:100,hp1:2000,reso:3,curve:2,verb0:0.15,verb1:0.5,suck:0.5,width0:0.3,width1:1},
-    'stutter build':{laserLvl:1,laserZap:0.5,laserVoices:1,gate:'synced',gateDepth:0.9,div0:'1/4',div1:'1/32',noiseLvl:0.5,lp0:2000,lp1:16000,drive0:0.1,drive1:0.5,curve:1.8},
+    'noise sweep':{laserLvl:0.3,laserVoices:1,laserRange:6,noiseLvl:1,color0:0.2,color1:1,lp0:300,lp1:16000,hp0:100,hp1:2000,reso:5,curve:2,verb0:0.15,verb1:0.5,suck:0.5,width0:0.3,width1:1},
     'dark tension':{laserLvl:0.9,laserVoices:1,laserRange:5,laserFade:12,noiseLvl:0.3,lp0:200,lp1:3500,hp0:40,hp1:200,reso:6,curve:3,verb0:0.3,verb1:0.6,width0:0.5,width1:0.8,drive0:0.2,drive1:0.6},
     'airy':{laserLvl:0.2,laserVoices:1,noiseLvl:0.9,color0:0.5,color1:1,lp0:2000,lp1:18000,hp0:600,hp1:5000,verb0:0.4,verb1:0.8,width0:0.6,width1:1,curve:1.5,suck:0.6},
   },
@@ -431,7 +423,7 @@ function sweepResolve(p,down){
   const b={...raw,...(SWEEP_CHARS[t][p.character]||{})};
   const lim=(k,v)=>{ const d=defs.find(x=>x.k===k); return d&&d.min!=null?clamp(v,d.min,d.max):v; };
   const te=p.tension??0.5, w=p.widthX??0.5, g=p.grit??0.4, br=p.bright??0, s=p.spaceX??0.5;
-  b.curve=lim('curve',b.curve*Math.pow(2,(te-0.5)*1.2)); b.gateDepth=lim('gateDepth',b.gateDepth*(0.5+te)); b.drive1=lim('drive1',b.drive1+(te-0.5)*0.5);
+  b.curve=lim('curve',b.curve*Math.pow(2,(te-0.5)*1.2)); b.drive1=lim('drive1',b.drive1+(te-0.5)*0.5);
   if(down){ b.width0=lim('width0',b.width0*(0.5+w)); } else { b.width1=lim('width1',b.width1*(0.5+w)); }
   b.drive0=lim('drive0',b.drive0+(g-0.4)*0.4); b.drive1=lim('drive1',b.drive1+(g-0.4)*0.6); b.noiseLvl=lim('noiseLvl',b.noiseLvl*(0.6+g));
   b[down?'color0':'color1']=lim('color1',b[down?'color0':'color1']+(g-0.4)*0.4);
@@ -695,10 +687,9 @@ const TYPES = {
       P('lowCut','Low cut',60,6000,400,'Hz',{log:true}),
       P('tone','Tone',2000,20000,18000,'Hz',{log:true}),
     ]},
-  riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser build with dual filters, synced stutter and a reverse suck into the drop, in your key.',
+  riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser build with a steady resonant noise sweep and a reverse suck into the drop, in your key.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
-    presets:{'Laser':{mode:'simple',character:'laser'},'Noise sweep':{mode:'simple',character:'noise sweep'},
-      'Stutter build':{mode:'simple',character:'stutter build'},'Dark tension':{mode:'simple',character:'dark tension'},'Airy':{mode:'simple',character:'airy'}},
+    presets:{'Laser':{mode:'simple',character:'laser'},'Noise sweep':{mode:'simple',character:'noise sweep'},'Dark tension':{mode:'simple',character:'dark tension'},'Airy':{mode:'simple',character:'airy'}},
     params:sweepParams(false)},
   down:{label:'Downlifter',folder:'Downlifters',c:'--down',desc:'A laser fall, or an impact tail: a hit, a sub drop and a noise wash falling away into a growing reverb.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
@@ -2204,37 +2195,30 @@ function sweepSignal(p,sr,down){
   // ---- laser: band-limited click streams in whole-number ratios (the Harmony Voice Box engine), sweeping with the pitch ----
   const lzL=new Float32Array(Nd), lzR=new Float32Array(Nd);
   if(p.laserLvl>0) laserStreams(p,sr,Nd,root,down,R,lzL,lzR);
-  // ---- noise: white or ambience, color moving between pink and white, width opening or closing ----
+  // ---- noise: steady white/pink noise (no random gusts), color moving between pink and white, width opening or closing ----
   const nzL=new Float32Array(Nd), nzR=new Float32Array(Nd);
   if(p.noiseLvl>0){
-    const amb=p.noiseType==='ambience', sd=(p.seed|0)*7919;
-    const a=amb?ambience(Nd,sr,p,sd+61,sd+62,0.8):null, b=amb?ambience(Nd,sr,p,sd+61,sd+63,0.8):null;
     const pk=[0,0].map(()=>({b0:0,b1:0,b2:0,b3:0,b4:0,b5:0,b6:0}));
     const pinkStep=(s,w)=>{ s.b0=0.99886*s.b0+w*0.0555179; s.b1=0.99332*s.b1+w*0.0750759; s.b2=0.969*s.b2+w*0.153852; s.b3=0.8665*s.b3+w*0.3104856; s.b4=0.55*s.b4+w*0.5329522; s.b5=-0.7616*s.b5-w*0.016898; const o=(s.b0+s.b1+s.b2+s.b3+s.b4+s.b5+s.b6+w*0.5362)*0.11; s.b6=w*0.115926; return o; };
     for(let i=0;i<Nd;i++){ const x=i/Nd, col=lerp(p.color0,p.color1,x), w=lerp(p.width0,p.width1,x);
-      const wa=a?a[i]*1.73:n2(), wb=b?b[i]*1.73:n2();
+      const wa=n2(), wb=n2();
       const ca=wa*col*0.6+pinkStep(pk[0],wa)*(1-col)*2, cb=wb*col*0.6+pinkStep(pk[1],wb)*(1-col)*2, m=(ca+cb)/2;
       nzL[i]=m+w*(ca-m); nzR[i]=m+w*(cb-m); }
   }
-  // ---- filters, amplitude, stutter, drive ----
-  const beat=60/(p._bpm||S.bpm), divs=['1/4','1/8','1/16','1/32','1/64'];
-  let stages=[]; if(p.gate==='synced'){ const a=divs.indexOf(p.div0), b=divs.indexOf(p.div1); for(let k=Math.min(a,b);k<=Math.max(a,b);k++) stages.push(+divs[k].split('/')[1]); if(down) stages.reverse(); }
+  // ---- filters, amplitude, drive ----
   const svf=()=>({i1:0,i2:0});
   const st=[[svf(),svf()],[svf(),svf()]];
-  let gH=0,gL=0,k=1/p.reso, kh=1/0.707, gph=0;
+  let gH=0,gL=0,k=1/p.reso, kh=1/0.707;
   for(let i=0;i<Nd;i++){
     const x=i/Nd, u=shape(x), t=i/sr;
-    if((i&15)===0){ gL=Math.tan(Math.PI*Math.min(p.lp0*Math.pow(p.lp1/p.lp0,u),sr*0.45)/sr); gH=Math.tan(Math.PI*Math.min(p.hp0*Math.pow(p.hp1/p.hp0,u),sr*0.45)/sr); }
-    const amp0 = down ? Math.pow(1-u,0.8) : 0.05+0.95*Math.pow(u,0.7); let amp=1;
-    if(p.gate==='synced'){ const si=Math.min(stages.length-1,Math.floor(x*stages.length)), per=beat*4/stages[si], f=(t/per)%1, e=0.0015/per;
-      const on = f<0.5 ? Math.min(1,f/e) : Math.max(0,1-(f-0.5)/e); amp*=1-p.gateDepth*(1-on); }
-    else if(p.gate==='free'){ gph+=p.freeRate*(0.15+0.85*(down?1-u:u))/sr; amp*=1-p.gateDepth*(0.5-0.5*Math.cos(2*Math.PI*gph)); }
+    if((i&15)===0){ gL=Math.tan(Math.PI*Math.min(p.lp0*Math.pow(p.lp1/p.lp0,x),sr*0.45)/sr); gH=Math.tan(Math.PI*Math.min(p.hp0*Math.pow(p.hp1/p.hp0,x),sr*0.45)/sr); }   // steady sweep: constant octaves per second
+    const amp0 = down ? Math.pow(1-u,0.8) : 0.05+0.95*Math.pow(u,0.7);
     const drv=lerp(p.drive0,p.drive1,u), kd=1+drv*8, td=Math.tanh(kd), vs=lerp(p.verb0,p.verb1,u);
     for(let c=0;c<2;c++){
       let v=(c?nzR[i]:nzL[i])*p.noiseLvl*0.5*amp0+(c?lzR[i]:lzL[i])*(p.laserLvl||0);
       const h=st[c][0], vh=(v-(gH+kh)*h.i1-h.i2)/(1+gH*(gH+kh)), bh=gH*vh+h.i1; h.i1=2*bh-h.i1; const lh=gH*bh+h.i2; h.i2=2*lh-h.i2; v=v-kh*bh-lh;   // high-pass
       const l=st[c][1], vl=(v-(gL+k)*l.i1-l.i2)/(1+gL*(gL+k)), bl=gL*vl+l.i1; l.i1=2*bl-l.i1; const ll=gL*bl+l.i2; l.i2=2*ll-l.i2; v=ll;      // resonant low-pass
-      v*=amp; if(drv>0.001) v=Math.tanh(kd*v)/td;
+      if(drv>0.001) v=Math.tanh(kd*v)/td;
       if(c){ dR[i]+=v; sR[i]+=v*vs; } else { dL[i]+=v; sL[i]+=v*vs; }
     }
   }
@@ -2766,10 +2750,10 @@ const INFO={
     how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
     tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Inspired by Zion Jaymes: <a href="https://youtu.be/netcpYINyBQ" target="_blank" rel="noopener">his percussion and cymbal design video</a> (resonators and the dispersion loop).'},
   riser:{lead:'Tension that rises into the drop, in your key and tempo.',
-    how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
+    how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. Steady noise runs through two filters, a high-pass that rises and a resonant low-pass that opens, both sweeping at a constant number of octaves per second so the sweep moves evenly from start to finish.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
   down:{lead:'The release after a drop: a fall in your key with a sub dive.',
-    how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to a low buzz, fading as it goes. <b>Smooth</b> rounds off the clicks as the pitch drops, so the low end turns into soft pulses instead of sharp ticks. More streams can stack in whole-number ratios.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
+    how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to a low buzz, fading as it goes. <b>Smooth</b> rounds off the clicks as the pitch drops, so the low end turns into soft pulses instead of sharp ticks. More streams can stack in whole-number ratios.','A resonant filter closes evenly over steady noise as it falls, with a reverb tail.','An optional sub dive drops a sine into the low end.'],
     tips:['A two-octave fall over one bar is a classic transition; shorter falls work as fills.'],src:''},
   impact:{lead:'A hit for drops and transitions: boom, crack and wash.',
     how:['<b>Boom</b>. A sine sweeping down from a start pitch to an end pitch, with a long decay.','<b>Crack</b>. A sharp broadband transient on top.','<b>Wash</b>. Noise from the generated ambience with a filter closing over its decay.','Drive and a large room glue it together.'],
