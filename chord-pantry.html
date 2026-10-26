@@ -380,7 +380,7 @@ const CHROM={maj:[['I','bII','bIII','IV'],['I','bVI','V','IV'],['I','bIII','IV',
 
 /* ---------------- state ---------------- */
 const KEY='chordpantry.v1';
-const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'hold',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,flow:'loop',inv:'root',flip:'off',
+const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'hold',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,flow:'loop',inv:'root',flip:'off',voices:'auto',
   dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off',room:false};
 let S={set:{...DEF},prog:null,pantry:[]};
 const held=set=>({...DEF,...set,rhythm:'hold',swing:0,artic:set&&set.artic==='staccato'?'tenuto':(set&&set.artic)||DEF.artic});
@@ -427,7 +427,7 @@ function functionalSeq(st,R,minor){
     const cadence = i===n-1 || (n===8&&i===3);
     const prev=seq[i-1], w={...(cadence?{D:0.7,PD:0.3}:FLOW[prev.fn])}; if(prev.fn==='D'){ delete w.D; if(cadence) w.PD=1; }   // no V twice in a row
     const fn=pickW(R,Object.entries(w))[0];
-    let c; for(let k=0;k<6;k++){ let opts=F[fn].map(x=>[x[0],x[1],null,x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]);
+    let c; for(let k=0;k<6;k++){ let opts=F[fn].filter(x=>x[0]!==prev.r).map(x=>[x[0],x[1],null,x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]); if(!opts.length) opts=F[fn].map(x=>[x[0],x[1],null,x[2]]);
       const x=pickW(R,opts); c={r:x[0],fam:x[1],force:x[2],fn}; if(c.r!==prev.r) break; }
     seq.push(c);
   }
@@ -519,11 +519,13 @@ function pickQ(ch,st){
 function colorize(p,st){ for(const c of p.chords) c.q=pickQ(c,st); voice(p,st); }
 
 /* ---------------- voicing ----------------
-   Every chord gets the same four upper voices, so each voice is a real line. The whole loop (including the
+   Every chord gets the same number of upper voices (3-6; Auto follows Colour), so each voice is a real line. The whole loop (including the
    turn from the last chord back to the first) is voiced at once by dynamic programming: voices take the
    shortest paths, common tones hold, big leaps cost a lot, voices never cross, and parallel fifths/octaves
    (with the bass too) are avoided. */
+const voiceCount=st=>st.voices&&st.voices!=='auto' ? +st.voices : st.color<0.5?4 : st.color<0.76?5 : 6;
 function toneSet(ch,st){
+  const N=voiceCount(st);
   const iv=Q[ch.q].iv;
   const third=iv.find(x=>x===3||x===4) ?? iv.find(x=>x===2||x===5);
   const fifth=iv.find(x=>x===6||x===7||x===8);
@@ -532,40 +534,43 @@ function toneSet(ch,st){
   const ext=iv.filter(x=>x>=13).sort((a,b)=>b-a);                 // 13th, 11th, 9th: the colour
   const pri=[]; if(third!=null) pri.push(third); if(sev!=null) pri.push(sev); pri.push(...ext);
   if(fifth!=null) pri.push(fifth);
-  const rootless = st.bass && iv.length>=5;                        // the bass has the root
+  const others=new Set(pri.map(x=>x%12)); others.delete(0);
+  const rootless = st.bass && others.size>=N;                       // the bass has the root when every voice is busy with colour
   if(!rootless) pri.splice(Math.min(pri.length,2),0,0);           // keep the root early in plain chords
   const pcs=[]; for(const x of pri){ const pc=x%12; if(!pcs.includes(pc)) pcs.push(pc); }
-  const tones=pcs.slice(0,4), dbl=[0,fifth??0,third??0]; let k=0;
-  while(tones.length<4){ tones.push(dbl[k%3]%12); k++; }           // triads: double root, then fifth
+  const tones=pcs.slice(0,N), dbl=[0,fifth??0,0,fifth??0,third??0]; let k=0;
+  while(tones.length<N){ tones.push(dbl[k%dbl.length]%12); k++; }  // simpler chords: double the root, then the fifth
   return tones;
 }
 function vCands(ch,st,center){
-  const root=(st.key+ch.r)%12, T=toneSet(ch,st).map(t=>(root+t)%12);
-  const lo=Math.max(46,Math.round(center-12)), hi=Math.round(center+16), opts=T.map(pc=>{ const o=[]; for(let n=lo;n<=hi;n++) if(n%12===pc) o.push(n); return o; });
+  const root=(st.key+ch.r)%12, T=toneSet(ch,st).map(t=>(root+t)%12), N=T.length;
+  const lo=Math.max(46,Math.round(center-12)), hi=Math.round(center+16+(N-4)*5), opts=T.map(pc=>{ const o=[]; for(let n=lo;n<=hi;n++) if(n%12===pc) o.push(n); return o; });
   const out=[], seen=new Set();
-  const rec=(i,acc)=>{ if(i===4){ const v=acc.slice().sort((a,b)=>a-b); for(let k=1;k<4;k++) if(v[k]===v[k-1]) return;
+  const rec=(i,acc)=>{ if(i===N){ const v=acc.slice().sort((a,b)=>a-b); for(let k=1;k<N;k++) if(v[k]===v[k-1]) return;
       const key=v.join(','); if(!seen.has(key)){ seen.add(key); out.push(v); } return; }
     for(const n of opts[i]) rec(i+1,[...acc,n]); };
   rec(0,[]);
   return out;
 }
 function vStatic(v,st,center,bass){
-  let c=0; const sp=v[3]-v[0];
-  if(st.voicing==='close') c+= sp>12 ? (sp-12)*2.5 : 0;
-  else if(st.voicing==='open') c+= sp<12 ? (12-sp)*1.5 : sp>20 ? (sp-20)*2 : 0;
-  else c+= sp<16 ? (16-sp)*1.5 : sp>28 ? (sp-28)*2 : 0;
-  for(let i=0;i<3;i++){ const g=v[i+1]-v[i]; if(g>12) c+=6+(g-12); if(v[i]<52&&g<=4) c+=8; if(g===1&&v[i]<60) c+=4; }
-  c+=0.25*Math.abs(v.reduce((a,b)=>a+b,0)/4-center);
+  let c=0; const N=v.length, sp=v[N-1]-v[0], x=(N-4)*4;             // more voices need a little more room
+  if(st.voicing==='close') c+= sp>12+x ? (sp-12-x)*2.5 : 0;
+  else if(st.voicing==='open') c+= sp<12+x ? (12+x-sp)*1.5 : sp>20+x ? (sp-20-x)*2 : 0;
+  else c+= sp<16+x ? (16+x-sp)*1.5 : sp>28+x ? (sp-28-x)*2 : 0;
+  for(let i=0;i<N-1;i++){ const g=v[i+1]-v[i]; if(g>12) c+=6+(g-12); if(v[i]<52&&g<=4) c+=8; if(g===1&&v[i]<60) c+=4; if(g===1&&i>=N-3) c+=3; }
+  c+=0.25*Math.abs(v.reduce((a,b)=>a+b,0)/N-center);
   if(bass!=null && v[0]-bass<5) c+=6;
   return c;
 }
 function vMove(a,b,ba,bb){
   let c=0;
-  for(let i=0;i<4;i++){ const d=Math.abs(b[i]-a[i]); c+=d; if(d>5) c+=(d-5)*2.5; if(d>7) c+=30; }
-  const dt=Math.abs(b[3]-a[3]); if(dt>4) c+=(dt-4)*1.5;            // keep the top line singable
-  const A=ba!=null?[ba,...a]:a, B=bb!=null?[bb,...b]:b;
+  const N=Math.min(a.length,b.length);
+  for(let i=0;i<N;i++){ const d=Math.abs(b[i]-a[i]); c+=d; if(d>5) c+=(d-5)*2.5; if(d>7) c+=30; }
+  const dt=Math.abs(b[b.length-1]-a[a.length-1]); if(dt>4) c+=(dt-4)*1.5;   // keep the top line singable
+  const A=ba!=null?[ba,...a.slice(0,N)]:a.slice(0,N), B=bb!=null?[bb,...b.slice(0,N)]:b.slice(0,N);
   for(let i=0;i<A.length;i++) for(let j=i+1;j<A.length;j++){
     const di=B[i]-A[i], dj=B[j]-A[j]; if(!di||!dj||Math.sign(di)!==Math.sign(dj)) continue;
+    if(i>0 && (A[j]-A[i])%12===0 && (B[j]-B[i])%12===0) continue;  // the same note doubled an octave apart is reinforcement, not two lines
     const x=((A[j]-A[i])%12+12)%12, y=((B[j]-B[i])%12+12)%12;
     if(x===y&&(x===7||x===0)) c+=60;                                // parallel fifths / octaves
   }
@@ -574,7 +579,7 @@ function vMove(a,b,ba,bb){
 function voiceUpper(p,st){
   const cs=p.chords, n=cs.length, center=54+st.register*14;
   const C=cs.map(ch=>{ let v=vCands(ch,st,center); if(!v.length) v=[toneSet(ch,st).map(t=>60+((st.key+ch.r+t)%12)).sort((a,b)=>a-b)];
-    const sc=v.map(x=>vStatic(x,st,center,st.bass?ch.bass:null)); const idx=[...v.keys()].sort((a,b)=>sc[a]-sc[b]).slice(0,60);
+    const sc=v.map(x=>vStatic(x,st,center,st.bass?ch.bass:null)); const idx=[...v.keys()].sort((a,b)=>sc[a]-sc[b]).slice(0,voiceCount(st)>=6?45:60);
     return {v:idx.map(k=>v[k]),s:idx.map(k=>sc[k])}; });
   const bass=i=>st.bass?cs[i].bass:null;
   if(n===1){ cs[0].notes=C[0].v[0]; return; }
@@ -878,7 +883,8 @@ const PARAMS=[
   {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed chords, secondary dominants, ii–Vs, tritone subs, passing diminished chords and V alternatives.'},
   {k:'flip',label:'Modal flip',kind:'seg',opts:['off','last','first','random'],labels:{off:'Off',last:'Last chord',first:'First chord',random:'Random'},act:'regen',hint:'Modal interchange: one chord swaps between major and minor on the same root, like a minor loop that lands on a major I. Every card also has a flip button.'},
   {k:'inv',label:'Inversions',kind:'seg',opts:['root','smooth'],labels:{root:'Root position',smooth:'Smooth bass'},act:'voice',hint:'First inversions (like G/B) where they let the bass walk by step.'},
-  {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice',hint:'Four voices that move as little as possible from chord to chord.'},
+  {k:'voices',label:'Voices',kind:'seg',opts:['auto','3','4','5','6'],labels:{auto:'Auto','3':'3','4':'4','5':'5','6':'6'},act:'voice',hint:'Upper voices per chord, the same all the way through. Auto follows Colour: 4 for triads and 7ths, 5 for 9ths, 6 for 11ths and 13ths.'},
+  {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice',hint:'How wide the chord is spread. Voices always move as little as possible from chord to chord.'},
   {k:'register',label:'Register',kind:'range',min:0,max:1,fmt:v=>v<0.33?'low':v<0.67?'mid':'high',act:'voice'},
   {k:'bass',label:'Bass line',kind:'seg',opts:[true,false],labels:{true:'On',false:'Off'},act:'voice'},
   {kind:'head',label:'Performance',hint:'How a player would perform it. All of this is written into the MIDI.'},
