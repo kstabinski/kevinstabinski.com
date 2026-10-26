@@ -59,6 +59,24 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .scope-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .scope-head h2{margin:0;font-family:var(--f-display);font-size:22px;font-weight:400;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
 .scope-head h2 .dot{width:12px;height:12px}
+.info-btn{border:1px solid var(--line);background:transparent;color:var(--muted);width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;cursor:pointer;padding:0;margin-left:2px}
+.info-btn:hover{color:var(--ink);border-color:var(--ink)}
+.info-btn svg{width:16px;height:16px}
+dialog.info{border:1px solid var(--line);border-radius:3px;background:var(--panel);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:min(80vh,760px);box-shadow:0 18px 60px rgba(0,0,0,.35)}
+dialog.info::backdrop{background:rgba(10,12,16,.55)}
+.info-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.info-head h2{margin:0;font-family:var(--f-display);font-size:24px;line-height:1.15;display:flex;align-items:center;gap:10px}
+.info-head h2 .dot{width:12px;height:12px;flex:none}
+.info-head p{margin:6px 0 0;color:var(--muted);font-size:13.5px;max-width:52ch}
+.info-close{border:1px solid var(--line);background:transparent;color:var(--muted);width:32px;height:32px;border-radius:2px;cursor:pointer;font-size:15px;flex:none}
+.info-close:hover{color:var(--ink);border-color:var(--ink)}
+.info-body{padding:14px 20px 22px;overflow:auto;font-size:14px;line-height:1.6}
+.info-body h3{margin:16px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.info-body h3:first-child{margin-top:4px}
+.info-body ol,.info-body ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px}
+.info-body li b{font-weight:600}
+.info-body p{margin:0 0 8px;max-width:62ch}
+.info-body .src{font-size:12.5px;color:var(--muted)}
 .desc{color:var(--muted);font-size:13px;margin:0}
 .readout{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;gap:14px}
 .wave{width:100%;height:150px;display:block;background:var(--sunk);border-radius:3px;cursor:pointer}
@@ -218,7 +236,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       <div class="scope">
         <div class="scope-head">
           <div>
-            <h2 id="tName"><span class="dot"></span><span></span></h2>
+            <h2 id="tName"><span class="dot"></span><span class="tlabel"></span><button type="button" class="info-btn" id="bInfo" aria-haspopup="dialog" aria-label="How this sound is made" title="How this sound is made"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="0.6" fill="currentColor"/></svg></button></h2>
             <p class="desc" id="tDesc"></p>
           </div>
           <div class="readout"><span id="rLen">—</span><span id="rPk">—</span></div>
@@ -290,6 +308,10 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       <p class="foot-meta">&copy; 2026 KSTAB LLC. All rights reserved.</p>
     </footer>
 </main>
+<dialog class="info" id="infoDlg" aria-labelledby="infoTitle">
+  <div class="info-head"><div><h2 id="infoTitle"></h2><p id="infoLead"></p></div><button type="button" class="info-close" id="infoClose" aria-label="Close">✕</button></div>
+  <div class="info-body" id="infoBody"></div>
+</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -360,8 +382,8 @@ const sweepParams=(down)=>{
     P('detune1','Detune end',0,60,down?8:35,'ct',{step:1,detail:true}),
     {kind:'head',label:'Noise',detail:true},
     P('noiseLvl','Level',0,1,down?1:0.4,'%',{detail:true}),
-    P('color0','Colour start',0,1,down?1:0.2,'%',{detail:true}),
-    P('color1','Colour end',0,1,down?0.3:1,'%',{detail:true}),
+    P('color0','Color start',0,1,down?1:0.2,'%',{detail:true}),
+    P('color1','Color end',0,1,down?0.3:1,'%',{detail:true}),
     {kind:'head',label:'Filters',detail:true},
     P('lp0','Low-pass start',150,18000,down?16000:400,'Hz',{log:true,detail:true}),
     P('lp1','Low-pass end',150,18000,down?300:14000,'Hz',{log:true,detail:true}),
@@ -741,7 +763,7 @@ const TYPES = {
       {k:'frogType',label:'Frog species',kind:'sel',opts:['eastern','world','generic'],def:'eastern',rebuild:true,when:p=>p.frogs>0},
       P('frogPitch','Frog pitch',100,600,220,'Hz',{log:true,when:p=>p.frogs>0&&p.frogType==='generic'}),
       P('aliens','Aliens',0,1,0,'%'),
-      {kind:'head',label:'Behaviour'},
+      {kind:'head',label:'Behavior'},
       P('chance','Call chance',0.1,1,0.5,'%'),
       P('vary','Variation depth',0,1,0.5,'%'),
       P('chorus','Call and answer',0,1,0.4,'%'),
@@ -759,7 +781,7 @@ const TYPES = {
       P('tone','Tone',1000,18000,6500,'Hz',{log:true}),
       P('lowCut','Low cut',20,300,40,'Hz',{log:true}),
     ]},
-  birds:{label:'Animals',folder:'Animals',c:'--birds',desc:'Birds and frogs from the eastern US and around the world, each modelled from its real song or call structure. Add individuals for a chorus.',
+  birds:{label:'Animals',folder:'Animals',c:'--birds',desc:'Birds and frogs from the eastern US and around the world, each modeled from its real song or call structure. Add individuals for a chorus.',
     post:{drive:0,space:0,room:1.5},
     presets:{
       'Songbird':{group:'birds',species:'cardinal',individuals:1},
@@ -1390,7 +1412,7 @@ function ecoSignal(p,sr){
   const addBed=(L,R2,dry=1,send=0.3)=>{ for(let i=0;i<L.length&&i<N;i++){ dL[i]+=L[i]*dry; dR[i]+=R2[i]*dry; sL[i]+=L[i]*send*p.forest; sR[i]+=R2[i]*send*p.forest; } };
 
   // ===== GEOPHONY =====
-  // wind: a low pink whoosh plus a higher band whose noise colour drifts between pink and brown
+  // wind: a low pink whoosh plus a higher band whose noise color drifts between pink and brown
   if(p.wind>0){
     const wl=new Float32Array(NB), wr=new Float32Array(NB);
     for(let ch=0;ch<2;ch++){
@@ -1687,7 +1709,7 @@ function makeStreetIR(ctx,p){
   return b;
 }
 
-/* ---------- Eastern US backyard birds: each species' song and call, modelled from its documented structure ---------- */
+/* ---------- Eastern US backyard birds: each species' song and call, modeled from its documented structure ---------- */
 // one performance (a song or a call) as a mono buffer. o: {pitch (st), speed (x), call (bool)}
 function birdVoice(sp,R,sr,o={}){
   const ps=Math.pow(2,(o.pitch||0)/12), ts=1/(o.speed||1), rr=(a,b)=>a+(b-a)*R(), n2=()=>R()*2-1, pick=a=>a[Math.floor(R()*a.length)];
@@ -1919,7 +1941,7 @@ function birdsSignal(p,sr){
   }
   const val={dL,dR,sL,sR,N}; birdCache.key=key; birdCache.val=val; return val;
 }
-/* ---------- Eastern frogs and toads: each species' advertisement call, modelled from its documented structure ---------- */
+/* ---------- Eastern frogs and toads: each species' advertisement call, modeled from its documented structure ---------- */
 function frogVoice(sp,R,sr,o={}){
   const ps=Math.pow(2,(o.pitch||0)/12), ts=1/(o.speed||1), rr=(a,b)=>a+(b-a)*R(), n2=()=>R()*2-1;
   const out=[]; let t=0;
@@ -2003,7 +2025,7 @@ function frogVoice(sp,R,sr,o={}){
   return b;
 }
 
-const MODES=[ // ratio, weight (centre-ish strike), air-loaded circular membrane
+const MODES=[ // ratio, weight (center-ish strike), air-loaded circular membrane
   [1.00,1.00],[1.50,0.30],[1.98,0.22],[2.18,0.50],[2.56,0.14],[2.80,0.28],[3.06,0.10],[3.38,0.12],[3.48,0.24],[3.60,0.08],[4.10,0.10],[4.60,0.08]];
 const BEATER={ felt:{tc:0.0042,bright:2200,click:0.25}, wood:{tc:0.0016,bright:6000,click:0.6}, plastic:{tc:0.0009,bright:9500,click:0.9} };
 
@@ -2198,10 +2220,10 @@ function sweepSignal(p,sr,down){
   const sawL=new Float32Array(Nd), sawR=new Float32Array(Nd);
   if(p.sawLvl>0){
     if(p.engine==='shepard'){
-      const K=9, oct=Math.max(1,semis/12)*(down?-1:1), lo=Math.log2(root/4), centre=Math.log2(root*2), ph=new Float64Array(K).map(()=>R());
+      const K=9, oct=Math.max(1,semis/12)*(down?-1:1), lo=Math.log2(root/4), center=Math.log2(root*2), ph=new Float64Array(K).map(()=>R());
       for(let i=0;i<Nd;i++){ const x=i/Nd, sh=oct*x, w=lerp(p.width0,p.width1,shape(x));
         for(let k=0;k<K;k++){ let lf=lo+((k+sh)%K+K)%K, f=Math.pow(2,lf); if(f>sr*0.4) continue;
-          const a=Math.exp(-Math.pow(lf-centre,2)/(2*1.3*1.3)); ph[k]+=f/sr; ph[k]-=Math.floor(ph[k]);
+          const a=Math.exp(-Math.pow(lf-center,2)/(2*1.3*1.3)); ph[k]+=f/sr; ph[k]-=Math.floor(ph[k]);
           const v=(Math.sin(2*Math.PI*ph[k])+0.18*Math.sin(6*Math.PI*ph[k]))*a, pan=(k%2?1:-1)*w*0.7;
           sawL[i]+=v*(1-Math.max(0,pan)); sawR[i]+=v*(1-Math.max(0,-pan)); } }
     } else {
@@ -2213,7 +2235,7 @@ function sweepSignal(p,sr,down){
           const pan=pos[k]*w; sawL[i]+=v*(1-Math.max(0,pan))*0.38; sawR[i]+=v*(1-Math.max(0,-pan))*0.38; } }
     }
   }
-  // ---- noise: white or ambience, colour moving between pink and white, width opening or closing ----
+  // ---- noise: white or ambience, color moving between pink and white, width opening or closing ----
   const nzL=new Float32Array(Nd), nzR=new Float32Array(Nd);
   if(p.noiseLvl>0){
     const amb=p.noiseType==='ambience', sd=(p.seed|0)*7919;
@@ -2385,7 +2407,7 @@ function vary(t,p,amt,full){
       continue;
     }
     if(d.lock || d.kind==='bool' || d.k==='room' && !full) continue;
-    if(t==='bass' && (d.k==='space'||d.k==='room'||d.k==='drive')) continue;   // keep 808s dry and centred; it has its own saturation
+    if(t==='bass' && (d.k==='space'||d.k==='room'||d.k==='drive')) continue;   // keep 808s dry and centered; it has its own saturation
     if(d.kind==='sel'){ const os=(d.rndOptsBy&&d.rndOptsBy[p.kind])||d.rndOpts||d.opts; if(Math.random()<(full?(d.rndOpts?1:0.5):amt)) o[d.k]=os[Math.floor(Math.random()*os.length)]; continue; }
     const hi = d.rmax!=null ? norm(d,d.rmax) : 0.95;
     const n = full ? 0.05+Math.random()*(hi-0.05) : clamp(norm(d,p[d.k])+(Math.random()*2-1)*amt, 0, d.rmax!=null?hi:1);
@@ -2404,7 +2426,7 @@ function fmt(d,v){
     case 'ct': return Math.round(v)+' ct';
     case 'bars': return v+(v===1?' bar':' bars');
     case 'n': return String(Math.round(v));
-    case 'pan': return Math.abs(v)<0.02?'centre':(v<0?'L ':'R ')+Math.round(Math.abs(v)*100);
+    case 'pan': return Math.abs(v)<0.02?'center':(v<0?'L ':'R ')+Math.round(Math.abs(v)*100);
     case 'm': return Math.round(v)+' m';
     case 'bal': return v===0?'neutral':(v<0?'darker ':'brighter ')+Math.round(Math.abs(v)*100)+'%';
     case 'dB': return (v>0?'+':'')+v.toFixed(1)+' dB';
@@ -2540,7 +2562,7 @@ function paramEl(d,p){
 }
 function buildParams(){
   const t=S.type, T=TYPES[t], p=S.params[t];
-  const h=$('#tName'); h.querySelector('.dot').style.setProperty('--c',`var(${T.c})`); h.querySelector('span:last-child').textContent=T.label;
+  const h=$('#tName'); h.querySelector('.dot').style.setProperty('--c',`var(${T.c})`); h.querySelector('.tlabel').textContent=T.label; $('#bInfo').title='How the '+T.label.toLowerCase()+' sound is made';
   $('#tDesc').textContent=T.desc;
   const s=$('#pSound'), f=$('#pFinish'); s.innerHTML=''; f.innerHTML='';
   T.params.forEach(d=>{ const el=paramEl(d,p); if(el) s.appendChild(el); });
@@ -2713,12 +2735,82 @@ async function saveFile(filename, blob){
   try{ await downloads.save({filename, data:blob}); toast('Saved '+filename); }
   catch(e){
     const c=e&&e.code;
-    if(c==='declined') toast('Save cancelled.');
+    if(c==='declined') toast('Save canceled.');
     else if(c==='rate_limited') toast('A save prompt is already open.');
     else if(c==='too_large') toast('That pack is too large to save here. Split it into smaller packs.');
     else toast('Couldn’t save the file here.');
   }
 }
+
+/* ---------------- how each sound is made ---------------- */
+const INFO={
+  kick:{lead:'Three layers you can blend: an acoustic drum model, a near and far mic pair, and a grit layer.',
+    how:[
+      '<b>Acoustic shell</b> (Studio, Vintage, Open, Jazz, Breakbeat, Thud, Live room). A beater pulse strikes a modeled drum head: a bank of membrane modes that bend slightly in pitch on impact, a second, slightly sharp resonant head that beats against it, air noise feeding the modes, the shell’s wooden body and the port’s low thump. A room mic adds early reflections and a short diffuse tail. Mic distance moves you from the close mic to the room.',
+      '<b>Near mic</b>. A short sine that falls from a start pitch to an end pitch, phase-modulated by noise for the beater click, then shaped with a low shelf, a mid scoop, a high boost and a resonant peak at the head’s pitch.',
+      '<b>Far mic</b>. A boomier sine, phase-modulated by noise on a slower envelope, high-passed, delayed by the mic distance and slightly chorused for width.',
+      '<b>Grit</b>. Any source (noise, a supersaw or your own sample) gets a huge bass boost, then distortion, a high-pass and a fade, for gritty or textured kicks.',
+      'Noise comes from a generated ambience (rumble, room, crackle or wind) instead of plain white noise. Every kick is DC-blocked and faded so it never pops.'],
+    tips:['<b>Texture</b> adds air and noise to the acoustic characters; <b>Room</b> moves the mic back.','Real kicks sit around 50–90 Hz with almost nothing below 45 Hz. Use <b>Tune</b> to match the song’s key.','Switch to <b>Detailed</b> to blend all three layers yourself.'],
+    src:'Near and far mic method from a kick design tutorial. The acoustic characters were tuned against real recorded kicks (Virtuosity Drums, close, mid and room mics).'},
+  bass:{lead:'Tuned low end in two flavors: the 808 and the amapiano log drum.',
+    how:[
+      '<b>808</b>. A sine at the note you pick. <b>Punch</b> starts the pitch a few semitones high and drops it onto the note over the punch time. The note holds briefly, then decays exponentially over <b>Length</b>.',
+      '<b>Glide</b> slides in from above or below the note with a smooth curve, for drill and trap slides.',
+      '<b>Upper harmonics</b> adds the 2nd and 3rd harmonics so the 808 still reads on phone speakers. <b>Click</b> adds a short 1.9 kHz blip for definition.',
+      '<b>Log drum</b>. Built from real amapiano log drums: the pitch starts two and a half to three octaves up and drops onto the note in 5–10 ms (the pluck). A sine pushed into soft clipping gives the hollow, odd-harmonic tone (<b>Hollow</b>). Clipping happens before the volume envelope, so the tone holds as it decays. Then a pure exponential decay.',
+      '<b>Saturation</b>: Soft (tanh), Tape (asymmetric), Hard (clip) or Fold (wavefolder), then <b>Tone</b> (a low-pass filter).'],
+    tips:['Set <b>Note</b> to your song’s root or the bass line note. Hits stay in tune.','Keep 808s dry and in mono; Randomize leaves reverb off on purpose.','For log drums, more <b>Punch</b> and a shorter <b>Punch time</b> make a sharper pluck; more <b>Hollow</b> makes a squarer, woodier tone.'],
+    src:'Log drum presets were fitted to six amapiano log drum samples; each preset matches its sample within about 1 dB across the spectrum.'},
+  snare:{lead:'A drum head made from a feedback delay, struck by a stick, with snare wires on top.',
+    how:[
+      '<b>Stick</b>. A short burst of noise and a square-wave body makes the strike.',
+      '<b>Drum head</b>. The strike rings a delay line fed back into itself. The loop length sets the head’s pitch, and filters inside the loop set how long it rings (<b>Ring</b>, <b>Damping</b>). The loop is corrected so the pitch stays where you set it. <b>Overtone dip</b> notches out a ringy overtone and <b>Hit bend</b> bends the pitch on impact, like a real head under tension.',
+      '<b>Snare wires</b>. Filtered noise with its own decay, set to follow the head’s energy (<b>Follow head</b>), then spread in stereo.',
+      'A room and master EQ finish it.'],
+    tips:['Low pitch with long ring sounds fat; high pitch with short ring sounds like a piccolo.','More snare wire level and decay gives a trashier sound; turn them down for a tom-like hit.'],
+    src:'Feedback-delay method from a snare design tutorial.'},
+  clap:{lead:'Several hands that don’t quite land together.',
+    how:['Short bursts of band-passed noise, one per hand, spread a few milliseconds apart (<b>Hands</b>, <b>Spread</b>).','The last burst is longer: the slap and its room.','<b>Tone</b> and <b>Focus</b> set the band-pass center and how narrow it is.'],
+    tips:['More hands and wider spread gives a crowd clap; one or two tight hands is a snap.'],src:''},
+  hat:{lead:'The 808 recipe: six metallic square waves blended with noise.',
+    how:['Six square-wave oscillators at inharmonic ratios make the metallic clang (<b>Metal</b>, <b>Pitch</b>).','Noise is blended in, and both are high-passed and band-shaped for brightness.','A short exponential decay makes it closed; longer makes it open.'],
+    tips:['Short decay and high brightness for tight hats; longer decay for open hats and shakers.'],src:''},
+  perc:{lead:'Physical-model percussion: something strikes a set of resonators.',
+    how:['<b>Exciter</b>. A stick hit, or shaped noise for brushes and shakers.','<b>Resonators</b>. A bank of tuned comb filters rings like a bar, a block or a bell. Fractional delays keep it in tune, and DC blockers inside the loops stop low drones.','<b>Cymbals</b> add a dispersion loop: an all-pass chain that smears the ringing into a shimmering bloom (<b>Sizzle</b>), plus a slight frequency shift for inharmonic shimmer.','<b>Pedal chick</b> adds the closing sound of a hi-hat pedal.'],
+    tips:['Lower pitch and longer length make toms and gongs; high and short make woodblocks and claves.'],src:'Dispersion technique from a cymbal design tutorial.'},
+  riser:{lead:'Tension that rises into the drop, in your key and tempo.',
+    how:['<b>Synth</b>. A detuned supersaw (anti-aliased) or a Shepard tone, whose stacked octaves seem to rise forever. Both climb to a target interval in your key.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
+    tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Shepard mode works for builds that need to keep rising without getting higher.'],src:''},
+  down:{lead:'The release after a drop: a fall in your key with a sub dive.',
+    how:['The same supersaw or Shepard engine as the riser, falling instead of rising.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
+    tips:['A two-octave fall over one bar is a classic transition; shorter falls work as fills.'],src:''},
+  impact:{lead:'A hit for drops and transitions: boom, crack and wash.',
+    how:['<b>Boom</b>. A sine sweeping down from a start pitch to an end pitch, with a long decay.','<b>Crack</b>. A sharp broadband transient on top.','<b>Wash</b>. Noise from the generated ambience with a filter closing over its decay.','Drive and a large room glue it together.'],
+    tips:['A lower boom end and a longer decay give a cinematic sub drop.'],src:''},
+  city:{lead:'An urban bed with vinyl character, to sit under a track.',
+    how:['<b>Traffic wash</b>. Filtered noise that rises and falls like distant traffic, with occasional cars passing by.','<b>Crowd murmur</b>. Shaped noise with the movement of a crowd but no voices.','<b>Hum</b>. Mains hum and its harmonics.','<b>Vinyl</b>. Crackle, hiss and wow and flutter, then tone, space and width.','<b>Seamless loop</b> crossfades the ends so it loops without a seam.'],
+    tips:['Keep it low in the mix; it works best as texture you feel more than hear.'],src:''},
+  eco:{lead:'A generative forest, layered the way ecologists describe soundscapes.',
+    how:['<b>Geophony</b>. Weather: wind and gusts, rain and droplets, distant thunder.','<b>Biophony</b>. Creatures that call by their own rules: birds (choose a species), crickets, frogs and alien calls. Some answer each other (<b>Call and answer</b>).','<b>Propagation</b>. Distance, depth spread and a forest reverb place each sound in space.','<b>Texture</b>. Vinyl crackle, hiss and wow tuck it under a track. <b>Seamless loop</b> makes it loop cleanly.'],
+    tips:['Lower <b>Presence</b> and more distance keep it in the background.'],src:'Soundscape layers (geophony and biophony) from a BIOTA ambience tutorial.'},
+  birds:{lead:'Individual birds and frogs, each modeled from its real song or call.',
+    how:['<b>Birds</b>. Each species is built from its song’s structure: the pitch contour of every syllable, its harmonics, its rhythm and how phrases repeat.','<b>Frogs</b>. Pulse trains and resonant formants match each species’ call: trills, peeps, croaks and snores.','<b>Individuals</b> adds more of the same animal, each slightly different in pitch and timing, for a chorus.','Distance, depth, reverb and pan place them in the scene.'],
+    tips:['Use one individual for a feature sound and several for a background chorus.'],src:'Species modeled from recordings in the Macaulay Library, Smithsonian Folkways’ Sounds of North American Frogs and earth.fm.'},
+};
+function openInfo(){
+  const t=S.type, T=TYPES[t], I=INFO[t]; if(!I) return;
+  $('#infoTitle').innerHTML=`<span class="dot" style="--c:var(${T.c})"></span>`; $('#infoTitle').append(T.label);
+  $('#infoLead').textContent=I.lead;
+  $('#infoBody').innerHTML=`<h3>How it’s made</h3><ol>${I.how.map(x=>`<li>${x}</li>`).join('')}</ol>`+
+    (I.tips&&I.tips.length?`<h3>Shape it</h3><ul>${I.tips.map(x=>`<li>${x}</li>`).join('')}</ul>`:'')+
+    (I.src?`<h3>Based on</h3><p class="src">${I.src}</p>`:'');
+  const d=$('#infoDlg'); try{ d.showModal(); }catch(e){ d.setAttribute('open',''); }
+  $('#infoClose').focus();
+}
+$('#bInfo').onclick=openInfo;
+$('#infoClose').onclick=()=>{ const d=$('#infoDlg'); try{ d.close(); }catch(e){ d.removeAttribute('open'); } $('#bInfo').focus(); };
+$('#infoDlg').addEventListener('click',e=>{ if(e.target===e.currentTarget) $('#infoClose').click(); });   // click outside to close
 
 /* ---------------- toast ---------------- */
 let tT; function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('show'),2400); }
@@ -2770,6 +2862,7 @@ pnm.addEventListener('input',()=>{ S.packName=pnm.value; persist(); });
 
 document.addEventListener('keydown',e=>{
   const tag=(e.target.tagName||'').toLowerCase();
+  if($('#infoDlg').open) return;
   if(tag==='input'&&e.target.type!=='range'&&e.target.type!=='checkbox'||tag==='select'||e.metaKey||e.ctrlKey||e.altKey) return;
   const k=e.key.toLowerCase();
   if(k===' '){ e.preventDefault(); playCur(); }

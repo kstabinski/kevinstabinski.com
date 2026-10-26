@@ -186,7 +186,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
       </div>
       <div class="readout">
         <b id="rKey">C minor</b><span id="rMeta">4 bars · 122 BPM</span>
-        <span class="legend" aria-label="Chord colours">
+        <span class="legend" aria-label="Chord colors">
           <span style="--c:var(--f-tonic)"><i></i>Tonic</span>
           <span style="--c:var(--f-pre)"><i></i>Predominant</span>
           <span style="--c:var(--f-dom)"><i></i>Dominant</span>
@@ -271,7 +271,7 @@ const Q={
   m11:{iv:[0,3,7,10,14,17],s:'m11'}, '9sus4':{iv:[0,5,7,10,14],s:'9sus4'}, '7sus4':{iv:[0,5,7,10],s:'7sus4'},
   'maj9#11':{iv:[0,4,7,11,14,18],s:'maj9♯11'}, 'maj7#11':{iv:[0,4,7,11,18],s:'maj7♯11'}, '13':{iv:[0,4,7,10,14,21],s:'13'}, '7b9':{iv:[0,4,7,10,13],s:'7♭9'},
 };
-// how rich each family gets as Colour rises (level 0..3)
+// how rich each family gets as Color rises (level 0..3)
 const EXT={
   maj:[['maj'],['add9','maj7','6','sus2'],['maj9','69','maj7'],['maj9','69','maj9#11','maj7#11']],
   majDom:[['maj'],['add9','7','sus4'],['9','7sus4','13'],['13','9sus4','9']],     // major chords whose in-key 7th is flat (V in major, ♭VII in minor)
@@ -396,11 +396,11 @@ function slotsFor(st,R){
     else out.push({bar:b,start:b*4,len:4,role:'main'});
   } return out;
 }
-// the half-bar chord between two main chords. In-key by default; a colour approach chord only when Spice allows one.
-function passing(T,prev,st,R,colour,prevOut){
+// the half-bar chord between two main chords. In-key by default; a color approach chord only when Spice allows one.
+function passing(T,prev,st,R,color,prevOut){
   const sc=SCALES[st.scale].iv, opts=[];
-  if(prevOut) return {r:prev.r,fam:prev.fam,force:prev.force||null,flip:!!prev.flip,slash:'third'};   // a colour chord keeps its pull toward the next chord
-  if(colour && T.fam!=='dim' && T.fam!=='hdim'){
+  if(prevOut) return {r:prev.r,fam:prev.fam,force:prev.force||null,flip:!!prev.flip,slash:'third'};   // a color chord keeps its pull toward the next chord
+  if(color && T.fam!=='dim' && T.fam!=='hdim'){
     if(!sc.includes((T.r+7)%12)||T.r!==0) opts.push([1.4,{r:(T.r+7)%12,fam:'dom'}]);           // V7 of the next chord
     if(st.spice>0.35) opts.push([0.9,{r:(T.r+1)%12,fam:'dom'}]);                              // tritone sub: a dominant a half step above
     opts.push([0.8,{r:(T.r+11)%12,fam:'dim',force:'dim7'}]);                                   // diminished chord a half step below
@@ -443,7 +443,7 @@ function generate(st,keep){
       return c; }); }
   else { const list=minor?sty.min:sty.maj; tpl=list[Math.floor(R()*list.length)].split(' ').map(t=>parseTok(t,minor)); }
   const mains=[]; for(let b=0;b<st.bars;b++) mains.push({...tpl[b%tpl.length]});
-  // the mode's own colour (Dorian IV, Mixolydian ♭VII, Lydian II, Phrygian ♭II...): once per loop, not on every match
+  // the mode's own color (Dorian IV, Mixolydian ♭VII, Lydian II, Phrygian ♭II...): once per loop, not on every match
   const subs=MODE_SUBS[st.scale]||[];
   if(subs.length && R()<0.8){ const spots=[]; mains.forEach((c,b)=>{ for(const [r,f,r2,f2] of subs) if(b>0&&c.r===r&&c.fam===f) spots.push([b,r2,f2]); });
     if(spots.length){ const [b,r2,f2]=spots[Math.floor(R()*spots.length)]; mains[b]={r:r2,fam:f2}; } }
@@ -456,7 +456,7 @@ function generate(st,keep){
   const bars=[...Array(st.bars).keys()].slice(1).sort(()=>R()-0.5);
   for(const b of bars){ if(budget<1) break; if(R()>0.8) continue;
     const c=mains[b], nx=mains[(b+1)%st.bars], prev=mains[b-1];
-    if(isOut(c)||isOut(prev)) continue;                                   // never two colour chords in a row
+    if(isOut(c)||isOut(prev)) continue;                                   // never two color chords in a row
     const opts=[];
     for(const x of BORROW[minor?'min':'maj']) if(x[0]===c.r&&x[1]===c.fam){
       if(x[3]==='hdim' && nx.r!==7) continue;                          // iiø only when a V follows
@@ -491,7 +491,7 @@ function generate(st,keep){
     if(skip && sl.role==='pass'){ skip=false; return; }
     skip=false;
     if(sl.role==='main') base=mains[sl.bar];
-    else { const colour = budget>=1 && R()<0.45 && !isOut(mains[sl.bar]) && !isOut(next); if(colour) budget--; base=passing(next,mains[sl.bar],st,R,colour,isOut(mains[sl.bar])); }
+    else { const color = budget>=1 && R()<0.45 && !isOut(mains[sl.bar]) && !isOut(next); if(color) budget--; base=passing(next,mains[sl.bar],st,R,color,isOut(mains[sl.bar])); }
     if(base.susRes && sl.len===4){   // sus4 that resolves to the major chord within the bar
       chords.push(newChord({...base,fam:'sus',force:'sus4'},{...sl,len:2},R), newChord({...base,susRes:false},{...sl,start:sl.start+2,len:2},R)); return; }
     chords.push(newChord(base,sl,R));
@@ -519,7 +519,7 @@ function pickQ(ch,st){
 function colorize(p,st){ for(const c of p.chords) c.q=pickQ(c,st); voice(p,st); }
 
 /* ---------------- voicing ----------------
-   Every chord gets the same number of upper voices (3-6; Auto follows Colour), so each voice is a real line. The whole loop (including the
+   Every chord gets the same number of upper voices (3-6; Auto follows Color), so each voice is a real line. The whole loop (including the
    turn from the last chord back to the first) is voiced at once by dynamic programming: voices take the
    shortest paths, common tones hold, big leaps cost a lot, voices never cross, and parallel fifths/octaves
    (with the bass too) are avoided. */
@@ -531,11 +531,11 @@ function toneSet(ch,st){
   const fifth=iv.find(x=>x===6||x===7||x===8);
   const sixLike=['6','m6','69','dim7'].includes(ch.q);
   const sev=iv.find(x=>x===10||x===11) ?? (sixLike?iv.find(x=>x===9):undefined);
-  const ext=iv.filter(x=>x>=13).sort((a,b)=>b-a);                 // 13th, 11th, 9th: the colour
+  const ext=iv.filter(x=>x>=13).sort((a,b)=>b-a);                 // 13th, 11th, 9th: the color
   const pri=[]; if(third!=null) pri.push(third); if(sev!=null) pri.push(sev); pri.push(...ext);
   if(fifth!=null) pri.push(fifth);
   const others=new Set(pri.map(x=>x%12)); others.delete(0);
-  const rootless = st.bass && others.size>=N;                       // the bass has the root when every voice is busy with colour
+  const rootless = st.bass && others.size>=N;                       // the bass has the root when every voice is busy with color
   if(!rootless) pri.splice(Math.min(pri.length,2),0,0);           // keep the root early in plain chords
   const pcs=[]; for(const x of pri){ const pc=x%12; if(!pcs.includes(pc)) pcs.push(pc); }
   const tones=pcs.slice(0,N), dbl=[0,fifth??0,0,fifth??0,third??0]; let k=0;
@@ -878,12 +878,12 @@ function initGlobals(){
 const PARAMS=[
   {k:'bars',label:'Length',kind:'seg',opts:[4,8],labels:{4:'4 bars',8:'8 bars'},act:'regen'},
   {k:'rate',label:'Chord changes',kind:'seg',opts:['1','2','mixed'],labels:{'1':'1 / bar','2':'2 / bar',mixed:'Mixed'},act:'regen'},
-  {k:'color',label:'Colour',kind:'range',min:0,max:1,fmt:v=>v<0.22?'triads':v<0.5?'7ths, add9':v<0.76?'9ths':'11ths, 13ths',act:'color',hint:'How rich each chord is.'},
+  {k:'color',label:'Color',kind:'range',min:0,max:1,fmt:v=>v<0.22?'triads':v<0.5?'7ths, add9':v<0.76?'9ths':'11ths, 13ths',act:'color',hint:'How rich each chord is.'},
   {k:'flow',label:'Progression logic',kind:'seg',opts:['loop','functional','chromatic'],labels:{loop:'Pop loop',functional:'Functional',chromatic:'Chromatic'},act:'regen',hint:'Pop loops of I, IV, V, vi; tonic → predominant → dominant → tonic with cadences; or rising chromatic major chords.'},
   {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed chords, secondary dominants, ii–Vs, tritone subs, passing diminished chords and V alternatives.'},
   {k:'flip',label:'Modal flip',kind:'seg',opts:['off','last','first','random'],labels:{off:'Off',last:'Last chord',first:'First chord',random:'Random'},act:'regen',hint:'Modal interchange: one chord swaps between major and minor on the same root, like a minor loop that lands on a major I. Every card also has a flip button.'},
   {k:'inv',label:'Inversions',kind:'seg',opts:['root','smooth'],labels:{root:'Root position',smooth:'Smooth bass'},act:'voice',hint:'First inversions (like G/B) where they let the bass walk by step.'},
-  {k:'voices',label:'Voices',kind:'seg',opts:['auto','3','4','5','6'],labels:{auto:'Auto','3':'3','4':'4','5':'5','6':'6'},act:'voice',hint:'Upper voices per chord, the same all the way through. Auto follows Colour: 4 for triads and 7ths, 5 for 9ths, 6 for 11ths and 13ths.'},
+  {k:'voices',label:'Voices',kind:'seg',opts:['auto','3','4','5','6'],labels:{auto:'Auto','3':'3','4':'4','5':'5','6':'6'},act:'voice',hint:'Upper voices per chord, the same all the way through. Auto follows Color: 4 for triads and 7ths, 5 for 9ths, 6 for 11ths and 13ths.'},
   {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice',hint:'How wide the chord is spread. Voices always move as little as possible from chord to chord.'},
   {k:'register',label:'Register',kind:'range',min:0,max:1,fmt:v=>v<0.33?'low':v<0.67?'mid':'high',act:'voice'},
   {k:'bass',label:'Bass line',kind:'seg',opts:[true,false],labels:{true:'On',false:'Off'},act:'voice'},
@@ -893,7 +893,7 @@ const PARAMS=[
   {k:'accent',label:'Accent',kind:'seg',opts:['top','inner','even'],labels:{top:'Top note',inner:'Inner voice',even:'Even'},act:'events',hint:'Which voice of each chord sings out.'},
   {k:'artic',label:'Articulation',kind:'seg',opts:['tenuto','legato'],labels:{tenuto:'Tenuto',legato:'Legato'},act:'events',hint:'Chords are held for their full length; legato lets each one ring into the next.'},
   {k:'roll',label:'Rolled chords',kind:'range',min:0,max:1,fmt:v=>v<0.02?'off':Math.round(v*32)+' ms per note',act:'events',hint:'Wide chords always roll a little.'},
-  {k:'humanize',label:'Humanise',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events',hint:'Timing and velocity drift, bigger on fast notes and at the extremes.'},
+  {k:'humanize',label:'Humanize',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events',hint:'Timing and velocity drift, bigger on fast notes and at the extremes.'},
   {k:'rubato',label:'Push & pull',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events',hint:'Rushes and holds back inside the loop. The loop length stays on the grid.'},
   {k:'pedal',label:'Sustain pedal',kind:'seg',opts:['off','chord','bar'],labels:{off:'Off',chord:'Per chord',bar:'Per bar'},act:'events',hint:'CC64, lifted where chords don’t blend. Soft pedal (CC67) in quiet passages.'},
   {kind:'head',label:'Preview',hint:'Only affects what you hear here.'},
@@ -999,7 +999,7 @@ function drawRoll(playB){
   x.globalAlpha=1; if(st.bass){ x.beginPath(); x.moveTo(0,rollH+3.5); x.lineTo(w,rollH+3.5); x.stroke(); }
   const ny=n=>rollH-((n-lo)/(hi-lo))*rollH;
   const fnCol={}; for(const k of ['tonic','pre','dom','color']) fnCol[k]=cssVar('--f-'+k);
-  const cols=S.prog.chords.map(c=>{ const fn=func(c,st); return fnCol[fn==='sec'?'color':fn]; });   // each note takes its own chord's colour, same as its card
+  const cols=S.prog.chords.map(c=>{ const fn=func(c,st); return fnCol[fn==='sec'?'color':fn]; });   // each note takes its own chord's color, same as its card
   const nh=Math.max(3,Math.min(9,rollH/(hi-lo)*0.85));
   for(const e of ev){
     const X=bx(e.b), W=Math.max(2,bx(e.d)-1); x.fillStyle=cols[e.ci]||fnCol.tonic; x.globalAlpha=0.45+0.55*e.v/127;
@@ -1040,7 +1040,7 @@ const localSave={ save:async({filename,data})=>{ const u=URL.createObjectURL(dat
 async function saveFile(filename,blob){
   if(!downloads){ toast('Saving files isn’t available in this view.'); return; }
   try{ await downloads.save({filename,data:blob}); toast('Saved '+filename); }
-  catch(e){ const c=e&&e.code; toast(c==='declined'?'Save cancelled.':c==='rate_limited'?'A save prompt is already open.':'Couldn’t save the file here.'); }
+  catch(e){ const c=e&&e.code; toast(c==='declined'?'Save canceled.':c==='rate_limited'?'A save prompt is already open.':'Couldn’t save the file here.'); }
 }
 /* Linked folder (Chrome/Edge on the site or the desktop copy): MIDI is written straight into a folder on disk,
    e.g. one added to Ableton's browser under Places. Shares the folder link with Spice Drawer (same site, same store). */
