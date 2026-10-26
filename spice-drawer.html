@@ -252,7 +252,6 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
         <button class="tbtn" id="bRnd">Randomize <kbd>R</kbd></button>
         <button class="tbtn" id="bReset">Reset</button>
         <span class="spacer"></span>
-        <button class="tbtn" id="bSave">Save WAV</button>
         <button class="tbtn primary" id="bAdd">Add to pack <kbd>A</kbd></button>
       </div>
       <div class="groups">
@@ -2671,9 +2670,6 @@ $('#bReset').onclick=()=>{ snap(); S.params[S.type]=defaults(S.type); persist();
 async function freshBuf(){ if(!curBuf || curKey!==editorKey()){ clearTimeout(rT); await rerender(false); } return curBuf; }
 $('#bAdd').onclick=async()=>{ const perm=dirReady(); const t=S.type, params={...S.params[t]}; const b=await freshBuf(); const it=addItem(t,params,b); toast('Added '+it.name);
   const p=await toDir(perm,t,it.name,b,params); if(p) toast('Added '+it.name+' → '+dirH.name+'/'+p); };
-$('#bSave').onclick=async()=>{ const perm=dirReady(); const b=await freshBuf(); if(!b) return; const n=safe(nextName(S.type));
-  if(dirH){ const p=await toDir(perm,S.type,n,b,S.params[S.type]); if(p){ toast('Saved '+dirH.name+'/'+p); return; } }
-  if(LOCAL) await saveFile(n+'.wav', new Blob([wav(b)],{type:'audio/wav'})); else await saveFile(n+'.zip', zip([{name:n+'.wav',data:wav(b)}])); };
 $('#bVar').onclick=async()=>{
   const perm=dirReady(); const b=$('#bVar'); b.disabled=true; const t=S.type, base=S.params[t];
   for(let i=0;i<8;i++){ b.textContent=`Rendering ${i+1} of 8…`; const p=vary(t,base,0.16,false), buf=await render(t,p), it=addItem(t,p,buf); await toDir(perm,t,it.name,buf,p); }
@@ -2855,8 +2851,8 @@ rerenderPack();
   if(LOCAL) downloads=localSave;
   loadDir();
   $('#dragHint').textContent = CAN_LINK ? 'Drag a sample onto the waveform to load its settings. To use your sounds in Ableton, add them to the pack with a folder linked above.' : 'Drag a sample onto the waveform to load its settings. Export pack saves everything as WAVs.';
-  $('#bSave').disabled=!downloads; drawPack(); drawSeq();
-  if(!downloads){ $('#bSave').title='Saving files isn’t available in this view'; $('#bExport').title='Saving files isn’t available in this view'; }
+  drawPack(); drawSeq();
+  if(!downloads){ $('#bExport').title='Saving files isn’t available in this view'; }
 })();
 })();
 </script>
