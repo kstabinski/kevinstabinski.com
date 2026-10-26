@@ -293,7 +293,8 @@ function parseTok(t,minor){
 }
 const RN=['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII'];
 const isMinorQ=q=>['min','m7','m9','m11','madd9','m6','m7b5','dim','dim7'].includes(q);
-function numeral(r,q){ let n=RN[r]; if(isMinorQ(q)) n=n.toLowerCase();
+const RN_SHARP={1:'♯I',3:'♯II',6:'♯IV',8:'♯V',10:'♯VI'};
+function numeral(r,q){ let n=(q==='dim7'||q==='dim')&&RN_SHARP[r]?RN_SHARP[r]:RN[r]; if(isMinorQ(q)) n=n.toLowerCase();
   const s=Q[q].s.replace(/^m(?!aj)/,''); return n+(q==='dim'?'°':q==='m7b5'?'ø7':q==='dim7'?'°7':s); }
 function roman(ch){
   const inv=ch.slashLbl?'⁶':'';
@@ -332,15 +333,15 @@ const STYLES={
   euphoric:{label:'Euphoric',hint:'Big, bright festival chords. Think Avicii.',
     maj:['vi IV I V','I V vi IV','IV I V vi','I vi IV Vsus','vi V IV V'],
     min:['i VI III VII','i VII VI VII','VI VII i i','i III VII VI','i VI VII v'],
-    sus:0.35, def:{scale:'minor',flow:'loop',inv:'root',flip:'off',color:0.3,spice:0.15,rate:'1',rhythm:'syncopated',voicing:'open',sound:'pluck',swing:0,bpm:126,humanize:0.3,dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off'}},
-  neosoul:{label:'Neo-soul house',hint:'Bouncy 7ths and 9ths with a swing. Think Kaytranada.',
+    sus:0.35, def:{scale:'minor',flow:'loop',inv:'root',flip:'off',color:0.3,spice:0.15,rate:'1',rhythm:'hold',voicing:'open',sound:'pluck',swing:0,bpm:126,humanize:0.3,dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off'}},
+  neosoul:{label:'Neo-soul house',hint:'Warm 7ths and 9ths. Think Kaytranada.',
     maj:['ii V7 I vi','IV iii ii I','ii iii IV V7','I VI7 ii V7','IV V7 iii vi'],
     min:['i iv VII7 III','iiø V7 i iv','i IV7 i IV7','iv v i VI','i VII VI V7'],
-    def:{scale:'dorian',flow:'functional',inv:'smooth',flip:'last',color:0.75,spice:0.35,rate:'2',rhythm:'syncopated',voicing:'open',sound:'keys',swing:0.15,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'staccato',roll:0.12,rubato:0.12,pedal:'off'}},
+    def:{scale:'dorian',flow:'functional',inv:'smooth',flip:'last',color:0.75,spice:0.35,rate:'2',rhythm:'hold',voicing:'open',sound:'keys',swing:0,bpm:118,humanize:0.4,dyn:'waves',range:0.4,accent:'inner',artic:'tenuto',roll:0.12,rubato:0.12,pedal:'off'}},
   future:{label:'Lush future',hint:'Wide, glossy, slightly chromatic. Think Sam Gellaitry.',
     maj:['IV V iii vi','I II IV iv','IV I bVII IV','vi IV I II','I iii IV iv'],
     min:['i VI III VII','iv i VI VII','i VII iv VI'],
-    def:{scale:'lydian',flow:'chromatic',inv:'smooth',flip:'random',color:0.85,spice:0.5,rate:'mixed',rhythm:'stabs',voicing:'spread',sound:'keys',swing:0.05,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
+    def:{scale:'lydian',flow:'chromatic',inv:'smooth',flip:'random',color:0.85,spice:0.5,rate:'mixed',rhythm:'hold',voicing:'spread',sound:'keys',swing:0,bpm:124,humanize:0.35,dyn:'swell',range:0.45,accent:'top',artic:'tenuto',roll:0.18,rubato:0.1,pedal:'chord'}},
   dark:{label:'Dark',hint:'Brooding minor loops for heavier tracks.',
     maj:['I bVII bVI bVII','I bIII IV iv'],
     min:['i bII i VII','i VI iv V7','i iv VI V7','i VI III VII','i v VI iv'],
@@ -348,11 +349,11 @@ const STYLES={
   lofi:{label:'Lo-fi',hint:'Jazzy, dusty and laid back.',
     maj:['ii V7 I vi','IV iii vi I','I vi ii V7','IV iv iii VI7'],
     min:['i iv VII III','iv v i i','iiø V7 i VI'],
-    def:{scale:'major',flow:'functional',inv:'smooth',flip:'first',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0.3,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
+    def:{scale:'major',flow:'functional',inv:'smooth',flip:'first',color:0.8,spice:0.3,rate:'1',rhythm:'hold',voicing:'open',sound:'piano',swing:0,bpm:84,humanize:0.55,dyn:'waves',range:0.45,accent:'inner',artic:'legato',roll:0.45,rubato:0.35,pedal:'chord'}},
   pop:{label:'Pop',hint:'Clean, singable triads.',
     maj:['I V vi IV','vi IV I V','I IV vi V','I vi IV V'],
     min:['i VI III VII','i iv VI V','i VI iv V'],
-    def:{scale:'major',flow:'loop',inv:'smooth',flip:'off',color:0.12,spice:0.1,rate:'1',rhythm:'stabs',voicing:'close',sound:'piano',swing:0,bpm:120,humanize:0.35,dyn:'build',range:0.4,accent:'top',artic:'tenuto',roll:0.15,rubato:0.1,pedal:'chord'}},
+    def:{scale:'major',flow:'loop',inv:'smooth',flip:'off',color:0.12,spice:0.1,rate:'1',rhythm:'hold',voicing:'close',sound:'piano',swing:0,bpm:120,humanize:0.35,dyn:'build',range:0.4,accent:'top',artic:'tenuto',roll:0.15,rubato:0.1,pedal:'chord'}},
 };
 // make the chosen mode audible
 const MODE_SUBS={
@@ -364,7 +365,9 @@ const MODE_SUBS={
 };
 // borrowed-chord swaps (Spice)
 // borrowed chords (Spice): major keys borrow from the parallel minor (i, ii°, ♭III, iv, v, ♭VI, ♭VII); minor keys from the parallel major
-const BORROW={maj:[[5,'maj',5,'min'],[7,'maj',7,'min'],[9,'min',8,'maj'],[7,'maj',10,'maj'],[2,'min',2,'hdim'],[4,'min',3,'maj'],[0,'maj',0,'min']],
+// major keys borrow from the parallel minor modes (Aeolian, Dorian, Phrygian), each with its typical chord type:
+// ♭IImaj7, iiø, ♭IIImaj7, iv m7/m6, v, ♭VImaj7, ♭VII7
+const BORROW={maj:[[5,'maj',5,'min'],[7,'maj',7,'min'],[9,'min',8,'maj','maj7'],[7,'maj',10,'dom'],[2,'min',2,'hdim'],[4,'min',3,'maj','maj7'],[2,'min',1,'maj','maj7'],[0,'maj',0,'min']],
               min:[[5,'min',5,'maj'],[7,'min',7,'dom'],[8,'maj',5,'min'],[10,'maj',7,'dom'],[3,'maj',3,'min']]};
 // functional flow: tonic -> predominant -> dominant -> tonic, with plagal (IV-I) and deceptive (V-vi) moves
 const FUNC={maj:{T:[[0,'maj',3],[9,'min',2.5],[4,'min',0.8]],PD:[[5,'maj',3],[2,'min',2]],D:[[7,'maj',3],[11,'dim',0.25]]},
@@ -376,10 +379,11 @@ const CHROM={maj:[['I','bII','bIII','IV'],['I','bVI','V','IV'],['I','bIII','IV',
 
 /* ---------------- state ---------------- */
 const KEY='chordpantry.v1';
-const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'syncopated',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,flow:'loop',inv:'root',flip:'off',
+const DEF={key:0,scale:'minor',style:'euphoric',bars:4,rate:'1',color:0.3,spice:0.15,voicing:'open',register:0.5,rhythm:'hold',swing:0,humanize:0.35,bass:true,sound:'pluck',bpm:126,seed:1,flow:'loop',inv:'root',flip:'off',
   dyn:'waves',range:0.35,accent:'top',artic:'tenuto',roll:0.1,rubato:0.05,pedal:'off',room:false};
 let S={set:{...DEF},prog:null,pantry:[]};
-try{ const j=JSON.parse(localStorage.getItem(KEY)||'null'); if(j&&j.set){ S.set={...DEF,...j.set}; S.prog=j.prog||null; S.pantry=Array.isArray(j.pantry)?j.pantry:[]; } }catch(e){}
+const held=set=>({...DEF,...set,rhythm:'hold',swing:0,artic:set&&set.artic==='staccato'?'tenuto':(set&&set.artic)||DEF.artic});
+try{ const j=JSON.parse(localStorage.getItem(KEY)||'null'); if(j&&j.set){ S.set=held(j.set); S.prog=j.prog||null; S.pantry=Array.isArray(j.pantry)?j.pantry:[]; } }catch(e){}
 let pT; const persist=()=>{ clearTimeout(pT); pT=setTimeout(()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} },150); };
 let uid=S.pantry.reduce((a,b)=>Math.max(a,b.id||0),0);
 
@@ -395,7 +399,8 @@ function passing(T,prev,st,R){
   const sp=st.spice, opts=[];
   if(T.fam!=='dim'&&T.fam!=='hdim') opts.push([1+sp*1.5,{r:(T.r+7)%12,fam:'dom'}]);              // V7 of the next chord
   if(T.fam==='maj'||T.fam==='dom') opts.push([0.8,{r:(T.r+2)%12,fam:'min'}]);                      // its ii
-  if(sp>0.25) opts.push([sp*1.4,{r:(T.r+1)%12,fam:'dom'}]);                                       // tritone sub
+  if(sp>0.25) opts.push([sp*1.4,{r:(T.r+1)%12,fam:'dom'}]);                                       // tritone sub: a dominant a half step above
+  if(sp>0.2 && T.fam!=='dim') opts.push([sp*1.1,{r:(T.r+11)%12,fam:'dim',force:'dim7'}]);         // diminished chord a half step below
   opts.push([Math.max(0.15,1-sp),{r:prev.r,fam:prev.fam,slash:'third'}]);                         // same chord, 3rd in the bass
   const sc=SCALES[st.scale].iv, i=sc.indexOf(T.r); if(i>=0){ const r=sc[(i+6)%7]; opts.push([0.7,{r,fam:diatonicFam(r,st.scale)}]); } // step below
   let tot=opts.reduce((a,o)=>a+o[0],0), x=R()*tot; for(const [w,o] of opts){ x-=w; if(x<=0) return {...o}; } return {...opts[0][1]};
@@ -414,7 +419,9 @@ function functionalSeq(st,R,minor){
     const cadence = i===n-1 || (n===8&&i===3);
     const prev=seq[i-1], w=cadence?{D:0.7,PD:0.3}:FLOW[prev.fn];
     const fn=pickW(R,Object.entries(w))[0];
-    let c; for(let k=0;k<6;k++){ const opts=F[fn].map(x=>[x[0],x[1],x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]); const x=pickW(R,opts); c={r:x[0],fam:x[1],fn}; if(c.r!==prev.r) break; }
+    let c; for(let k=0;k<6;k++){ let opts=F[fn].map(x=>[x[0],x[1],null,x[2]*(prev.fn==='D'&&fn==='T'&&x[0]!==0?1.6:1)]);
+      if(fn==='D' && !minor && st.spice>0.2) opts=opts.concat([[10,'dom',null,st.spice*1.2],[1,'dom',null,st.spice*0.9],[5,'min','m6',st.spice*0.9],[2,'hdim',null,st.spice*0.6],[11,'dim','dim7',st.spice*0.5]]);
+      const x=pickW(R,opts); c={r:x[0],fam:x[1],force:x[2],fn}; if(c.r!==prev.r) break; }
     seq.push(c);
   }
   return seq;
@@ -433,7 +440,7 @@ function generate(st,keep){
     let c={...tpl[b%tpl.length]};
     for(const [r,f,r2,f2] of subs) if(c.r===r&&c.fam===f&&R()<0.55){ c={r:r2,fam:f2}; break; }
     const pB=st.spice*0.35+(b>=4&&b%4===3?0.25:0);
-    if(b>0 && R()<pB){ const bl=BORROW[minor?'min':'maj'].filter(x=>x[0]===c.r&&x[1]===c.fam); if(bl.length){ const x=bl[Math.floor(R()*bl.length)]; c={r:x[2],fam:x[3]}; } }
+    if(b>0 && R()<pB){ const bl=BORROW[minor?'min':'maj'].filter(x=>x[0]===c.r&&x[1]===c.fam); if(bl.length){ const x=bl[Math.floor(R()*bl.length)]; c={r:x[2],fam:x[3],force:x[4]||null}; } }
     mains.push(c);
   }
   // secondary dominants (Spice): swap a tonic/predominant chord for V of the chord it leads to — III before vi, VI before ii, II before V
@@ -451,11 +458,18 @@ function generate(st,keep){
     let i = st.flip==='last' ? st.bars-1 : st.flip==='first' ? 0 : Math.floor(R()*st.bars);
     for(let k=0;k<st.bars&&!canFlip(mains[i]);k++) i=(i+1)%st.bars;
     mains[i]={...mains[i]}; flipChord(mains[i]); }
-  const slots=slotsFor(st,R), chords=[];
+  const slots=slotsFor(st,R), chords=[]; let skip=false;
   slots.forEach((sl,i)=>{
     let base;
+    const next=mains[(sl.bar+1)%st.bars];
+    if(sl.role==='main' && sl.len===2 && sl.bar>0 && next.r!==mains[sl.bar].r && ['maj','min'].includes(next.fam) && R()<st.spice*0.35){
+      const mt=next.fam==='min';                                      // ii–V of the next chord
+      chords.push(newChord({r:(next.r+2)%12,fam:mt?'hdim':'min'},sl,R), newChord({r:(next.r+7)%12,fam:'dom',force:mt?'7b9':null},{...sl,start:sl.start+2,role:'pass'},R));
+      skip=true; return; }
+    if(skip && sl.role==='pass'){ skip=false; return; }
+    skip=false;
     if(sl.role==='main') base=mains[sl.bar];
-    else { const next=mains[(sl.bar+1)%st.bars]; base=passing(next,mains[sl.bar],st,R); }
+    else base=passing(next,mains[sl.bar],st,R);
     if(base.susRes && sl.len===4){   // sus4 that resolves to the major chord within the bar
       chords.push(newChord({...base,fam:'sus',force:'sus4'},{...sl,len:2},R), newChord({...base,susRes:false},{...sl,start:sl.start+2,len:2},R)); return; }
     chords.push(newChord(base,sl,R));
@@ -467,7 +481,7 @@ function generate(st,keep){
 function pickQ(ch,st){
   // a flipped chord is borrowed from the parallel key, so its added notes come from that key
   const u=ch.u, sty=STYLES[st.style], sc=ch.flip ? (SCALES[st.scale].minor?SCALES.major.iv:SCALES.minor.iv) : SCALES[st.scale].iv, inKey=sc.includes(ch.r);
-  if(ch.force) return ch.fam==='sus' ? ch.force : st.color>=0.22 ? ch.force : 'maj';
+  if(ch.force) return (ch.fam==='sus'||ch.force==='dim7'||ch.force==='7b9') ? ch.force : st.color>=0.22 ? ch.force : EXT[ch.fam][0][0];
   if(ch.fam==='maj' && sty.sus && (ch.r===7||ch.r===10) && ((u*7.31)%1)<sty.sus) return st.color>0.45?'7sus4':'sus4';
   let lv=st.color+(u-0.5)*0.28; lv = lv<0.22?0 : lv<0.5?1 : lv<0.76?2 : 3;
   let fam=ch.fam;
@@ -481,46 +495,87 @@ function pickQ(ch,st){
 }
 function colorize(p,st){ for(const c of p.chords) c.q=pickQ(c,st); voice(p,st); }
 
-/* ---------------- voicing ---------------- */
-function upperIv(ch,st){
-  let iv=Q[ch.q].iv.slice();
-  if(st.bass && st.voicing!=='close' && iv.length>=5) iv=iv.filter(x=>x!==0);   // rootless: the bass has it
-  if(iv.length>5) iv=iv.filter(x=>x!==7);
-  if(iv.length>5) iv=iv.slice(0,5);
-  return iv;
+/* ---------------- voicing ----------------
+   Every chord gets the same four upper voices, so each voice is a real line. The whole loop (including the
+   turn from the last chord back to the first) is voiced at once by dynamic programming: voices take the
+   shortest paths, common tones hold, big leaps cost a lot, voices never cross, and parallel fifths/octaves
+   (with the bass too) are avoided. */
+function toneSet(ch,st){
+  const iv=Q[ch.q].iv;
+  const third=iv.find(x=>x===3||x===4) ?? iv.find(x=>x===2||x===5);
+  const fifth=iv.find(x=>x===6||x===7||x===8);
+  const sixLike=['6','m6','69','dim7'].includes(ch.q);
+  const sev=iv.find(x=>x===10||x===11) ?? (sixLike?iv.find(x=>x===9):undefined);
+  const ext=iv.filter(x=>x>=13).sort((a,b)=>b-a);                 // 13th, 11th, 9th: the colour
+  const pri=[]; if(third!=null) pri.push(third); if(sev!=null) pri.push(sev); pri.push(...ext);
+  if(fifth!=null) pri.push(fifth);
+  const rootless = st.bass && iv.length>=5;                        // the bass has the root
+  if(!rootless) pri.splice(Math.min(pri.length,2),0,0);           // keep the root early in plain chords
+  const pcs=[]; for(const x of pri){ const pc=x%12; if(!pcs.includes(pc)) pcs.push(pc); }
+  const tones=pcs.slice(0,4), dbl=[0,fifth??0,third??0]; let k=0;
+  while(tones.length<4){ tones.push(dbl[k%3]%12); k++; }           // triads: double root, then fifth
+  return tones;
 }
-function candidates(pcs,st,lo,hi){
-  const out=[], k=pcs.length;
-  for(let rot=0;rot<k;rot++){
-    const stack=[pcs[rot]]; for(let j=1;j<k;j++){ let n=pcs[(rot+j)%k]; while(n<=stack[stack.length-1]) n+=12; stack.push(n); }
-    let shapes=[stack];
-    if(st.voicing!=='close'&&k>=3){
-      const d2=stack.slice(); const i2=k-2; d2[i2]-=12; d2.sort((a,b)=>a-b); shapes=[d2];
-      if(st.voicing==='spread'&&k>=4){ const d24=stack.slice(); d24[k-2]-=12; d24[k-4]-=12; d24.sort((a,b)=>a-b); shapes.push(d24); }
-    }
-    for(const sh of shapes) for(let o=-2;o<=10;o++){ const v=sh.map(n=>n+12*o); if(v[0]>=lo&&v[v.length-1]<=hi) out.push(v); }
-  }
+function vCands(ch,st,center){
+  const root=(st.key+ch.r)%12, T=toneSet(ch,st).map(t=>(root+t)%12);
+  const lo=Math.max(46,Math.round(center-12)), hi=Math.round(center+16), opts=T.map(pc=>{ const o=[]; for(let n=lo;n<=hi;n++) if(n%12===pc) o.push(n); return o; });
+  const out=[], seen=new Set();
+  const rec=(i,acc)=>{ if(i===4){ const v=acc.slice().sort((a,b)=>a-b); for(let k=1;k<4;k++) if(v[k]===v[k-1]) return;
+      const key=v.join(','); if(!seen.has(key)){ seen.add(key); out.push(v); } return; }
+    for(const n of opts[i]) rec(i+1,[...acc,n]); };
+  rec(0,[]);
   return out;
 }
-function vcost(v,prev,center){
+function vStatic(v,st,center,bass){
+  let c=0; const sp=v[3]-v[0];
+  if(st.voicing==='close') c+= sp>12 ? (sp-12)*2.5 : 0;
+  else if(st.voicing==='open') c+= sp<12 ? (12-sp)*1.5 : sp>20 ? (sp-20)*2 : 0;
+  else c+= sp<16 ? (16-sp)*1.5 : sp>28 ? (sp-28)*2 : 0;
+  for(let i=0;i<3;i++){ const g=v[i+1]-v[i]; if(g>12) c+=6+(g-12); if(v[i]<52&&g<=4) c+=8; if(g===1&&v[i]<60) c+=4; }
+  c+=0.25*Math.abs(v.reduce((a,b)=>a+b,0)/4-center);
+  if(bass!=null && v[0]-bass<5) c+=6;
+  return c;
+}
+function vMove(a,b,ba,bb){
   let c=0;
-  for(let i=0;i<v.length-1;i++) if(v[i]<52 && v[i+1]-v[i]<=3) c+=6;           // muddy low clusters
-  for(let i=0;i<v.length-1;i++) if(v[i+1]-v[i]===1 && v[i]<60) c+=3;
-  const mean=v.reduce((a,b)=>a+b,0)/v.length;
-  if(!prev) return c+Math.abs(mean-center);
-  let mv=0; for(const n of v){ let m=99; for(const p of prev) m=Math.min(m,Math.abs(n-p)); mv+=m; }
-  for(const p of prev){ let m=99; for(const n of v) m=Math.min(m,Math.abs(n-p)); mv+=m*0.5; }
-  return c+mv+0.6*Math.abs(v[v.length-1]-prev[prev.length-1])+0.12*Math.abs(mean-center);
+  for(let i=0;i<4;i++){ const d=Math.abs(b[i]-a[i]); c+=d; if(d>5) c+=(d-5)*2.5; if(d>7) c+=30; }
+  const dt=Math.abs(b[3]-a[3]); if(dt>4) c+=(dt-4)*1.5;            // keep the top line singable
+  const A=ba!=null?[ba,...a]:a, B=bb!=null?[bb,...b]:b;
+  for(let i=0;i<A.length;i++) for(let j=i+1;j<A.length;j++){
+    const di=B[i]-A[i], dj=B[j]-A[j]; if(!di||!dj||Math.sign(di)!==Math.sign(dj)) continue;
+    const x=((A[j]-A[i])%12+12)%12, y=((B[j]-B[i])%12+12)%12;
+    if(x===y&&(x===7||x===0)) c+=60;                                // parallel fifths / octaves
+  }
+  return c;
+}
+function voiceUpper(p,st){
+  const cs=p.chords, n=cs.length, center=54+st.register*14;
+  const C=cs.map(ch=>{ let v=vCands(ch,st,center); if(!v.length) v=[toneSet(ch,st).map(t=>60+((st.key+ch.r+t)%12)).sort((a,b)=>a-b)];
+    const sc=v.map(x=>vStatic(x,st,center,st.bass?ch.bass:null)); const idx=[...v.keys()].sort((a,b)=>sc[a]-sc[b]).slice(0,60);
+    return {v:idx.map(k=>v[k]),s:idx.map(k=>sc[k])}; });
+  const bass=i=>st.bass?cs[i].bass:null;
+  if(n===1){ cs[0].notes=C[0].v[0]; return; }
+  let best=Infinity, bestPath=null;
+  const starts=C[0].v.length>24 ? 24 : C[0].v.length;               // try the best-sounding first voicings
+  for(let s0=0;s0<starts;s0++){
+    let cost=[C[0].s[s0]], back=[];
+    let prevCost=C[0].v.map((_,k)=>k===s0?C[0].s[s0]:Infinity);
+    for(let i=1;i<n;i++){
+      const cur=C[i], pv=C[i-1], nc=new Array(cur.v.length).fill(Infinity), bk=new Array(cur.v.length).fill(-1);
+      for(let b=0;b<cur.v.length;b++) for(let a=0;a<pv.v.length;a++){ if(prevCost[a]===Infinity) continue;
+        const c=prevCost[a]+cur.s[b]+vMove(pv.v[a],cur.v[b],bass(i-1),bass(i)); if(c<nc[b]){ nc[b]=c; bk[b]=a; } }
+      back.push(bk); prevCost=nc;
+    }
+    for(let e=0;e<C[n-1].v.length;e++){ if(prevCost[e]===Infinity) continue;
+      const tot=prevCost[e]+vMove(C[n-1].v[e],C[0].v[s0],bass(n-1),bass(0));   // the loop turns around
+      if(tot<best){ best=tot; const path=[e]; for(let i=n-1;i>=1;i--) path.unshift(back[i-1][path[0]]); bestPath=path; } }
+  }
+  cs.forEach((ch,i)=>{ ch.notes=C[i].v[bestPath[i]]; });
 }
 function voice(p,st){
-  const center=54+st.register*14, span=st.voicing==='spread'?27:st.voicing==='open'?23:18, lo=Math.round(center-span/2), hi=Math.round(center+span/2);
-  let prev=null, prevB=null; analyze(p,st);
+  let prevB=null; analyze(p,st);
   p.chords.forEach((ch,ci)=>{
     const root=(st.key+ch.r)%12;
-    const pcs=[...new Set(upperIv(ch,st).map(x=>(root+x)%12))];
-    const cands=candidates(pcs,st,lo,hi);
-    let best=null,bc=1e9; for(const v of cands){ const c=vcost(v,prev,center); if(c<bc){bc=c;best=v;} }
-    ch.notes=best||pcs.map(x=>60+x); prev=ch.notes;
     // bass: root, or the chord's third (first inversion, like G/B) for a slash chord or where it lets the bass walk by step
     const third=Q[ch.q].iv.find(x=>x===3||x===4);
     let inv = ch.slash==='third';
@@ -530,16 +585,18 @@ function voice(p,st){
       if(dist(pb,root)>2 && dist(pb,tp)<=2 && tp!==pb && (nr==null || dist(tp,nr)<=2)) inv=true;
     }
     const bpc = inv && third!=null ? (root+third)%12 : root;
-    const rel=(bpc-st.key+12)%12;
-    ch.slashLbl = inv && third!=null ? spellAs(bpc, LETTERS.indexOf(rootName(ch,st)[0])+2) : null;   // the third of the chord, spelled from its root (A7/C♯, not A7/D♭)
+    ch.slashLbl = inv && third!=null ? spellAs(bpc, LETTERS.indexOf(rootName(ch,st)[0])+2) : null;   // the third, spelled from the chord's root (A7/C♯)
     if(ch.slash==='third' && third==null) ch.slash=null;
     let best2=null; for(let n=28;n<=50;n++) if(n%12===bpc){ if(best2==null || Math.abs(n-(prevB??40))<Math.abs(best2-(prevB??40))) best2=n; }
     ch.bass=best2; prevB=best2;
   });
+  voiceUpper(p,st);
 }
 const LETTERS='CDEFGAB', NAT=[0,2,4,5,7,9,11];
 function spellAs(pc,letterIdx){ const L=((letterIdx%7)+7)%7; let d=((pc-NAT[L])%12+12)%12; if(d>6) d-=12; return LETTERS[L]+(d===1?'♯':d===2?'𝄪':d===-1?'♭':d===-2?'𝄫':''); }
-const rootName=(ch,st)=>{ const pc=(st.key+ch.r)%12; return SCALES[st.scale].iv.includes(ch.r)||![1,3,6,8,10].includes(ch.r) ? noteName(pc,st.key,st.scale) : N_FLAT[pc]; };
+const rootName=(ch,st)=>{ const pc=(st.key+ch.r)%12;
+  if((ch.q==='dim7'||ch.q==='dim') && [1,3,6,8,10].includes(ch.r) && !SCALES[st.scale].iv.includes(ch.r)) return N_SHARP[pc];   // leading-tone diminished: F♯°7 into G
+  return SCALES[st.scale].iv.includes(ch.r)||![1,3,6,8,10].includes(ch.r) ? noteName(pc,st.key,st.scale) : N_FLAT[pc]; };
 const chordName=(ch,st)=>{ const s=Q[ch.q].s; return rootName(ch,st)+s+(ch.slashLbl?(s.includes('/')?' / ':'/')+ch.slashLbl:''); };
 
 /* ---------------- rhythm → events ---------------- */
@@ -795,19 +852,17 @@ const PARAMS=[
   {k:'rate',label:'Chord changes',kind:'seg',opts:['1','2','mixed'],labels:{'1':'1 / bar','2':'2 / bar',mixed:'Mixed'},act:'regen'},
   {k:'color',label:'Colour',kind:'range',min:0,max:1,fmt:v=>v<0.22?'triads':v<0.5?'7ths, add9':v<0.76?'9ths':'11ths, 13ths',act:'color',hint:'How rich each chord is.'},
   {k:'flow',label:'Progression logic',kind:'seg',opts:['loop','functional','chromatic'],labels:{loop:'Pop loop',functional:'Functional',chromatic:'Chromatic'},act:'regen',hint:'Pop loops of I, IV, V, vi; tonic → predominant → dominant → tonic with cadences; or rising chromatic major chords.'},
-  {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed chords from the parallel key and secondary dominants.'},
+  {k:'spice',label:'Spice',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'regen',hint:'Borrowed chords, secondary dominants, ii–Vs, tritone subs, passing diminished chords and V alternatives.'},
   {k:'flip',label:'Modal flip',kind:'seg',opts:['off','last','first','random'],labels:{off:'Off',last:'Last chord',first:'First chord',random:'Random'},act:'regen',hint:'Modal interchange: one chord swaps between major and minor on the same root, like a minor loop that lands on a major I. Every card also has a flip button.'},
   {k:'inv',label:'Inversions',kind:'seg',opts:['root','smooth'],labels:{root:'Root position',smooth:'Smooth bass'},act:'voice',hint:'First inversions (like G/B) where they let the bass walk by step.'},
-  {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice'},
+  {k:'voicing',label:'Voicing',kind:'seg',opts:['close','open','spread'],labels:{close:'Close',open:'Open',spread:'Spread'},act:'voice',hint:'Four voices that move as little as possible from chord to chord.'},
   {k:'register',label:'Register',kind:'range',min:0,max:1,fmt:v=>v<0.33?'low':v<0.67?'mid':'high',act:'voice'},
-  {k:'rhythm',label:'Rhythm',kind:'select',opts:['hold','stabs','offbeat','syncopated','arp'],labels:{hold:'Hold',stabs:'Stabs',offbeat:'Offbeat house',syncopated:'Syncopated',arp:'Arpeggio'},act:'events'},
-  {k:'swing',label:'Swing',kind:'range',min:0,max:0.6,fmt:v=>Math.round(v/0.6*100)+'%',act:'events'},
   {k:'bass',label:'Bass line',kind:'seg',opts:[true,false],labels:{true:'On',false:'Off'},act:'voice'},
   {kind:'head',label:'Performance',hint:'How a player would perform it. All of this is written into the MIDI.'},
   {k:'dyn',label:'Dynamics',kind:'select',opts:['flat','swell','waves','build','fade'],labels:{flat:'Flat',swell:'Swell',waves:'Waves (2 bars)',build:'Build (crescendo)',fade:'Fade (diminuendo)'},act:'events',hint:'The loudness shape over the loop.'},
   {k:'range',label:'Dynamic range',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events'},
   {k:'accent',label:'Accent',kind:'seg',opts:['top','inner','even'],labels:{top:'Top note',inner:'Inner voice',even:'Even'},act:'events',hint:'Which voice of each chord sings out.'},
-  {k:'artic',label:'Articulation',kind:'seg',opts:['staccato','tenuto','legato'],labels:{staccato:'Staccato',tenuto:'Tenuto',legato:'Legato'},act:'events'},
+  {k:'artic',label:'Articulation',kind:'seg',opts:['tenuto','legato'],labels:{tenuto:'Tenuto',legato:'Legato'},act:'events',hint:'Chords are held for their full length; legato lets each one ring into the next.'},
   {k:'roll',label:'Rolled chords',kind:'range',min:0,max:1,fmt:v=>v<0.02?'off':Math.round(v*32)+' ms per note',act:'events',hint:'Wide chords always roll a little.'},
   {k:'humanize',label:'Humanise',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events',hint:'Timing and velocity drift, bigger on fast notes and at the extremes.'},
   {k:'rubato',label:'Push & pull',kind:'range',min:0,max:1,fmt:v=>Math.round(v*100)+'%',act:'events',hint:'Rushes and holds back inside the loop. The loop length stays on the grid.'},
@@ -941,7 +996,7 @@ function drawPantry(){
     li.innerHTML=`<button type="button" class="load"><span class="ch"></span><span class="meta"></span></button><button type="button" class="del" title="Remove" aria-label="Remove">✕</button>`;
     li.querySelector('.ch').textContent=progLabel(it.prog,it.set);
     li.querySelector('.meta').textContent=`${noteName(it.set.key,it.set.key,it.set.scale)} ${SCALES[it.set.scale].label.toLowerCase()} · ${it.set.bpm} BPM · ${STYLES[it.set.style].label}`;
-    li.querySelector('.load').onclick=()=>{ snap(); retime(); S.set={...DEF,...it.set}; S.prog=JSON.parse(JSON.stringify(it.prog)); syncControls(); afterChange(); toast('Loaded from the pantry. Back undoes it.'); };
+    li.querySelector('.load').onclick=()=>{ snap(); retime(); S.set=held(it.set); S.prog=JSON.parse(JSON.stringify(it.prog)); voice(S.prog,S.set); syncControls(); afterChange(); toast('Loaded from the pantry. Back undoes it.'); };
     li.querySelector('.del').onclick=()=>{ S.pantry=S.pantry.filter(x=>x!==it); persist(); drawPantry(); };
     ul.appendChild(li);
   }
@@ -1007,13 +1062,14 @@ async function saveCurrent(){
   if(LOCAL) await saveFile(t+'.mid',new Blob([mid],{type:'audio/midi'}));
   else await saveFile(t+'.zip',zip([{name:t+'.mid',data:mid}]));
 }
+const revoiced=it=>{ const st=held(it.set), prog=JSON.parse(JSON.stringify(it.prog)); voice(prog,st); return {st,prog}; };
 async function exportAll(){
   if(dirH){ const perm=dirReady(); let n=0;
-    for(const it of S.pantry){ const st={...DEF,...it.set}, t=fileTitle(it.prog,st); if(await toDir(perm,t,midiFile(it.prog,st,t))) n++; else break; }
+    for(const it of S.pantry){ const {st,prog}=revoiced(it), t=fileTitle(prog,st); if(await toDir(perm,t,midiFile(prog,st,t))) n++; else break; }
     if(n){ toast('Saved '+n+' progression'+(n===1?'':'s')+' to '+dirH.name+'/'+SUB); return; } }
   const used=new Set(), files=[];
   for(const it of S.pantry){ let t=fileTitle(it.prog,it.set), n=t, k=2; while(used.has(n)) n=`${t} ${k++}`; used.add(n);
-    files.push({name:`Chord Pantry/${n}.mid`,data:midiFile(it.prog,{...DEF,...it.set},n)}); }
+    const {st,prog}=revoiced(it); files.push({name:`Chord Pantry/${n}.mid`,data:midiFile(prog,st,n)}); }
   await saveFile('Chord Pantry.zip',zip(files));
 }
 
