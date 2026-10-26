@@ -362,12 +362,13 @@ const sweepParams=(down)=>{
     {kind:'head',label:'Laser',detail:true},
     P('laserLvl','Level',0,1,1,'%',{detail:true}),
     P('laserRange','Range',1,10,8,'oct',{step:0.5,detail:true}),
-    P('laserFade','Fade',0,48,22,'dB',{step:1,detail:true}),
+    P('laserFade','Fade',0,48,12,'dB',{step:1,detail:true}),
     {k:'laserStack',label:'Stack',kind:'sel',opts:['harmonic','major','dom 7','fifths','cluster'],def:'harmonic',detail:true},
     P('laserVoices','Streams',1,14,2,'n',{step:1,detail:true}),
     P('laserBloom','Bloom',0,1,0,'%',{detail:true}),
     P('laserZap','Zap',0,1,0,'%',{detail:true}),
     P('laserShimmer','Shimmer',0,1,0.4,'%',{detail:true}),
+    P('laserSoft','Smooth',0,1,0.6,'%',{detail:true}),
     {kind:'head',label:'Noise',detail:true},
     P('noiseLvl','Level',0,1,down?0.25:0.25,'%',{detail:true}),
     P('color0','Color start',0,1,down?1:0.2,'%',{detail:true}),
@@ -2293,6 +2294,14 @@ function laserStreams(p,sr,Nd,root,down,R,outL,outR){
       ph=ph1; if(ph>1e6) ph-=Math.floor(ph);
     }
   }
+  // smoothing: a low-pass that tracks the stream's pitch, keeping only the first K harmonics, so the low end
+  // turns into a soft buzz and then gentle pulses instead of sharp ticks (no effect while the stream is high)
+  const soft=p.laserSoft??0.6;
+  if(soft>0){ const K=Math.pow(2,6-4.5*soft);                                  // 64 harmonics at 0, about 3 at 1
+    for(const buf of [L,Rr]){ let i1=0,i2=0,g=0; const kq=1.2;
+      for(let i=0;i<Nd+2*pad;i++){
+        if((i&15)===0){ const x=Math.min(1,Math.max(0,(i-pad)/Nd)), fc=Math.min(sr*0.45,lo*Math.pow(2,range*(down?1-x:x))*K); g=Math.tan(Math.PI*fc/sr); }
+        const v=buf[i], h=(v-(g+kq)*i1-i2)/(1+g*(g+kq)), b=g*h+i1; i1=2*b-i1; const l=g*b+i2; i2=2*l-i2; buf[i]=l; } } }
   // remove the click trains' DC, then normalize so the laser sits level with the other layers
   const a=Math.exp(-2*Math.PI*20/sr); let pk=1e-9;
   for(const [src,dst] of [[L,outL],[Rr,outR]]){ let xp=0,y=0; for(let i=0;i<Nd;i++){ const xv=src[i+pad]; y=a*(y+xv-xp); xp=xv; dst[i]=y; pk=Math.max(pk,Math.abs(y)); } }
@@ -2760,7 +2769,7 @@ const INFO={
     how:['<b>Laser</b>. The click-stream engine from the Harmony Voice Box: a band-limited pulse train that starts as slow ticks and speeds up by a fixed number of octaves per second, through buzz into a bright tone in your key. Extra streams can stack in whole-number ratios (harmonics, a major chord, a dominant 7th, fifths or a cluster), and <b>Zap</b> adds a synced pew on every 16th note.','<b>Noise</b>. A noise wash runs through two filters: a high-pass that rises and a low-pass that opens.','<b>Stutter</b>. A gate synced to your BPM speeds up toward the end.','<b>Reverse suck</b>. A reversed reverb swell pulls into the downbeat, and the cut gates the reverb tail so the drop lands clean.'],
     tips:['Set <b>Length</b> in bars to match your build; BPM comes from the top bar.','Turn up <b>Laser</b> for a sci-fi edge on any character, or pick <b>Laser</b> for the full effect.'],src:''},
   down:{lead:'The release after a drop: a fall in your key with a sub dive.',
-    how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to slow ticks, fading as it goes. More streams can stack in whole-number ratios.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
+    how:['<b>Laser fall</b>. A bright click stream that dives about eight octaves at a steady rate, from a high whine down to a low buzz, fading as it goes. <b>Smooth</b> rounds off the clicks as the pitch drops, so the low end turns into soft pulses instead of sharp ticks. More streams can stack in whole-number ratios.','Filters close as it falls, and a noise wash fades out with a reverb tail.','An optional sub dive drops a sine into the low end.'],
     tips:['A two-octave fall over one bar is a classic transition; shorter falls work as fills.'],src:''},
   impact:{lead:'A hit for drops and transitions: boom, crack and wash.',
     how:['<b>Boom</b>. A sine sweeping down from a start pitch to an end pitch, with a long decay.','<b>Crack</b>. A sharp broadband transient on top.','<b>Wash</b>. Noise from the generated ambience with a filter closing over its decay.','Drive and a large room glue it together.'],
