@@ -324,11 +324,10 @@ const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 
 /* ---------------- parameter definitions ---------------- */
 const P = (k,label,min,max,def,unit,o={}) => ({k,label,min,max,def,unit,...o});
-const AMB = (amb, own=true) => [
+const AMB = amb => [
   {kind:'head',label:'Noise source',always:true},
   {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
   {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:amb,lock:true,when:p=>p.noiseType==='ambience'},
-  ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'})]:[]),
 ];
 const POST = [
   {kind:'head',label:'Saturation'},
@@ -460,7 +459,7 @@ const TYPES = {
       P('texture','Texture',0,1,0.5,'%',{rnd:[0.35,0.65],when:p=>p.mode!=='detailed'}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      ...AMB('rumble',false),
+      ...AMB('rumble'),
       {kind:'head',label:'Shell · acoustic drum'},
       P('shellLvl','Level',0,1,0,'%'),
       P('shellPitch','Head pitch',40,120,62,'Hz',{log:true}),
@@ -546,7 +545,7 @@ const TYPES = {
       P('toneX','Tone',-1,1,0,'bal',{rnd:[-0.4,0.4]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      ...AMB('room',false),
+      ...AMB('room'),
       {kind:'head',label:'Transient · stick'},
       P('trLvl','Level',0,1,0.7,'%'),
       P('trLen','Length',0.002,0.03,0.008,'s',{log:true}),
@@ -583,6 +582,7 @@ const TYPES = {
       P('decay','Decay',0.05,1.2,0.26,'s',{log:true}),
       P('tone','Tone',500,5000,1300,'Hz',{log:true}),
       P('q','Focus',0.4,8,1.6,'Q',{log:true}),
+      P('seed','Variation',0,999,7,'seed',{step:1}),
       ...AMB('room'),
     ]},
   hat:{label:'Hat',folder:'Hats',c:'--hat',desc:'Six metallic square partials (808-style) blended with noise.',
@@ -592,6 +592,7 @@ const TYPES = {
       P('pitch','Pitch',0.5,2,1,'x',{log:true}),
       P('metal','Metal',0,1,0.6,'%'),
       P('tone','Brightness',3000,13000,7000,'Hz',{log:true}),
+      P('seed','Variation',0,999,7,'seed',{step:1}),
       ...AMB('crackle'),
     ]},
   perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'A stick and shaped noise excite a bank of tuned resonators: hats, blocks, toms and bells. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
@@ -607,7 +608,7 @@ const TYPES = {
       P('widthX','Width',0,1,0.5,'%',{rnd:[0.3,0.8]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      ...AMB('crackle',false),
+      ...AMB('crackle'),
       {kind:'head',label:'Stick'},
       P('stickLvl','Level',0,1,0.5,'%'),
       P('stickPitch','Pitch',150,8000,3500,'Hz',{log:true}),
@@ -656,6 +657,7 @@ const TYPES = {
       P('nDecay','Wash decay',0.1,4,1.1,'s',{log:true}),
       P('bright','Wash bright',1000,16000,8000,'Hz',{log:true}),
       P('crack','Crack',0,1,0.4,'%'),
+      P('seed','Variation',0,999,7,'seed',{step:1}),
       ...AMB('rumble'),
     ]},
   eco:{label:'Ecosystem',folder:'Ecosystems',c:'--eco',desc:'A generative ecosystem texture: weather and creatures set back in a forest, with vinyl character to sit under a track.',
@@ -854,7 +856,7 @@ function noiseSrc(ctx, dur, p, key=0, tilt=0, evFade=dur*0.3){
     const sd=(p.seed|0)*7919+key*1013;
     for(let c=0;c<2;c++){ const a=ambience(len,ctx.sampleRate,p,sd,sd+1+c,tilt,evFade); b.copyToChannel(a.map(v=>v*1.73),c); }
   } else
-  for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<len;i++) d[i]=Math.random()*2-1; }
+  for(let c=0;c<2;c++){ const d=b.getChannelData(c), R=mulberry(((p&&p.seed)|0)*7919+key*1013+5+c); for(let i=0;i<len;i++) d[i]=R()*2-1; }   // seeded, so Variation picks the grain
   const s = ctx.createBufferSource(); s.buffer=b; return s;
 }
 function envAD(param, peak, a, d, t0=0){
