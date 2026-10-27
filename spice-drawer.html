@@ -333,8 +333,10 @@ const AMB = (amb, own=true) => [
 ];
 const POST = [
   P('drive','Drive',0,1,0,'%'),
+  {kind:'head',label:'Reverb'},
   P('space','Space',0,1,0,'%'),
   P('room','Decay',0.2,2,0.2,'s',{log:true}),
+  {kind:'head',label:'Playback'},
   {k:'reverse',label:'Reverse',kind:'bool',def:false},
 ];
 
