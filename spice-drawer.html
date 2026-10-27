@@ -20,7 +20,7 @@
   --maxw:1360px;
   --panel:var(--bg-raise); --sunk:#0a0e13; --muted:var(--ink-soft);
   --accent-ink:#10151b; --danger:#ff7b7b;
-  --kick:#FF8A3D; --bass:#E8A87C; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --birds:#74C0FC;
+  --kick:#FF8A3D; --bass:#E8A87C; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --water:#74C0FC;
   --f-display:"Fraunces", Georgia, serif;
   --f-body:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
   --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -722,6 +722,37 @@ const TYPES = {
       P('citySpace','Distance',0,1,0.25,'%'),
       P('width','Width',0,1,0.8,'%'),
     ]},
+  water:{label:'Water',folder:'Water',c:'--water',desc:'Flowing water built from scratch: thousands of synthesized bubbles across nine frequency bands, turbulence noise, and a space around it.',
+    params:[
+      P('length','Length',4,30,10,'s',{step:0.5,lock:true}),
+      {k:'loop',label:'Seamless loop',kind:'bool',def:true,lock:true},
+      P('seed','Variation',0,999,7,'seed',{step:1}),
+      {kind:'head',label:'Flow'},
+      P('flow','Flow',0,1,0.5,'%',{rnd:[0.25,0.8]}),
+      P('lows','Lows',0,1,0.3,'%',{rnd:[0.05,0.6]}),
+      P('mids','Mids',0,1,0.6,'%',{rnd:[0.3,0.9]}),
+      P('highs','Highs',0,1,0.5,'%',{rnd:[0.2,0.8]}),
+      P('surge','Surge',0,1,0.4,'%',{rnd:[0.1,0.7]}),
+      P('echoes','Echoes',0,1,0.35,'%',{rnd:[0.1,0.6]}),
+      P('stack','Stack',1,4,3,'n',{step:1,rnd:[2,4]}),
+      {kind:'head',label:'Droplets'},
+      P('pitch','Pitch',-12,12,0,'st',{step:1,rnd:[-5,5]}),
+      P('dropLen','Length',0.5,2,1,'x',{log:true,rnd:[0.7,1.5]}),
+      P('chirp','Chirp',0,1,0.3,'%',{rnd:[0.15,0.6]}),
+      P('splash','Splash',0,1,0.3,'%',{rnd:[0.1,0.5]}),
+      {kind:'head',label:'Noise'},
+      P('turb','Turbulence',0,1,0.15,'%',{rnd:[0,0.5]}),
+      P('roar','Roar tone',300,8000,1800,'Hz',{log:true,rnd:[600,4000]}),
+      P('floor','Noise floor',0,1,0.1,'%',{rnd:[0,0.3]}),
+      {kind:'head',label:'Space'},
+      P('distance','Distance',0,1,0.25,'%',{rnd:[0.05,0.6]}),
+      P('verb','Reverb',0,1,0.25,'%',{rnd:[0.05,0.5]}),
+      P('size','Reverb size',0.5,6,1.8,'s',{log:true,rnd:[1,3]}),
+      P('width','Width',0,1,0.8,'%',{rnd:[0.5,1]}),
+      {kind:'head',label:'Master EQ'},
+      P('lowCut','Low cut',20,300,30,'Hz',{log:true,rnd:[20,80]}),
+      P('tone','Tone',1000,20000,16000,'Hz',{log:true,rnd:[6000,18000]}),
+    ]},
 };
 const KICK_CHARS={
   // acoustic: the shell layer is the drum; tuned against real recorded kicks (close, mid and room mics)
@@ -808,7 +839,7 @@ function percResolve(p){
 const OFFSET_MACROS={snare:['tune','snap','body','wires','lenX','toneX'],perc:['tune','stick','lenX','metal','toneX','widthX'],
   riser:['tension','widthX','grit','bright','spaceX','laserX'],down:['tension','widthX','grit','bright','spaceX','laserX']};
 function bakeMacros(t,p,resolved){ Object.assign(p,resolved); for(const k of OFFSET_MACROS[t]){ const d=TYPES[t].params.find(x=>x.k===k); p[k]=d.def; } p.mode='detailed'; }
-const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco'];
+const ORDER = ['kick','bass','snare','clap','hat','perc','riser','down','impact','city','eco','water'];
 const allDefs = t => [...TYPES[t].params, ...POST].filter(d=>d.kind!=='head');
 const defaults = t => { const o={}; for(const d of allDefs(t)) o[d.k] = d.def; return o; };   // Finish always starts dry and clean
 
@@ -968,6 +999,13 @@ const BUILD = {
     const mk=(a,b)=>{ const bf=ctx.createBuffer(2,N,sr); bf.copyToChannel(a,0); bf.copyToChannel(b,1); const s=ctx.createBufferSource(); s.buffer=bf; s.start(0); return s; };
     mk(dL,dR).connect(out);
     const cv=ctx.createConvolver(); cv.buffer=makeForestIR(ctx,p.size,p.seed); mk(sL,sR).connect(cv).connect(gainN(ctx,0.9)).connect(out);
+    return N/sr;
+  },
+  water(ctx,p,out){
+    const sr=ctx.sampleRate, {dL,dR,sL,sR,N}=waterSignal(p,sr);
+    const mk=(a,b)=>{ const bf=ctx.createBuffer(2,N,sr); bf.copyToChannel(a,0); bf.copyToChannel(b,1); const s=ctx.createBufferSource(); s.buffer=bf; s.start(0); return s; };
+    mk(dL,dR).connect(out);
+    if(p.verb>0.001){ const cv=ctx.createConvolver(); cv.buffer=makeHallIR(ctx,p.size,p.seed); mk(sL,sR).connect(cv).connect(gainN(ctx,1.2)).connect(out); }
     return N/sr;
   },
   city(ctx,p,out){
@@ -1501,6 +1539,99 @@ function loopFold(buf,len){
   const chs=[0,1].map(c=>{ const d=buf.getChannelData(c), o=new Float32Array(N); for(let i=0;i<d.length;i++) o[i%N]+=d[i]; for(const v of o) pk=Math.max(pk,Math.abs(v)); return o; });
   const g=0.9/(pk||1); chs.forEach((o,c)=>{ for(let i=0;i<N;i++) o[i]*=g; out.copyToChannel(o,c); });
   return out;
+}
+
+/* ---------- Water: procedural flowing water (after Amfiviola's method) ----------
+   Droplets are bubbles: a sine whose pitch rises as the bubble shrinks (van den Doel's model, f(t)=f0(1+σt),
+   damping d=0.043·f0+0.0014·f0^1.5), with a short noise transient. Nine chains cover 25 Hz–16 kHz, each with its
+   own density, a randomly wandering trigger rate (the arpeggiator), echoes whose feedback switches on and off
+   (the square-LFO MIDI echo), and a slowly moving resonant high-pass. The droplet pattern is stacked with offsets
+   and pitch changes for density, then a turbulence noise layer, a noise floor, distance and reverb. */
+const waterLen=p=>p.length+(p.loop?0:0.3)+Math.min(2,p.size*0.5)+0.4;
+const WATER_CHAINS=[ // [low Hz, high Hz, band, droplets per second at full density]
+  [25,80,'lows',5],[80,250,'lows',9],
+  [250,450,'mids',22],[450,800,'mids',26],[800,1300,'mids',24],[1300,2000,'mids',20],
+  [2000,4000,'highs',45],[4000,8000,'highs',60],[8000,16000,'highs',70]];
+function waterSignal(p,sr){
+  const R=mulberry((p.seed|0)*7919+211), n2=()=>R()*2-1, rr=(a,b)=>a+(b-a)*R();
+  const L=p.length, loop=!!p.loop, Nl=Math.round(L*sr), N=Math.ceil(waterLen(p)*sr);
+  const dL=new Float32Array(N), dR=new Float32Array(N), sL=new Float32Array(N), sR=new Float32Array(N);
+  const wrap=i=> loop ? ((i%Nl)+Nl)%Nl : i;                           // loop: everything folds onto the loop length
+  // periodic slow modulators (whole cycles over the length, so loops stay seamless)
+  const lfo=(cyc)=>{ const c=cyc.map(k=>({k,ph:R()*6.283,a:R()})); const s=c.reduce((a,x)=>a+x.a,0)||1; return t=>c.reduce((a,x)=>a+x.a*Math.sin(6.283*x.k*t/L+x.ph),0)/s; };
+  const flowScale=0.15+1.7*p.flow, surge=lfo([1,2,3,5]), surgeAmt=p.surge;
+  const dist=p.distance, wid=p.width*(1-0.7*dist), pitchMul=Math.pow(2,(p.pitch||0)/12);
+  const stackN=Math.max(1,Math.round(p.stack||1)), stacks=[{off:0,pm:1,g:1}];
+  for(let k=1;k<stackN;k++) stacks.push({off:rr(0.15,0.9)*L, pm:Math.pow(2,rr(-2.5,2.5)/12), g:rr(0.55,0.85)});
+  const mono=new Float32Array(N), bufL=new Float32Array(N), bufR=new Float32Array(N);
+  for(const [lo,hi,band,base] of WATER_CHAINS){
+    const dens=p[band]; if(dens<=0.001) continue;
+    mono.fill(0); const pans=[];                                       // this chain's droplets (mono), then filtered and panned
+    const rate=base*dens*flowScale, rWalk=lfo([3,7,11,17]), gateP=rr(0.4,1.5);
+    const evs=[]; let t=R()/Math.max(rate,0.1);
+    const Lend=loop?L:Math.max(0.1,L-0.25);
+    while(t<Lend){
+      const m=Math.max(0.05,(1+surgeAmt*1.2*surge(t))*(1+0.8*rWalk(t)));     // bursts and surges in the trigger rate
+      if(R()<m/2.2){
+        const f0=lo*Math.pow(hi/lo,R()), a=Math.pow(rr(0.25,1),1.6)*(band==='highs'?2:1);
+        evs.push({t,f0,a,pan:n2()});
+        // echoes: feedback is switched by a square LFO so they come in bursts, not a constant pile-up
+        if(Math.floor(t/gateP)%2===0){ let fb=(0.25+0.6*p.echoes)*p.echoes, et=t, ea=a;
+          for(let e=0;e<6 && R()<fb*1.6;e++){ et+=rr(0.008,0.06); ea*=fb*rr(0.7,1.1); evs.push({t:et,f0:f0*Math.pow(2,rr(-2,2)/12),a:ea,pan:n2()}); } }
+      }
+      t+= -Math.log(1-R()*0.9999)/(Math.max(rate,0.1)*2.2/ 1);
+    }
+    // stacking: the same pattern again, offset in time and shifted in pitch
+    for(const st of stacks){ for(const e of evs){
+      let te=e.t+st.off; if(loop) te%=L; else if(st.off>0){ if(te>Lend) te-=Lend; }
+      const f0=Math.min(sr*0.42, e.f0*st.pm*pitchMul), d=(0.043*f0+0.0014*Math.pow(f0,1.5))/p.dropLen;
+      const sig=(0.02+0.38*p.chirp)*rr(0.5,1.5)*d, dur=Math.min(1.2,6.9/d), n=Math.max(8,Math.floor(dur*sr));
+      const i0=Math.floor(te*sr), amp=e.a*st.g, ed=Math.exp(-d/sr), atk=Math.max(1,Math.round(sr*0.0002));
+      // rotating phasor (re-tuned every 32 samples for the chirp) instead of a sin() per sample
+      let x=1, y=0, env=amp, c=1, sn=0;
+      for(let k=0;k<n;k++){
+        if((k&31)===0){ const f=f0*(1+sig*(k+16)/sr); if(f>sr*0.45) break; const w=6.2832*f/sr; c=Math.cos(w); sn=Math.sin(w); const m=1/Math.hypot(x,y); x*=m; y*=m; }
+        const nx=x*c-y*sn; y=x*sn+y*c; x=nx;
+        const v=y*env*(k<atk?k/atk:1); env*=ed; if(env<amp*1e-3) break;
+        const ii=loop?(i0+k)%Nl:i0+k; if(ii<N) mono[ii]+=v; }
+      // splash: a short noise transient in parallel with the bubble
+      if(p.splash>0){ const ns=Math.floor(sr*rr(0.001,0.004)); for(let k=0;k<ns;k++){ const ii=wrap(i0+k); if(ii<N) mono[ii]+=n2()*p.splash*0.5*amp*(1-k/ns)*(1-k/ns); } }
+      pans.push(e.pan);
+    } }
+    // a resonant high-pass that wanders slowly, then roll-offs at the chain's edges
+    { const hpW=lfo([2,5,9]); let i1=0,i2=0,g=0; const kq=1/1.8;
+      for(let i=0;i<N;i++){ if((i&31)===0){ const fc=Math.min(sr*0.45,lo*0.7*Math.pow(2,1.2*hpW(i/sr))); g=Math.tan(Math.PI*fc/sr); }
+        const v=mono[i], h=(v-(g+kq)*i1-i2)/(1+g*(g+kq)), b=g*h+i1; i1=2*b-i1; const l=g*b+i2; i2=2*l-i2; mono[i]=v-kq*b-l; } }
+    biquad(mono,'lp',Math.min(sr*0.45,hi*1.6),0.707,0,sr);
+    // chain placement: each chain sits at its own spot and drifts a little
+    const pc=n2()*0.6, drift=lfo([1,3]); let gl=1, gr=0;
+    for(let i=0;i<N;i++){ if((i&127)===0){ const pan=Math.max(-1,Math.min(1,(pc+0.4*drift(i/sr))*wid)); gl=Math.cos((pan+1)*Math.PI/4); gr=Math.sin((pan+1)*Math.PI/4); } bufL[i]+=mono[i]*gl; bufR[i]+=mono[i]*gr; }
+  }
+  // level the droplets
+  { let e=0,n=0; for(let i=0;i<Math.min(N,Nl);i+=7){ e+=bufL[i]*bufL[i]+bufR[i]*bufR[i]; n+=2; } const g=0.12/(Math.sqrt(e/(n||1))||1); for(let i=0;i<N;i++){ bufL[i]*=g; bufR[i]*=g; } }
+  // turbulence: noise whose slope follows the roar tone, breathing with the surge; plus a quiet noise floor
+  const bedN=loop?Nl:N, xf=Math.min(Math.round(1.0*sr),Math.floor(bedN/4));
+  if(p.turb>0||p.floor>0){
+    const lpA=1-Math.exp(-2*Math.PI*p.roar/sr), hpA=Math.exp(-2*Math.PI*60/sr);
+    const st=[0,1].map(()=>({lp:0,lp2:0,hx:0,hy:0,b:[0,0,0,0,0,0,0]}));
+    const pink=(s,w)=>{ const b=s.b; b[0]=0.99886*b[0]+w*0.0555179; b[1]=0.99332*b[1]+w*0.0750759; b[2]=0.969*b[2]+w*0.153852; b[3]=0.8665*b[3]+w*0.3104856; b[4]=0.55*b[4]+w*0.5329522; b[5]=-0.7616*b[5]-w*0.016898; const o=(b[0]+b[1]+b[2]+b[3]+b[4]+b[5]+b[6]+w*0.5362)*0.11; b[6]=w*0.115926; return o; };
+    const len=loop?bedN+xf:bedN;
+    let sw=1; for(let i=0;i<len;i++){ if((i&127)===0) sw=1+0.5*surgeAmt*surge((i%Math.max(1,bedN))/sr);
+      let fade=1; if(loop){ if(i<xf) fade=Math.sin(Math.PI/2*i/xf); else if(i>=bedN) fade=Math.cos(Math.PI/2*(i-bedN)/xf); } else { fade=Math.min(1,i/(0.3*sr),(bedN-i)/(0.4*sr)); }
+      const wc=n2(), out=[0,0];
+      for(let c=0;c<2;c++){ const s=st[c], w=wc*(1-wid*0.7)+n2()*wid*0.7;
+        s.lp+=lpA*(w-s.lp); s.lp2+=lpA*(s.lp-s.lp2); const tb=(s.lp2*2.2+s.lp*0.6);
+        const y=hpA*(s.hy+tb-s.hx); s.hx=tb; s.hy=y;
+        out[c]=(y*p.turb*0.4*sw+pink(s,n2())*p.floor*0.06)*fade; }
+      const ii=wrap(i); if(ii<N){ bufL[ii]+=out[0]; bufR[ii]+=out[1]; } }
+  }
+  if(!loop){ const fi=Math.round(0.3*sr); for(let i=0;i<fi&&i<N;i++){ const g=i/fi; bufL[i]*=g; bufR[i]*=g; } }
+  // distance: highs fall away first, the source gets quieter and narrower; master EQ
+  const fcD=Math.min(p.tone, 18000*Math.pow(2,-3.2*dist));
+  for(const c of [bufL,bufR]){ biquad(c,'lp',fcD,0.707,0,sr); biquad(c,'hp',p.lowCut,0.707,0,sr); biquad(c,'hp',p.lowCut,0.707,0,sr); }
+  const gD=1-0.45*dist, send=Math.min(1,p.verb*(0.6+0.8*dist));
+  for(let i=0;i<N;i++){ dL[i]=bufL[i]*gD; dR[i]=bufR[i]*gD; sL[i]=bufL[i]*send; sR[i]=bufR[i]*send; }
+  return {dL,dR,sL,sR,N};
 }
 
 /* ---------- City texture: a continuous urban bed with vinyl character, made to sit under a track ---------- */
@@ -2207,7 +2338,7 @@ async function render(type, p){
     const cv=c2.createConvolver(); cv.buffer=makeIR(c2,p.room); chain(src,cv,gainN(c2,p.space*0.9),c2.destination);
     src.start(0); buf=await c2.startRendering();
   }
-  if((type==='eco'||type==='city') && p.loop) return loopFold(buf,p.length);
+  if((type==='eco'||type==='city'||type==='water') && p.loop) return loopFold(buf,p.length);
   return finish(buf,p);
 }
 function estimateLen(type,p){
@@ -2222,6 +2353,7 @@ function estimateLen(type,p){
     case 'impact': return Math.max(p.bDecay,p.nDecay)*2.4+0.02;
     case 'eco': return ecoLen(p);
     case 'city': return cityLen(p);
+    case 'water': return waterLen(p);
   }
 }
 function finish(buf,p){
@@ -2357,7 +2489,7 @@ function buildRail(){
     const head={0:'Drums',6:'FX',9:'Textures'}[i];
     if(head){ if(i){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); } const h=document.createElement('h3'); h.className='rhead'; h.textContent=head; r.appendChild(h); }
     const b=document.createElement('button'); b.type='button'; b.id='type-'+t; b.setAttribute('aria-pressed',String(S.type===t));
-    b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:i===10?'-':''}</span>`;
+    b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:i===10?'-':i===11?'=':''}</span>`;
     b.onclick=()=>selectType(t); r.appendChild(b);
   });
 }
@@ -2642,6 +2774,15 @@ const INFO={
   city:{lead:'An urban bed with vinyl character, to sit under a track.',
     how:['<b>Traffic wash</b>. Filtered noise that rises and falls like distant traffic, with occasional cars passing by.','<b>Crowd murmur</b>. Shaped noise with the movement of a crowd but no voices.','<b>Hum</b>. Mains hum and its harmonics.','<b>Vinyl</b>. Crackle, hiss and wow and flutter, then tone, space and width.','<b>Seamless loop</b> crossfades the ends so it loops without a seam.'],
     tips:['Keep it low in the mix; it works best as texture you feel more than hear.'],src:'Inspired by Amfiviola: <a href="https://youtu.be/5HU8Jm6pNS0" target="_blank" rel="noopener">the BIOTA ambience video</a>.'},
+  water:{lead:'Flowing water synthesized from scratch, droplet by droplet.',
+    how:['<b>Droplets</b>. Each droplet is an air bubble ringing under the surface: a sine whose pitch rises as the bubble shrinks, with a fast decay that depends on its size (larger, lower bubbles ring longer). <b>Chirp</b> sets how far the pitch rises, <b>Length</b> how long they ring, and <b>Splash</b> adds a tiny noise burst at each impact.',
+      '<b>Flow</b>. Nine chains of droplets run in parallel, from 25 Hz to 16 kHz: two for the lows, four for the mids and three for the highs (<b>Lows</b>, <b>Mids</b>, <b>Highs</b> set each band\'s density). Each chain fires at a randomly wandering rate, and <b>Surge</b> adds slow swells in the flow. A resonant high-pass drifts slowly in every chain for variety.',
+      '<b>Echoes</b>. Some droplets repeat a few milliseconds later at a slightly different pitch. The echo feedback switches on and off, so they come in bursts instead of piling up.',
+      '<b>Stack</b>. The whole droplet pattern is layered again with different time offsets and pitch shifts, which makes the water denser and more complex.',
+      '<b>Noise</b>. <b>Turbulence</b> is the rushing noise of rapids and waterfalls, its slope set by <b>Roar tone</b>. The more turbulent the water, the noisier and less distinct the droplets. <b>Noise floor</b> imitates the hiss of a field recording.',
+      '<b>Space</b>. Distance rolls off the highs, lowers the level and narrows the image; then a reverb.'],
+    tips:['A stream: mostly mids, some highs, little turbulence. Rapids or a waterfall: more turbulence and less droplet detail. A drip into a sink: low Flow and Stack, few echoes.','Seamless loop makes the file loop cleanly, ready to sit under a track.'],
+    src:'Inspired by Amfiviola: <a href="https://youtu.be/jW1YvzHvCrU" target="_blank" rel="noopener">How To Synthesize Realistic Water</a>. The bubble model follows Kees van den Doel\'s research on liquid sounds.'},
   eco:{lead:'A generative forest, layered the way ecologists describe soundscapes.',
     how:['<b>Geophony</b>. Weather: wind and gusts, rain and droplets, distant thunder.','<b>Biophony</b>. Creatures that call by their own rules: birds (choose a species), crickets, frogs and alien calls. Some answer each other (<b>Call and answer</b>).','<b>Propagation</b>. Distance, depth spread and a forest reverb place each sound in space.','<b>Texture</b>. Vinyl crackle, hiss and wow tuck it under a track. <b>Seamless loop</b> makes it loop cleanly.'],
     tips:['Lower <b>Presence</b> and more distance keep it in the background.'],src:'Inspired by Amfiviola: <a href="https://youtu.be/5HU8Jm6pNS0" target="_blank" rel="noopener">the BIOTA ambience video</a> (geophony, biophony and propagation).'},
@@ -2718,6 +2859,7 @@ document.addEventListener('keydown',e=>{
   else if(/^[1-9]$/.test(k)) selectType(ORDER[+k-1]);
   else if(k==='0') selectType(ORDER[9]);
   else if(k==='-') selectType(ORDER[10]);
+  else if(k==='=') selectType(ORDER[11]);
 });
 
 async function rerenderPack(){
