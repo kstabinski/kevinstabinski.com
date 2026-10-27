@@ -454,7 +454,7 @@ const TYPES = {
       P('tune','Tune',-7,7,0,'st',{step:1,rnd:[-4,4],when:p=>p.mode!=='detailed'}),
       P('click','Click',0,1,0.5,'%',{rnd:[0.3,0.75],when:p=>p.mode!=='detailed'}),
       P('lenX','Length',0.5,2,1,'x',{log:true,rnd:[0.75,1.35],when:p=>p.mode!=='detailed'}),
-      P('roomX','Room',0,1,0.5,'%',{rnd:[0.25,0.7],when:p=>p.mode!=='detailed'}),
+      P('roomX','Room',0,1,0.5,'%',{rnd:[0,0.1],when:p=>p.mode!=='detailed'}),
       P('toneX','Tone',-1,1,0,'bal',{rnd:[-0.4,0.4],when:p=>p.mode!=='detailed'}),
       P('texture','Texture',0,1,0.5,'%',{rnd:[0.35,0.65],when:p=>p.mode!=='detailed'}),
       P('velocity','Velocity',0,1,1,'%'),
@@ -2265,7 +2265,6 @@ function vary(t,p,amt,full){
     const n = full ? 0.05+Math.random()*(hi-0.05) : clamp(norm(d,p[d.k])+(Math.random()*2-1)*amt, 0, d.rmax!=null?hi:1);
     o[d.k]=denorm(d,n);
   }
-  if(t==='kick') o.roomX=0;   // kicks always come out of Randomize and Mutate dry
   return o;
 }
 
