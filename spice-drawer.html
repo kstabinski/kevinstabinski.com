@@ -332,6 +332,7 @@ const AMB = (amb, own=true) => [
   ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'}), {kind:'head',label:'Sound'}]:[]),
 ];
 const POST = [
+  {kind:'head',label:'Saturation'},
   P('drive','Drive',0,1,0,'%'),
   {kind:'head',label:'Reverb'},
   P('space','Space',0,1,0,'%'),
