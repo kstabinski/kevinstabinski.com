@@ -325,9 +325,10 @@ const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
 /* ---------------- parameter definitions ---------------- */
 const P = (k,label,min,max,def,unit,o={}) => ({k,label,min,max,def,unit,...o});
 const AMB = (amb, own=true) => [
+  {kind:'head',label:'Noise source',always:true},
   {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
   {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:amb,lock:true,when:p=>p.noiseType==='ambience'},
-  ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'}), {kind:'head',label:'Sound'}]:[]),
+  ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'})]:[]),
 ];
 const POST = [
   {kind:'head',label:'Saturation'},
@@ -352,9 +353,9 @@ const sweepParams=(down)=>{
     P('bright','Brightness',-1,1,0,'bal',{rnd:[-0.4,0.4],simple:true}),
     P('spaceX','Space',0,1,0.5,'%',{rnd:[0.3,0.75],simple:true}),
     P('laserX','Laser',0,1,0.5,'%',{rnd:[0.3,0.85],simple:true}),
-    P('bars','Length',0.5,8,down?1:2,'bars',{step:0.5,lock:true}),
     {k:'key',label:'Key',kind:'sel',opts:NOTES,def:'A',lock:true},
     P('octave','Octave',1,5,2,'n',{step:1,lock:true}),
+    P('bars','Length',0.5,8,down?1:2,'bars',{step:0.5,lock:true}),
     P('seed','Variation',0,999,7,'seed',{step:1}),
     {kind:'head',label:'Shape',detail:true},
     P('curve','Curve',0.5,5,down?2:2.2,'x',{detail:true}),
@@ -459,8 +460,15 @@ const TYPES = {
       P('texture','Texture',0,1,0.5,'%',{rnd:[0.35,0.65],when:p=>p.mode!=='detailed'}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
-      {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:'rumble',lock:true,when:p=>p.noiseType==='ambience'},
+      ...AMB('rumble',false),
+      {kind:'head',label:'Shell · acoustic drum'},
+      P('shellLvl','Level',0,1,0,'%'),
+      P('shellPitch','Head pitch',40,120,62,'Hz',{log:true}),
+      P('shellDamp','Damping',0,1,0.5,'%'),
+      {k:'beater',label:'Beater',kind:'sel',opts:['felt','wood','plastic'],def:'felt'},
+      P('shellAir','Air / noise',0,1,0.5,'%'),
+      P('shellRoom','Mic distance',0,1,0.35,'%'),
+      P('shellBend','Pitch bend',0,1,0.25,'%'),
       {kind:'head',label:'Near mic · kick in'},
       P('nearLvl','Level',0,1,1,'%'),
       P('pStart','Start pitch',40,300,100,'Hz',{log:true}),
@@ -498,14 +506,6 @@ const TYPES = {
       P('gritDist','Distortion',0,1,0.1,'%',{when:p=>p.grit!=='off'}),
       P('gritHP','High-pass',20,200,45,'Hz',{log:true,when:p=>p.grit!=='off'}),
       P('gritDecay','Fade',0.05,4,1.5,'s',{log:true,when:p=>p.grit!=='off'}),
-      {kind:'head',label:'Shell · acoustic drum'},
-      P('shellLvl','Level',0,1,0,'%'),
-      P('shellPitch','Head pitch',40,120,62,'Hz',{log:true}),
-      P('shellDamp','Damping',0,1,0.5,'%'),
-      {k:'beater',label:'Beater',kind:'sel',opts:['felt','wood','plastic'],def:'felt'},
-      P('shellAir','Air / noise',0,1,0.5,'%'),
-      P('shellRoom','Mic distance',0,1,0.35,'%'),
-      P('shellBend','Pitch bend',0,1,0.25,'%'),
       {kind:'head',label:'Master EQ'},
       P('lowCut','Low cut',20,150,20,'Hz',{log:true}),
       P('tone','Tone',600,20000,9000,'Hz',{log:true}),
@@ -517,6 +517,8 @@ const TYPES = {
         onset:(p,prev,o)=>{ if(o!==prev) Object.assign(p,BASS_KIND[o]); }},
       {k:'key',label:'Note',kind:'sel',opts:NOTES,def:'F',lock:true},
       P('octave','Octave',1,3,1,'n',{step:1,lock:true}),
+      P('seed','Variation',0,999,7,'seed',{step:1}),
+      {kind:'head',label:'Shape'},
       P('length','Length',0.1,4,1.6,'s',{log:true,rnd:[0.35,2.6],rndBy:{log:[0.3,1.3]}}),
       P('punch','Punch',0,48,12,'st',{step:1,rnd:[6,24],rndBy:{log:[26,40]}}),
       P('punchTime','Punch time',0.002,0.2,0.04,'s',{log:true,rnd:[0.02,0.08],rndBy:{log:[0.004,0.011]}}),
@@ -530,7 +532,6 @@ const TYPES = {
       {k:'sat',label:'Saturation',kind:'sel',opts:['clean','soft','tape','hard','fold'],labels:{clean:'Clean',soft:'Soft',tape:'Tape',hard:'Hard',fold:'Fold'},def:'soft',rndOptsBy:{log:['clean','clean','clean','soft','tape']}},
       P('satAmt','Saturation amount',0,1,0.35,'%',{rnd:[0.15,0.7],when:p=>p.sat!=='clean'}),
       P('tone','Tone',200,12000,5000,'Hz',{log:true,rnd:[2500,8000],rndBy:{log:[350,12000]}}),
-      P('seed','Variation',0,999,7,'seed',{step:1}),
     ]},
   snare:{label:'Snare',folder:'Snares',c:'--snare',desc:'A stick rings a feedback-delay drum head, with snare wires and a room on top. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
     post:{drive:0.2,space:0.25,room:0.7}, macroKeys:null,
@@ -545,8 +546,7 @@ const TYPES = {
       P('toneX','Tone',-1,1,0,'bal',{rnd:[-0.4,0.4]}),
       P('velocity','Velocity',0,1,1,'%'),
       P('seed','Variation',0,999,7,'seed',{step:1}),
-      {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
-      {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:'room',lock:true,when:p=>p.noiseType==='ambience'},
+      ...AMB('room',false),
       {kind:'head',label:'Transient · stick'},
       P('trLvl','Level',0,1,0.7,'%'),
       P('trLen','Length',0.002,0.03,0.008,'s',{log:true}),
@@ -578,21 +578,21 @@ const TYPES = {
   clap:{label:'Clap',folder:'Claps',c:'--clap',desc:'Stacked bandpassed noise bursts with a long last slap.',
     post:{drive:0.15,space:0.18,room:1.1},
     params:[
-      ...AMB('room'),
       P('bursts','Hands',1,7,4,'n',{step:1}),
       P('spread','Spread',0.003,0.03,0.011,'s'),
       P('decay','Decay',0.05,1.2,0.26,'s',{log:true}),
       P('tone','Tone',500,5000,1300,'Hz',{log:true}),
       P('q','Focus',0.4,8,1.6,'Q',{log:true}),
+      ...AMB('room'),
     ]},
   hat:{label:'Hat',folder:'Hats',c:'--hat',desc:'Six metallic square partials (808-style) blended with noise.',
     post:{drive:0.1,space:0,room:1},
     params:[
-      ...AMB('crackle'),
       P('decay','Decay',0.02,2,0.07,'s',{log:true}),
       P('pitch','Pitch',0.5,2,1,'x',{log:true}),
       P('metal','Metal',0,1,0.6,'%'),
       P('tone','Brightness',3000,13000,7000,'Hz',{log:true}),
+      ...AMB('crackle'),
     ]},
   perc:{label:'Perc',folder:'Perc',c:'--perc',desc:'A stick and shaped noise excite a bank of tuned resonators: hats, blocks, toms and bells. Simple shows six macros; Detailed opens every layer. Randomize moves everything.',
     post:{drive:0,space:0,room:1}, macroKeys:null,
@@ -633,11 +633,11 @@ const TYPES = {
       P('shift','Inharmonic shift',0,400,80,'Hz'),
       P('coin','Coin ring',0,1,0,'%'),
       P('width','Width',0,1,0.5,'%'),
-      {kind:'head',label:'Master'},
-      P('colorF','Color pitch',1000,12000,5000,'Hz',{log:true}),
-      P('color','Color',0,1,0.3,'%'),
+      {kind:'head',label:'Master EQ'},
       P('lowCut','Low cut',30,6000,400,'Hz',{log:true}),
       P('tone','Tone',2000,20000,18000,'Hz',{log:true}),
+      P('colorF','Color pitch',1000,12000,5000,'Hz',{log:true}),
+      P('color','Color',0,1,0.3,'%'),
     ]},
   riser:{label:'Riser',folder:'Risers',c:'--riser',desc:'A laser build with a steady resonant noise sweep and a reverse suck into the drop, in your key.',
     post:{drive:0,space:0,room:2}, macroKeys:SWEEP_MACROS,
@@ -648,7 +648,6 @@ const TYPES = {
   impact:{label:'Impact',folder:'Impacts',c:'--impact',desc:'Sub boom, crack and a closing noise wash for drops and transitions.',
     post:{drive:0.35,space:0.4,room:2},
     params:[
-      ...AMB('rumble'),
       P('bStart','Boom start',50,320,140,'Hz',{log:true}),
       P('bEnd','Boom end',22,70,34,'Hz',{log:true}),
       P('bDecay','Boom decay',0.3,4,1.8,'s',{log:true}),
@@ -657,13 +656,14 @@ const TYPES = {
       P('nDecay','Wash decay',0.1,4,1.1,'s',{log:true}),
       P('bright','Wash bright',1000,16000,8000,'Hz',{log:true}),
       P('crack','Crack',0,1,0.4,'%'),
+      ...AMB('rumble'),
     ]},
   eco:{label:'Ecosystem',folder:'Ecosystems',c:'--eco',desc:'A generative ecosystem texture: weather and creatures set back in a forest, with vinyl character to sit under a track.',
     post:{drive:0,space:0,room:1.5},
     params:[
-      P('seed','Variation',0,999,7,'seed',{step:1}),
       P('length','Length',4,30,10,'s',{step:0.5,lock:true}),
       {k:'loop',label:'Seamless loop',kind:'bool',def:true,lock:true},
+      P('seed','Variation',0,999,7,'seed',{step:1}),
       {kind:'head',label:'Geophony · weather'},
       P('wind','Wind',0,1,0.4,'%'),
       P('gust','Gusts',0,1,0.5,'%'),
@@ -701,9 +701,9 @@ const TYPES = {
   city:{label:'City',folder:'City',c:'--city',desc:'A continuous urban bed with vinyl character: traffic wash, murmur, hum and crackle to sit under a track.',
     post:{drive:0,space:0,room:1.5},
     params:[
-      P('seed','Variation',0,999,7,'seed',{step:1}),
       P('length','Length',4,30,10,'s',{step:0.5,lock:true}),
       {k:'loop',label:'Seamless loop',kind:'bool',def:true,lock:true},
+      P('seed','Variation',0,999,7,'seed',{step:1}),
       {kind:'head',label:'City'},
       P('traffic','Traffic wash',0,1,0.6,'%'),
       P('cars','Distant cars',0,1,0.3,'%'),
@@ -740,7 +740,7 @@ const KICK_CHARS={
   dubstep:{nearLen:1.1,pStart:220,pEnd:40,pDrop:0.06,clickFM:20,farLvl:0.25},
 };
 const KICK_MACROS=new Set(['mode','character','tune','click','lenX','roomX','toneX','texture','velocity','seed','noiseType','amb']);
-for(const d of TYPES.kick.params){ if(KICK_MACROS.has(d.k)) continue; const w=d.when; d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
+for(const d of TYPES.kick.params){ if(KICK_MACROS.has(d.k)||d.always) continue; const w=d.when; d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
 function kickResolve(p){
   const raw={}; for(const d of TYPES.kick.params) if(d.k&&!KICK_MACROS.has(d.k)&&'def' in d) raw[d.k]=d.def;
   const b={...raw,...(KICK_CHARS[p.character]||{})};
@@ -771,7 +771,7 @@ const SNARE_MACROS=new Set(['mode','tune','snap','body','wires','lenX','toneX','
 const PERC_MACROS=new Set(['mode','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb']);
 TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
 for(const [t,M] of [['snare',SNARE_MACROS],['perc',PERC_MACROS]])
-  for(const d of TYPES[t].params){ const w=d.when;
+  for(const d of TYPES[t].params){ const w=d.when; if(d.always) continue;
     if(M.has(d.k)){ if(d.k!=='mode'&&!['velocity','seed','noiseType','amb'].includes(d.k)) d.when = w ? (p=>p.mode!=='detailed'&&w(p)) : (p=>p.mode!=='detailed'); }
     else d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
 function macroBase(t,M,p){
