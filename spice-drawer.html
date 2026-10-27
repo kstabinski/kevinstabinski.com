@@ -327,8 +327,6 @@ const P = (k,label,min,max,def,unit,o={}) => ({k,label,min,max,def,unit,...o});
 const AMB = (amb, own=true) => [
   {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
   {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:amb,lock:true,when:p=>p.noiseType==='ambience'},
-  P('ambMotion','Motion',0,1,0.5,'%',{when:p=>p.noiseType==='ambience'}),
-  P('ambEvents','Events',0,1,0.4,'%',{when:p=>p.noiseType==='ambience'}),
   ...(own?[P('seed','Variation',0,999,7,'seed',{step:1,when:p=>p.noiseType==='ambience'}), {kind:'head',label:'Sound'}]:[]),
 ];
 const POST = [
@@ -463,8 +461,6 @@ const TYPES = {
       P('seed','Variation',0,999,7,'seed',{step:1}),
       {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
       {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:'rumble',lock:true,when:p=>p.noiseType==='ambience'},
-      P('ambMotion','Motion',0,1,0.5,'%',{when:p=>p.noiseType==='ambience'}),
-      P('ambEvents','Events',0,1,0.4,'%',{when:p=>p.noiseType==='ambience'}),
       {kind:'head',label:'Near mic · kick in'},
       P('nearLvl','Level',0,1,1,'%'),
       P('pStart','Start pitch',40,300,100,'Hz',{log:true}),
@@ -551,8 +547,6 @@ const TYPES = {
       P('seed','Variation',0,999,7,'seed',{step:1}),
       {k:'noiseType',label:'Noise',kind:'sel',opts:['white','ambience'],def:'ambience',lock:true,rebuild:true},
       {k:'amb',label:'Ambience',kind:'sel',opts:['rumble','room','crackle','wind'],def:'room',lock:true,when:p=>p.noiseType==='ambience'},
-      P('ambMotion','Motion',0,1,0.4,'%',{when:p=>p.noiseType==='ambience'}),
-      P('ambEvents','Events',0,1,0.3,'%',{when:p=>p.noiseType==='ambience'}),
       {kind:'head',label:'Transient · stick'},
       P('trLvl','Level',0,1,0.7,'%'),
       P('trLen','Length',0.002,0.03,0.008,'s',{log:true}),
@@ -745,7 +739,7 @@ const KICK_CHARS={
   ambience:{nearLvl:0.759,pStart:255.0,pEnd:49.1,pDrop:0.0141,nearLen:0.0649,clickFM:17.1,clickDecay:0.00225,modTone:1230.0,resoFreq:166.0,resoAmt:4.14,scoop:6.67,air:1.18,gritLvl:0.429,gritBass:52.0,gritBoost:23.3,gritQ:0.547,gritDist:0.00053,gritHP:35.3,gritDecay:3.24,lowCut:43.7,tone:16900.0,grit:"noise",farLvl:0},
   dubstep:{nearLen:1.1,pStart:220,pEnd:40,pDrop:0.06,clickFM:20,farLvl:0.25},
 };
-const KICK_MACROS=new Set(['mode','character','tune','click','lenX','roomX','toneX','texture','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const KICK_MACROS=new Set(['mode','character','tune','click','lenX','roomX','toneX','texture','velocity','seed','noiseType','amb']);
 for(const d of TYPES.kick.params){ if(KICK_MACROS.has(d.k)) continue; const w=d.when; d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
 function kickResolve(p){
   const raw={}; for(const d of TYPES.kick.params) if(d.k&&!KICK_MACROS.has(d.k)&&'def' in d) raw[d.k]=d.def;
@@ -773,12 +767,12 @@ function kickResolve(p){
 }
 for(const [t,o] of [['riser',SWEEP_DEFAULT.riser],['down',SWEEP_DEFAULT.down]])
   for(const d of TYPES[t].params) if(d.k && d.k in o) d.def=o[d.k];
-const SNARE_MACROS=new Set(['mode','tune','snap','body','wires','lenX','toneX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
-const PERC_MACROS=new Set(['mode','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb','ambMotion','ambEvents']);
+const SNARE_MACROS=new Set(['mode','tune','snap','body','wires','lenX','toneX','velocity','seed','noiseType','amb']);
+const PERC_MACROS=new Set(['mode','tune','stick','lenX','metal','toneX','widthX','velocity','seed','noiseType','amb']);
 TYPES.snare.macroKeys=SNARE_MACROS; TYPES.perc.macroKeys=PERC_MACROS;
 for(const [t,M] of [['snare',SNARE_MACROS],['perc',PERC_MACROS]])
   for(const d of TYPES[t].params){ const w=d.when;
-    if(M.has(d.k)){ if(d.k!=='mode'&&!['velocity','seed','noiseType','amb','ambMotion','ambEvents'].includes(d.k)) d.when = w ? (p=>p.mode!=='detailed'&&w(p)) : (p=>p.mode!=='detailed'); }
+    if(M.has(d.k)){ if(d.k!=='mode'&&!['velocity','seed','noiseType','amb'].includes(d.k)) d.when = w ? (p=>p.mode!=='detailed'&&w(p)) : (p=>p.mode!=='detailed'); }
     else d.when = w ? (p=>p.mode==='detailed'&&w(p)) : (p=>p.mode==='detailed'); }
 function macroBase(t,M,p){
   const raw={}; for(const d of TYPES[t].params) if(d.k&&!M.has(d.k)&&'def' in d) raw[d.k]= d.k in p ? p[d.k] : d.def;
@@ -1015,11 +1009,12 @@ const peakAbs=a=>{ let m=0; for(let i=0;i<a.length;i++){ const v=Math.abs(a[i]);
 const normTo=(a,g=1)=>{ const m=peakAbs(a); if(m>0) for(let i=0;i<a.length;i++) a[i]*=g/m; return a; };
 const rmsTo=(a,g,sr)=>{ const n=Math.min(a.length,Math.ceil(sr*0.15)); let e=0; for(let i=0;i<n;i++) e+=a[i]*a[i]; const r=Math.sqrt(e/n); if(r>0) for(let i=0;i<a.length;i++) a[i]*=0.3*g/r; return a; };
 
+const AMB_TYPE={rumble:{mo:0.5,ev:0.4},room:{mo:0.4,ev:0.3},crackle:{mo:0.5,ev:0.5},wind:{mo:0.5,ev:0.4}};
 /* Generated ambience: a seeded field-recording-like bed used in place of white noise.
    Event and swell timing come from seedEv; the noise bed from seedBed (so L/R can share events but not grain). */
 function ambience(N,sr,p,seedEv,seedBed,tilt=0,evFade=0){
   const Re=mulberry(seedEv), Rb=mulberry(seedBed), nb=()=>Rb()*2-1;
-  const out=new Float32Array(N), type=p.amb||'rumble', mo=p.ambMotion??0.5, ev=p.ambEvents??0.4;
+  const out=new Float32Array(N), type=p.amb||'rumble', {mo,ev}=AMB_TYPE[type]||AMB_TYPE.rumble;   // each type has its own fixed motion and event density
   let br=0, k0=0,k1=0,k2=0,k3=0,k4=0,k5=0,k6=0;
   // slow swells
   let sw=0.6, swT=Re(), swN=0; const swLen=Math.max(1,Math.floor(sr*(0.08+0.5*(1-mo))));
