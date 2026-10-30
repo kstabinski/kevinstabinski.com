@@ -173,6 +173,7 @@
   /* Responsive 16:9 video embed */
   .video{ aspect-ratio:16/9; border:1px solid var(--line); border-radius:2px; overflow:hidden; background:#000; }
   .video iframe{ width:100%; height:100%; border:0; display:block; }
+  .spotify-embed iframe{ width:100%; height:152px; border:0; border-radius:12px; display:block; }
 
   /* Store */
   .store-inner{
