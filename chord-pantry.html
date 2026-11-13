@@ -7,7 +7,7 @@
 <meta name="description" content="Chord Pantry: a free in-browser chord progression generator. Pick a style and key, hear it played like a real performance, and save it as MIDI with chords, bass and sustain pedal.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -18,10 +18,10 @@
 :root{
   /* Site blue-hour palette (styles.css), mapped onto the tool's tokens */
   --maxw:1360px;
-  --panel:var(--bg-raise); --sunk:#0a0e13; --muted:var(--ink-soft); --accent-ink:#10151b;
+  --panel:var(--bg-raise); --sunk:#0a0705; --muted:var(--ink-soft); --accent-ink:#1a0f07;
   --f-tonic:#5FCB8C; --f-pre:#E9AC4A; --f-dom:#F07A92; --f-color:#A98BF0; --tint:.16;
-  --display:"Fraunces", Georgia, serif;
-  --body:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  --display:"DM Serif Display", Georgia, serif;
+  --body:"Figtree", system-ui, -apple-system, sans-serif;
   --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 *{box-sizing:border-box}
@@ -137,7 +137,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 
 /* Site look for the tool's buttons */
 .tbtn{font-size:14px;transition:background .2s ease,color .2s ease,border-color .2s ease}
-.tbtn.primary{background:var(--ink);color:#10151b;border-color:var(--ink)}
+.tbtn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tbtn.primary:hover{background:transparent;color:var(--ink);filter:none}
 .tbtn kbd{background:none;border:0;padding:0;color:inherit;font-weight:500}
 .page-foot{position:relative;z-index:1;border-top:1px solid var(--line);padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem)}

@@ -7,7 +7,7 @@
 <meta name="description" content="Spice Drawer: a free in-browser sound designer for kicks, snares, percussion, risers, downlifters and ambiences. Build your own WAV sample packs and save them straight into a folder for your DAW.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -18,11 +18,11 @@
 :root{
   /* Site blue-hour palette (styles.css), mapped onto the tool's tokens */
   --maxw:1360px;
-  --panel:var(--bg-raise); --sunk:#0a0e13; --muted:var(--ink-soft);
-  --accent-ink:#10151b; --danger:#ff7b7b;
+  --panel:var(--bg-raise); --sunk:#0a0705; --muted:var(--ink-soft);
+  --accent-ink:#1a0f07; --danger:#ff7b7b;
   --kick:#FF8A3D; --bass:#E8A87C; --snare:#F06595; --clap:#CC5DE8; --hat:#3BC9DB; --perc:#51CF66; --riser:#FCC419; --down:#748FFC; --impact:#FF6B9A; --eco:#94D82D; --city:#A5B1C2; --water:#74C0FC;
-  --f-display:"Fraunces", Georgia, serif;
-  --f-body:"Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  --f-display:"DM Serif Display", Georgia, serif;
+  --f-body:"Figtree", system-ui, -apple-system, sans-serif;
   --f-mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 *{box-sizing:border-box}
@@ -192,7 +192,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 
 /* Site look for the tool's buttons */
 .tbtn{font-size:14px;transition:background .2s ease,color .2s ease,border-color .2s ease}
-.tbtn.primary{background:var(--ink);color:#10151b;border-color:var(--ink)}
+.tbtn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .tbtn.primary:hover{background:transparent;color:var(--ink);filter:none}
 .tbtn kbd{background:none;border:0;padding:0;color:inherit;font-weight:500}
 .chk input{accent-color:var(--accent)}

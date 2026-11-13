@@ -12,14 +12,15 @@
   }
   :root{
     color-scheme: dark;
-    /* ---- Blue-hour palette ---- */
-    --bg:        #0d1218;   /* deep blue-charcoal, genuinely blue */
-    --bg-raise:  #131a22;   /* slightly lifted surface */
-    --line:      #263140;   /* hairline dividers */
-    --ink:       #e9e5dd;   /* warm bone — cold/warm tension */
-    --ink-soft:  #a9b0ba;   /* muted secondary */
-    --ink-faint: #6b7480;   /* faintest labels */
-    --accent:    #9db4d6;   /* pale moonlit blue, used sparingly */
+    /* ---- After Hours palette (from the Midnight Shuffle cover) ---- */
+    --bg:        #0c0907;   /* warm near-black */
+    --bg-raise:  #16100c;   /* slightly lifted surface */
+    --line:      #33251b;   /* hairline dividers */
+    --ink:       #f3e6d6;   /* warm cream */
+    --ink-soft:  #c2ab94;   /* muted secondary */
+    --ink-faint: #86705c;   /* faintest labels */
+    --accent:    #e08a3c;   /* amber */
+    --accent-2:  #7fb6b3;   /* teal, for small labels */
 
     --maxw: 1080px;
     --pad: clamp(1.25rem, 5vw, 4rem);
@@ -38,7 +39,7 @@
     margin:0;
     background: var(--bg);
     color: var(--ink);
-    font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+    font-family: "Figtree", system-ui, -apple-system, sans-serif;
     font-size: clamp(1rem, 0.97rem + 0.15vw, 1.075rem);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -52,11 +53,11 @@
   .atmosphere::before{
     content:""; position:absolute; inset:0;
     background:
-      radial-gradient(60vw 55vw at 12% -5%, rgba(157,180,214,0.14), transparent 60%),
-      radial-gradient(50vw 50vw at 105% 8%, rgba(120,140,175,0.08), transparent 55%);
+      radial-gradient(60vw 55vw at 12% -5%, rgba(224,138,60,0.20), transparent 60%),
+      radial-gradient(50vw 50vw at 105% 8%, rgba(112,170,170,0.12), transparent 55%);
   }
   .atmosphere::after{
-    content:""; position:absolute; inset:0; opacity:0.045; mix-blend-mode:screen;
+    content:""; position:absolute; inset:0; opacity:0.08; mix-blend-mode:screen;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
@@ -76,7 +77,7 @@
     max-width: var(--maxw); margin:0 auto; padding: 0 var(--pad);
     height: 4.5rem; display:flex; align-items:center; justify-content:space-between;
   }
-  .wordmark{ font-family:"Nasalization","Kevinstabinskifont","Fraunces",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:0.03em; }
+  .wordmark{ font-family:"Nasalization","Kevinstabinskifont","DM Serif Display",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:0.03em; }
   .nav-links{ display:flex; gap: clamp(1rem, 4vw, 2.25rem); }
   .nav-links a{
     font-size:0.9rem; color: var(--ink-soft); position:relative; padding: .25rem 0;
@@ -97,7 +98,7 @@
     padding-top: clamp(3rem, 10vh, 7rem); padding-bottom: clamp(3rem, 10vh, 6rem);
   }
   .hero h1{
-    font-family:"Kevinstabinskifont","Fraunces",Georgia,serif; font-weight:400;
+    font-family:"Kevinstabinskifont","DM Serif Display",Georgia,serif; font-weight:400;
     font-size: clamp(3.3rem, 13vw, 9.5rem); line-height:0.92; letter-spacing:-0.025em;
     margin: 0 0 1.5rem; max-width: 12ch;
   }
@@ -110,7 +111,7 @@
   .hero-actions{ display:flex; align-items:center; gap: 1.5rem; flex-wrap:wrap; }
   .btn{
     display:inline-flex; align-items:center; gap:.6rem;
-    background: var(--ink); color: #10151b;
+    background: var(--ink); color: #1a0f07;
     font-weight:600; font-size:0.95rem;
     padding: .8rem 1.5rem; border-radius: 2px;
     border:1px solid var(--ink);
@@ -138,7 +139,7 @@
   .band{ padding: clamp(4rem, 12vh, 8rem) 0; border-top:1px solid var(--line); }
   .band-head{ margin-bottom: clamp(2rem, 5vw, 3.5rem); }
   .band-head h2{
-    font-family:"Fraunces",Georgia,serif; font-weight:400;
+    font-family:"DM Serif Display",Georgia,serif; font-weight:400;
     font-size: clamp(1.8rem, 5vw, 2.75rem); letter-spacing:-0.02em; margin:0;
   }
   .band-head p{ color: var(--ink-soft); margin:.75rem 0 0; max-width: 48ch; }
@@ -151,22 +152,22 @@
   .release:last-child{ border-bottom:1px solid var(--line); }
   .cover{
     aspect-ratio:1; background:
-      linear-gradient(150deg, var(--bg-raise), #0b0f14);
+      linear-gradient(150deg, var(--bg-raise), #0a0705);
     border:1px solid var(--line); border-radius:2px;
     display:grid; place-items:center; color: var(--ink-faint);
     font-size:0.7rem; letter-spacing:0.05em; text-align:center; overflow:hidden;
   }
   .cover svg{ width:38%; height:38%; opacity:.5; }
   .cover img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .rel-title{ font-family:"Fraunces",Georgia,serif; font-size:1.5rem; font-weight:400; margin:0 0 .3rem; letter-spacing:-0.01em; }
+  .rel-title{ font-family:"DM Serif Display",Georgia,serif; font-size:1.5rem; font-weight:400; margin:0 0 .3rem; letter-spacing:-0.01em; }
   .rel-meta{ color: var(--ink-faint); font-size:0.85rem; margin:0 0 1rem; }
   .embed-slot{
-    border:1px dashed var(--line); border-radius:2px; background: rgba(157,180,214,0.03);
+    border:1px dashed var(--line); border-radius:2px; background: rgba(224,138,60,0.04);
     padding: 1rem 1.15rem; color: var(--ink-soft); font-size:0.85rem; line-height:1.5;
   }
   .embed-slot code{
     font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:0.78rem;
-    color: var(--accent); background: rgba(157,180,214,0.08); padding:.1rem .35rem; border-radius:2px;
+    color: var(--accent); background: rgba(224,138,60,0.10); padding:.1rem .35rem; border-radius:2px;
   }
   /* When you paste a real iframe in, it fills this slot cleanly */
   .embed-slot iframe{ width:100%; border:0; display:block; border-radius:2px; }
@@ -181,14 +182,14 @@
     padding: clamp(2rem, 6vw, 3.5rem); display:flex; flex-wrap:wrap;
     align-items:center; justify-content:space-between; gap: 2rem;
   }
-  .store-inner h2{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size: clamp(1.6rem,4vw,2.4rem); margin:0 0 .6rem; letter-spacing:-0.02em; }
+  .store-inner h2{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size: clamp(1.6rem,4vw,2.4rem); margin:0 0 .6rem; letter-spacing:-0.02em; }
   .store-inner p{ color: var(--ink-soft); margin:0; max-width: 40ch; }
 
   /* Footer */
   footer{ position:relative; z-index:1; border-top:1px solid var(--line); padding: clamp(3rem,8vh,5rem) 0 clamp(2.5rem,6vh,4rem); }
   .foot-grid{ display:flex; flex-wrap:wrap; gap:2rem; justify-content:space-between; align-items:flex-end; }
   .foot-contact .label{ color:var(--ink-faint); font-size:0.8rem; margin:0 0 .4rem; }
-  .foot-contact a.mail{ font-family:"Fraunces",Georgia,serif; font-size: clamp(1.3rem,4vw,1.9rem); border-bottom:1px solid var(--line); transition: border-color .2s ease; }
+  .foot-contact a.mail{ font-family:"DM Serif Display",Georgia,serif; font-size: clamp(1.3rem,4vw,1.9rem); border-bottom:1px solid var(--line); transition: border-color .2s ease; }
   .foot-contact a.mail:hover{ border-bottom-color: var(--accent); }
   .foot-meta{ color: var(--ink-faint); font-size:0.82rem; }
 
@@ -211,7 +212,7 @@
   /* ---------- "Full discography" link (home page) ---------- */
   .more-link{
     display:inline-block; margin-top: clamp(1.75rem, 5vw, 3rem);
-    font-family:"Fraunces",Georgia,serif; font-size:1.2rem; color:var(--ink);
+    font-family:"DM Serif Display",Georgia,serif; font-size:1.2rem; color:var(--ink);
     border-bottom:1px solid var(--line); padding-bottom:2px;
     transition: border-color .2s ease;
   }
@@ -220,13 +221,13 @@
   /* ---------- Discography page ---------- */
   .disco-head{ padding: clamp(3rem,10vh,6rem) 0 clamp(1.5rem,4vh,2.5rem); position:relative; z-index:1; }
   .disco-head h1{
-    font-family:"Fraunces",Georgia,serif; font-weight:300;
+    font-family:"DM Serif Display",Georgia,serif; font-weight:300;
     font-size: clamp(2.4rem, 8vw, 4.25rem); letter-spacing:-0.025em; margin:0 0 .85rem;
   }
   .disco-head p{ color:var(--ink-soft); margin:0; max-width:52ch; }
   .disco-year{ position:relative; z-index:1; padding-top: clamp(2rem,5vh,3.25rem); }
   .disco-year .year{
-    font-family:"Hanken Grotesk",system-ui,sans-serif; font-weight:600;
+    font-family:"Figtree",system-ui,sans-serif; font-weight:600;
     font-size:0.82rem; letter-spacing:0.09em; color:var(--ink-faint);
     margin:0 0 .25rem; padding-bottom:.5rem;
   }
@@ -236,7 +237,7 @@
     padding: 1.15rem 0; border-top:1px solid var(--line);
   }
   .disco-info{ min-width:0; }
-  .disco-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
+  .disco-title{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
   .disco-meta{ color:var(--ink-faint); font-size:0.82rem; margin:.2rem 0 0; }
   .disco-links{ display:flex; gap:1.1rem; flex-wrap:wrap; }
   .disco-links a{
@@ -253,21 +254,21 @@
 
   /* ---------- Kev's Kitchen (sounds & samples shop) ---------- */
   .shop-head{ padding: clamp(3rem,10vh,6rem) 0 clamp(1.5rem,4vh,2.5rem); position:relative; z-index:1; }
-  .shop-head h1{ font-family:"Fraunces",Georgia,serif; font-weight:300; font-size:clamp(2.4rem,8vw,4.25rem); letter-spacing:-0.025em; margin:0 0 .85rem; }
+  .shop-head h1{ font-family:"DM Serif Display",Georgia,serif; font-weight:300; font-size:clamp(2.4rem,8vw,4.25rem); letter-spacing:-0.025em; margin:0 0 .85rem; }
   .shop-head p{ color:var(--ink-soft); margin:0; max-width:52ch; }
   .shop-grid{ position:relative; z-index:1; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:clamp(1.25rem,3vw,2rem); padding-bottom:clamp(2.5rem,6vh,4rem); }
   .product{ display:flex; flex-direction:column; background:var(--bg-raise); border:1px solid var(--line); border-radius:3px; overflow:hidden; transition:border-color .2s ease, transform .2s ease; }
   .product:hover{ border-color:var(--accent); transform:translateY(-2px); }
-  .product-cover{ aspect-ratio:1; display:grid; place-items:center; overflow:hidden; background:linear-gradient(150deg, #16202b, #0b0f14); color:var(--ink-faint); }
+  .product-cover{ aspect-ratio:1; display:grid; place-items:center; overflow:hidden; background:linear-gradient(150deg, #1d140e, #0a0705); color:var(--ink-faint); }
   .product-cover svg{ width:34%; height:34%; opacity:.5; }
   .product-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
   .product-body{ display:flex; flex-direction:column; gap:.4rem; padding:1.1rem 1.15rem 1.25rem; flex:1; }
-  .product-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
+  .product-title{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
   .product-desc{ color:var(--ink-soft); font-size:0.9rem; margin:0; flex:1; }
   .product-meta{ color:var(--ink-faint); font-size:0.78rem; letter-spacing:0.03em; margin:.15rem 0 0; }
   .product-foot{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-top:.75rem; }
-  .product-price{ font-family:"Fraunces",Georgia,serif; font-size:1.25rem; }
-  .buy-btn{ display:inline-flex; align-items:center; background:var(--ink); color:#10151b; font-weight:600; font-size:0.85rem; padding:.5rem 1rem; border-radius:2px; border:1px solid var(--ink); transition:background .2s ease, color .2s ease; }
+  .product-price{ font-family:"DM Serif Display",Georgia,serif; font-size:1.25rem; }
+  .buy-btn{ display:inline-flex; align-items:center; background:var(--ink); color:#1a0f07; font-weight:600; font-size:0.85rem; padding:.5rem 1rem; border-radius:2px; border:1px solid var(--ink); transition:background .2s ease, color .2s ease; }
   .buy-btn:hover, .buy-btn:focus-visible{ background:transparent; color:var(--ink); }
   .shop-note{ position:relative; z-index:1; border-top:1px solid var(--line); padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem); }
   .shop-note p{ color:var(--ink-faint); font-size:0.85rem; max-width:60ch; margin:0 0 1.5rem; }
@@ -275,12 +276,12 @@
 
   /* ---------- Featured product ---------- */
   .featured{ position:relative; z-index:1; display:grid; grid-template-columns:1.05fr 1fr; gap:clamp(1.5rem,4vw,3rem); align-items:center; padding-bottom:clamp(2.5rem,6vh,4rem); margin-bottom:clamp(2.5rem,6vh,4rem); border-bottom:1px solid var(--line); }
-  .featured-media{ aspect-ratio:16/9; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#0b0f14; }
+  .featured-media{ aspect-ratio:16/9; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#0a0705; }
   .featured-media img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .featured-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:clamp(1.9rem,4.5vw,2.7rem); letter-spacing:-0.02em; margin:0; }
+  .featured-title{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:clamp(1.9rem,4.5vw,2.7rem); letter-spacing:-0.02em; margin:0; }
   .featured-sub{ color:var(--ink-soft); font-size:1rem; margin:.4rem 0 1.25rem; }
   .featured-desc{ color:var(--ink-soft); line-height:1.6; margin:0 0 1.4rem; }
-  .kit-label{ color:var(--ink); font-family:"Fraunces",Georgia,serif; font-size:1rem; margin:0 0 .6rem; }
+  .kit-label{ color:var(--ink); font-family:"DM Serif Display",Georgia,serif; font-size:1rem; margin:0 0 .6rem; }
   .kit-list{ list-style:none; padding:0; margin:0 0 1.75rem; display:flex; flex-direction:column; gap:.5rem; }
   .kit-list li{ color:var(--ink-soft); font-size:0.92rem; line-height:1.5; padding-left:1.1rem; position:relative; }
   .kit-list li::before{ content:""; position:absolute; left:0; top:.55em; width:5px; height:5px; border-radius:50%; background:var(--accent); }
@@ -304,9 +305,9 @@
   .video-thumb:hover img, .video-thumb:focus-visible img{ transform:scale(1.03); opacity:.8; }
   .video-thumb .play{ position:absolute; inset:0; display:grid; place-items:center; }
   .video-thumb .play svg{ width:68px; height:48px; filter:drop-shadow(0 2px 8px rgba(0,0,0,.5)); transition:opacity .2s ease; }
-  .video-thumb .play .pb{ fill:#0d1218; opacity:.85; transition:fill .2s ease, opacity .2s ease; }
+  .video-thumb .play .pb{ fill:#0c0907; opacity:.85; transition:fill .2s ease, opacity .2s ease; }
   .video-thumb:hover .play .pb{ fill:var(--accent); opacity:1; }
-  .video-title{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:1.2rem; letter-spacing:-0.01em; margin:0; }
+  .video-title{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:1.2rem; letter-spacing:-0.01em; margin:0; }
   .video-embed{ aspect-ratio:16/9; border:1px solid var(--line); border-radius:3px; overflow:hidden; background:#000; }
   .video-embed iframe{ width:100%; height:100%; border:0; display:block; }
 
@@ -314,7 +315,7 @@
   /* ---------- Music box (header row + featured release in one box) ---------- */
   .music-box{ background:var(--bg-raise); border:1px solid var(--line); border-radius:3px; padding:clamp(1.5rem,5vw,2.75rem); }
   .music-head{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.5rem; margin-bottom:clamp(1.5rem,4vw,2.25rem); }
-  .music-head h2{ font-family:"Fraunces",Georgia,serif; font-weight:400; font-size:clamp(1.6rem,4vw,2.4rem); letter-spacing:-0.02em; margin:0; }
+  .music-head h2{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:clamp(1.6rem,4vw,2.4rem); letter-spacing:-0.02em; margin:0; }
   .release-label{ margin:0 0 clamp(1rem,3vw,1.5rem); padding-top:clamp(1.5rem,4vw,2.25rem); border-top:1px solid var(--line); color:var(--ink-faint); font-size:0.85rem; letter-spacing:0.03em; }
   .music-box .release{ margin:0; padding:0; border-top:0; border-bottom:0; }
   @media (max-width:560px){ .music-head{ flex-direction:column; align-items:flex-start; } }
@@ -336,15 +337,15 @@
 .hero::before{
   z-index:-2;
   background:url("covers/hero-bg.jpg") center/cover no-repeat;
-  filter:brightness(1) saturate(1);
+  filter:sepia(.55) saturate(1.3) hue-rotate(-12deg) brightness(.9);
 }
 
 .hero::after{
   z-index:-1;
   background:linear-gradient(
     to bottom,
-    rgba(13,18,24,0.45),
-    rgba(13,18,24,0.70) 55%,
+    rgba(12,9,7,0.35),
+    rgba(12,9,7,0.70) 55%,
     var(--bg) 100%
   );
 }
@@ -360,7 +361,17 @@
 
 /* ---------- Keyboard hints (Chord Pantry, Spice Drawer) ---------- */
 kbd{
-  font-family:"Hanken Grotesk",system-ui,sans-serif; font-size:.8rem; font-weight:600; color:var(--ink);
+  font-family:"Figtree",system-ui,sans-serif; font-size:.8rem; font-weight:600; color:var(--ink);
   background:var(--bg-raise); border:1px solid var(--line); border-bottom-width:2px; border-radius:3px;
   padding:.1em .45em;
 }
+
+
+/* ---------- After Hours finish: amber pill buttons, softer boxes, teal labels ---------- */
+.hero h1{ color:#f6e2c8; text-shadow:0 0 40px rgba(224,138,60,.35); }
+.btn, .buy-btn{ background:var(--accent); border-color:var(--accent); color:#1a0f07; border-radius:999px; }
+.btn:hover, .btn:focus-visible, .buy-btn:hover, .buy-btn:focus-visible{ background:transparent; color:var(--accent); }
+.music-box, .store-inner{ border-radius:18px; background:linear-gradient(160deg, #1b130d, #120d0a); }
+.cover{ border-radius:10px; }
+.release-label, .disco-year .year{ color:var(--accent-2); letter-spacing:.14em; text-transform:uppercase; font-size:.72rem; }
+.disco-links a{ color:var(--accent); }
