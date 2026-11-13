@@ -368,7 +368,6 @@ kbd{
 
 
 /* ---------- After Hours finish: amber pill buttons, softer boxes, teal labels ---------- */
-.hero h1{ color:#f6e2c8; text-shadow:0 0 40px rgba(224,138,60,.35); }
 .btn, .buy-btn{ background:var(--accent); border-color:var(--accent); color:#1a0f07; border-radius:999px; }
 .btn:hover, .btn:focus-visible, .buy-btn:hover, .buy-btn:focus-visible{ background:transparent; color:var(--accent); }
 .music-box, .store-inner{ border-radius:18px; background:linear-gradient(160deg, #1b130d, #120d0a); }
