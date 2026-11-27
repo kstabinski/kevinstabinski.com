@@ -66,7 +66,7 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .tl{overflow-x:auto;padding:12px 14px 14px}
 .tl-inner{min-width:680px;display:flex;flex-direction:column;gap:8px}
 .strip{display:grid;gap:6px}
-.card{--c:var(--f-tonic);position:relative;min-width:0;border:1px solid color-mix(in oklab,var(--c) 45%,var(--line));background:color-mix(in oklab,var(--c) calc(var(--tint)*100%),var(--panel));
+.card{--c:var(--f-tonic);position:relative;min-width:0;border:1px solid transparent;background:color-mix(in oklab,var(--c) calc(var(--tint)*100%),var(--panel));
   border-radius:2px;padding:9px 9px 8px;display:flex;flex-direction:column;gap:2px;cursor:pointer;text-align:left}
 .card:hover{background:color-mix(in oklab,var(--c) calc(var(--tint)*180%),var(--panel))}
 .card.playing{box-shadow:0 0 0 2px var(--c)}
@@ -79,7 +79,7 @@ header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(1rem,3vh,1.75rem);display:flex;
 .card .ic[aria-pressed="true"]{color:var(--c)}
 .card .ic svg{width:15px;height:15px}
 .card .ic:disabled{opacity:.3;cursor:default}
-.card.locked{border-style:dashed}
+.card.locked{border-style:dashed;border-color:color-mix(in oklab,var(--c) 55%,var(--line))}
 .card.f-pre{--c:var(--f-pre)} .card.f-dom{--c:var(--f-dom)} .card.f-color,.card.f-sec{--c:var(--f-color)}
 canvas.roll{width:100%;height:170px;display:block;border-radius:2px;background:var(--sunk);border:1px solid var(--line)}
 
@@ -121,7 +121,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .plist .del:hover{background:var(--panel);color:var(--ink)}
 .plist .empty{display:block;padding:14px 8px;color:var(--muted)}
 .plist .empty strong{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
-.folder{margin:10px 14px 4px;padding:10px 12px;border:1px solid var(--line);border-radius:2px;background:var(--sunk);display:flex;flex-direction:column;gap:8px;font-size:13px}
+.folder{margin:10px 14px 4px;padding:12px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;display:flex;flex-direction:column;gap:8px;font-size:13px}
 .folder .f-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .folder .f-name{font-weight:600;overflow-wrap:anywhere}
 .folder .f-help{font-size:12px;color:var(--muted);margin:0}
