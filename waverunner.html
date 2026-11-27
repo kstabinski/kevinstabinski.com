@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Route Wave Explorer &mdash; Kev&rsquo;s Kitchen</title>
-<meta name="description" content="Route Wave Explorer: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, watch which stretch of the course each frame comes from, and hear it.">
+<title>Waverunner &mdash; Kev&rsquo;s Kitchen</title>
+<meta name="description" content="Waverunner: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, watch which stretch of the course each frame comes from, and hear it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -82,7 +82,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
 <main class="app" id="top">
   <header class="top">
     <div class="brand">
-      <h1>Route Wave Explorer</h1>
+      <h1>Waverunner</h1>
       <p>How a race becomes a wavetable. Pick a race and drag WT POS to move through it: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start line, frame 256 the finish.</p>
     </div>
   </header>
@@ -338,7 +338,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     render();
   }
 
-  fetch("route-waves.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+  fetch("waverunner.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     data = d;
     const box = $("runs");
     d.runs.forEach((r) => {
