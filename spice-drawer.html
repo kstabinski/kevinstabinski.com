@@ -89,7 +89,7 @@ dialog.info::backdrop{background:rgba(10,12,16,.55)}
 .tbtn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 .tbtn.primary:hover{filter:brightness(1.08)}
 .tbtn:disabled{opacity:.45;cursor:not-allowed}
-.tbtn kbd{font-family:var(--f-mono);font-size:10.5px;opacity:.65}
+.tbtn kbd{font-family:var(--f-mono);font-size:10.5px;opacity:.8}
 .spacer{flex:1}
 .groups{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);}
 .group{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -2493,7 +2493,7 @@ function buildRail(){
   const r=$('#rail'); r.innerHTML='';
   ORDER.forEach((t,i)=>{
     const head={0:'Drums',6:'FX',9:'Textures'}[i];
-    if(head){ if(i){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); } const h=document.createElement('h3'); h.className='rhead'; h.textContent=head; r.appendChild(h); }
+    if(head){ if(i){ const s=document.createElement('div'); s.className='sep'; r.appendChild(s); } const h=document.createElement('h2'); h.className='rhead'; h.textContent=head; r.appendChild(h); }
     const b=document.createElement('button'); b.type='button'; b.id='type-'+t; b.setAttribute('aria-pressed',String(S.type===t));
     b.innerHTML=`<span class="dot" style="--c:var(${TYPES[t].c})"></span><span>${TYPES[t].label}</span><span class="key">${i<10?(i+1)%10:i===10?'-':i===11?'=':''}</span>`;
     b.onclick=()=>selectType(t); r.appendChild(b);
