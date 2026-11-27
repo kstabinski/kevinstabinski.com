@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Waverunner &mdash; Kev&rsquo;s Kitchen</title>
+<meta name="description" content="Waverunner: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, watch which stretch of the course each frame comes from, and hear it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+/* Layout: a run on the bench. Controls first; the route map beside the frame it makes; the three ingredients of that stretch underneath. Ingredient colors are tuned for the site's dark panels. */
+:root{
+  --maxw:1160px;
+  --panel:var(--bg-raise); --sunk:#0a0705; --muted:var(--ink-soft); --grid:#241a13;
+  --fg:var(--ink); --wave:var(--ink); --route:#4a3829;
+  --bend:#2ea39c; --turn:#d97f2f; --hill:#48b476; --hill-fill:rgba(72,180,118,.18);
+  --display:"DM Serif Display", Georgia, serif;
+  --body:"Figtree", system-ui, -apple-system, sans-serif;
+  --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 var(--pad) clamp(2rem,5vh,3rem);font-size:15px;line-height:1.5;display:flex;flex-direction:column;gap:16px}
+header.top{padding:clamp(3rem,10vh,6rem) 0 clamp(.5rem,2vh,1rem)}
+.brand h1{font-family:var(--display);font-weight:300;font-size:clamp(2.4rem,8vw,4.25rem);letter-spacing:-0.025em;margin:0 0 .85rem;line-height:1.05;text-wrap:balance}
+.brand p{margin:0;color:var(--ink-soft);max-width:62ch;font-size:clamp(1rem,0.97rem + 0.15vw,1.075rem);line-height:1.6}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:16px;display:grid;gap:10px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:1.35rem;letter-spacing:-.01em;margin:0}
+.controls{gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+button,select{border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:2px;cursor:pointer;font-weight:500;font-size:14px}
+button:hover,select:hover{background:var(--sunk)}
+button[aria-pressed="true"]{background:var(--accent);color:#1a0f07;border-color:var(--accent);font-weight:600}
+.seg button small{display:block;font-size:11.5px;opacity:.75;font-family:var(--mono)}
+.slider-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+input[type="range"]{width:100%;accent-color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+#pos-out{min-width:7.5ch;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.status{margin:0}
+.status b{font-weight:600;color:var(--ink)}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.cap{margin:0;color:var(--muted);font-size:.88rem}
+.cap b{color:var(--ink);font-weight:600}
+svg{width:100%;height:auto;display:block;overflow:visible}
+svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.notes{color:var(--ink-soft);font-size:.92rem;display:grid;gap:8px;max-width:72ch}
+.notes p{margin:0}
+.page-foot{position:relative;z-index:1;border-top:1px solid var(--line);padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem)}
+.page-foot p{color:var(--ink-faint);font-size:0.85rem;max-width:60ch;margin:0 0 1.5rem}
+@media (max-width:820px){
+  .pair,.trio{grid-template-columns:minmax(0,1fr)}
+  .slider-row{grid-template-columns:1fr auto}
+  .slider-row .label{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div class="atmosphere" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html#top" class="wordmark">KSTAB</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="discography.html">Music</a>
+      <a href="videos.html">Videos</a>
+      <a href="kitchen.html" class="active" aria-current="page">Kev's Kitchen</a>
+    </nav>
+  </div>
+</header>
+
+<main class="app" id="top">
+  <header class="top">
+    <div class="brand">
+      <h1>Waverunner</h1>
+      <p>How a race becomes a wavetable. Pick a race and drag WT POS to move through it: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start line, frame 256 the finish.</p>
+    </div>
+  </header>
+
+  <section class="panel controls" aria-label="Controls">
+    <div class="row">
+      <span class="label">Race</span>
+      <div class="seg" id="runs" role="group" aria-label="Choose a race"></div>
+    </div>
+    <div class="slider-row">
+      <label class="label" for="pos">WT POS</label>
+      <input id="pos" type="range" min="1" max="256" step="1" value="120">
+      <output id="pos-out" for="pos">120 / 256</output>
+    </div>
+    <div class="row">
+      <button id="sweep" type="button" aria-pressed="false">Sweep through the race</button>
+      <button id="sound" type="button" aria-pressed="false">Play sound</button>
+      <label class="label" for="note">Note</label>
+      <select id="note">
+        <option value="55">A1 (55 Hz)</option>
+        <option value="110" selected>A2 (110 Hz)</option>
+        <option value="220">A3 (220 Hz)</option>
+      </select>
+    </div>
+    <p class="status" id="status" aria-live="polite">Loading races&hellip;</p>
+  </section>
+
+  <div class="pair">
+    <section class="panel" aria-labelledby="map-h">
+      <h2 id="map-h">Where in the race</h2>
+      <svg id="map" viewBox="0 0 420 320" role="img" aria-label="Route map with the current stretches highlighted"></svg>
+      <p class="cap">Dots mark where each of the 16 stretches starts. The highlighted stretches are the two keyframes this frame is blended from; the stronger one counts more. Dashed: the straight line the nearest stretch is measured against.</p>
+    </section>
+    <section class="panel" aria-labelledby="wave-h">
+      <h2 id="wave-h">The frame at this position</h2>
+      <svg id="wave" viewBox="0 0 600 240" role="img" aria-label="One cycle of the current wavetable frame, shown twice"></svg>
+      <p class="cap">One cycle (2048 samples in the wavetable), drawn twice: the faded copy is the next repeat. Its end meets its start, so it loops without a click.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="ing-h">
+    <h2 id="ing-h">Ingredients of the nearest keyframe</h2>
+    <div class="trio">
+      <div>
+        <p class="cap"><span class="swatch" style="background:var(--bend)"></span><b>A. Bend</b>: metres off the straight line (+ right, &minus; left)</p>
+        <svg id="ing-bend" viewBox="0 0 320 170" role="img" aria-label="How far the road bends from the straight line"></svg>
+      </div>
+      <div>
+        <p class="cap"><span class="swatch" style="background:var(--turn)"></span><b>B. Heading</b>: degrees compared with a steady turn (+ left, &minus; right)</p>
+        <svg id="ing-turn" viewBox="0 0 320 170" role="img" aria-label="Direction of travel compared with a steady turn"></svg>
+      </div>
+      <div>
+        <p class="cap"><span class="swatch" style="background:var(--hill)"></span><b>C. Hills</b>: elevation in metres; the shaded gap from the steady slope is what counts</p>
+        <svg id="ing-hill" viewBox="0 0 320 170" role="img" aria-label="Elevation compared with a steady slope"></svg>
+      </div>
+    </div>
+    <p class="cap" id="ing-cap"></p>
+  </section>
+
+  <section class="notes" aria-label="How it works">
+    <p>Each run is cut into 16 overlapping stretches of road. A keyframe mixes three ingredients from its stretch: how far the road bends from a straight line, how your direction changes compared with a steady turn (every corner adds brightness), and how the hills rise and fall compared with a steady slope. Between each pair of keyframes, 16 frames blend gradually from one to the next, so sweeping the wavetable position doesn&rsquo;t click.</p>
+    <p>Some keyframes are stored upside down so they match their neighbour. A held note sounds the same either way. The sound here plays a 512-sample version of each frame, so it previews the tone rather than matching a synth exactly.</p>
+  </section>
+
+  <div class="page-foot">
+    <p>These are four of my races, tracked on my watch: the Cherry Blossom 10 Miler and the Eugene, Marine Corps and Philly marathons. Each one becomes a 256-frame wavetable for Serum and Vital.</p>
+    <a class="more-link" href="kitchen.html">Back to Kev&rsquo;s Kitchen &rarr;</a>
+  </div>
+  <footer id="contact">
+      <div class="foot-grid">
+        <div class="socials" aria-label="Social links">
+          <a href="https://open.spotify.com/artist/7ogkPvRYLFvfpVNEqNGi7E?si=UTplcCznTDON6Axlid5GDA" target="_blank" rel="noopener" aria-label="Spotify"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm4.59 14.44a.62.62 0 01-.86.21c-2.35-1.44-5.3-1.76-8.79-.96a.62.62 0 11-.28-1.21c3.81-.87 7.08-.5 9.72 1.11.29.18.38.56.21.85zm1.22-2.72a.78.78 0 01-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.17a.78.78 0 11-.45-1.49c3.63-1.1 8.15-.56 11.23 1.33.37.22.49.7.26 1.07zm.11-2.84C14.8 8.95 9.4 8.77 6.32 9.71a.94.94 0 11-.54-1.8c3.53-1.07 9.49-.86 13.23 1.36a.94.94 0 01-.96 1.61z"/></svg></a>
+          <a href="https://music.apple.com/us/artist/kevin-stabinski/1827594935" target="_blank" rel="noopener" aria-label="Apple Music"><svg viewBox="0 0 24 24"><path d="M17.5 3.5c-.3 0-.6.05-1 .13L9 5.2c-.7.14-1 .55-1 1.25v8.06c-.4-.18-.85-.26-1.35-.2-1.3.16-2.3 1.16-2.25 2.36.05 1.1 1.05 1.9 2.3 1.78 1.2-.12 2.2-1.05 2.2-2.3V9.06l6.5-1.3v4.9c-.4-.17-.85-.25-1.35-.19-1.3.16-2.3 1.16-2.25 2.36.05 1.1 1.05 1.9 2.3 1.78 1.2-.12 2.2-1.05 2.2-2.3V4.6c0-.72-.38-1.12-1.1-1.1z"/></svg></a>
+          <a href="https://www.youtube.com/@kstab" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23 7.5a3 3 0 00-2.1-2.12C19.05 4.9 12 4.9 12 4.9s-7.05 0-8.9.48A3 3 0 001 7.5C.5 9.36.5 12 .5 12s0 2.64.5 4.5a3 3 0 002.1 2.12C4.95 19.1 12 19.1 12 19.1s7.05 0 8.9-.48A3 3 0 0023 16.5c.5-1.86.5-4.5.5-4.5s0-2.64-.5-4.5zM9.75 15.25v-6.5L15.5 12l-5.75 3.25z"/></svg></a>
+          <a href="https://soundcloud.com/kstab" target="_blank" rel="noopener" aria-label="SoundCloud"><svg viewBox="0 0 24 24"><path d="M1 14.5c0-.3.2-.5.4-.5.3 0 .5.2.5.5l.2 2-.2 2c0 .3-.2.5-.5.5-.2 0-.4-.2-.4-.5l-.2-2 .2-2zm2-1.3c0-.3.2-.5.5-.5.2 0 .4.2.5.5l.2 3.3-.2 3.2c0 .3-.3.5-.5.5-.3 0-.5-.2-.5-.5L2.8 16l.2-2.8zm2.2-.7c0-.3.2-.5.5-.5s.5.2.5.5l.2 4-.2 3.8c0 .3-.2.5-.5.5s-.5-.2-.5-.5L5 16l.2-3.5zm2.3-.5c0-.3.2-.6.5-.6.3 0 .5.3.5.6L9.4 16l-.2 3.7c0 .3-.2.5-.5.5-.3 0-.5-.2-.5-.5L8 16l.2-3.7zm2.3-.3c0-.3.3-.5.6-.5.3 0 .5.2.5.5l.2 4.3-.2 3.5c0 .3-.2.5-.5.5-.3 0-.6-.2-.6-.5L9.5 16l.2-4.3zM12 10c.3 0 .5.2.5.5l.2 5.5-.2 3.5c0 .3-.2.5-.5.5s-.5-.2-.5-.5l-.2-3.5.2-5.5c0-.3.2-.5.5-.5zm2-1c.3 0 .5.2.5.5v10c0 .3-.2.5-.5.5s-.5-.2-.5-.5V9.5c0-.3.2-.5.5-.5zm7.5 3c1.4 0 2.5 1.1 2.5 2.5S22.9 20 21.5 20H15c-.3 0-.5-.2-.5-.5V9.7c0-.3.1-.4.4-.5.7-.3 1.5-.4 2.3-.4 2.6 0 4.7 1.9 5.1 4.4.2-.1.5-.2.7-.2z"/></svg></a>
+          <a href="https://www.instagram.com/kstabinski" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2c2.7 0 3 0 4.1.06 1 .05 1.7.22 2.3.46.6.24 1.1.56 1.6 1.06.5.5.82 1 1.06 1.6.24.6.4 1.3.46 2.3C21.99 9 22 9.3 22 12s0 3-.06 4.1c-.05 1-.22 1.7-.46 2.3a4.3 4.3 0 01-1.06 1.6c-.5.5-1 .82-1.6 1.06-.6.24-1.3.4-2.3.46C15 21.99 14.7 22 12 22s-3 0-4.1-.06c-1-.05-1.7-.22-2.3-.46a4.3 4.3 0 01-1.6-1.06 4.3 4.3 0 01-1.06-1.6c-.24-.6-.4-1.3-.46-2.3C2.01 15 2 14.7 2 12s0-3 .06-4.1c.05-1 .22-1.7.46-2.3A4.3 4.3 0 013.58 4c.5-.5 1-.82 1.6-1.06.6-.24 1.3-.4 2.3-.46C9 2.01 9.3 2 12 2zm0 1.8c-2.65 0-2.96.01-4 .06-.77.04-1.19.16-1.47.27-.37.14-.63.31-.91.59-.28.28-.45.54-.59.91-.1.28-.23.7-.27 1.47-.05 1.04-.06 1.35-.06 4s.01 2.96.06 4c.04.77.16 1.19.27 1.47.14.37.31.63.59.91.28.28.54.45.91.59.28.1.7.23 1.47.27 1.04.05 1.35.06 4 .06s2.96-.01 4-.06c.77-.04 1.19-.16 1.47-.27.37-.14.63-.31.91-.59.28-.28.45-.54.59-.91.1-.28.23-.7.27-1.47.05-1.04.06-1.35.06-4s-.01-2.96-.06-4c-.04-.77-.16-1.19-.27-1.47a2.5 2.5 0 00-.59-.91 2.5 2.5 0 00-.91-.59c-.28-.1-.7-.23-1.47-.27-1.04-.05-1.35-.06-4-.06zm0 3.06a5.14 5.14 0 110 10.28 5.14 5.14 0 010-10.28zm0 8.48a3.34 3.34 0 100-6.68 3.34 3.34 0 000 6.68zm6.54-8.69a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0z"/></svg></a>
+        </div>
+      </div>
+      <p class="foot-meta">&copy; 2026 KSTAB LLC. All rights reserved.</p>
+    </footer>
+</main>
+
+<script src="main.js"></script>
+<script>
+(() => {
+  const NK = 16, NF = 256;
+  const $ = (id) => document.getElementById(id);
+  const pos = $("pos"), posOut = $("pos-out"), status = $("status");
+  const NS = "http://www.w3.org/2000/svg";
+  let data = null, run = null;
+
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const clear = (svg) => { while (svg.firstChild) svg.removeChild(svg.firstChild); };
+  const pathOf = (pts) => { let d = "", pen = false; for (const p of pts) { if (!p) { pen = false; continue; } d += (pen ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); pen = true; } return d; };
+
+  function frameAt(p) {
+    const x = (p - 1) * (NK - 1) / (NF - 1);
+    const i = Math.min(Math.floor(x), NK - 2), t = x - i;
+    const a = run.keys[i], b = run.keys[i + 1];
+    const f = a.map((v, j) => (1 - t) * v + t * b[j]);
+    const peak = Math.max(...f.map(Math.abs)) || 1;
+    return { f: f.map((v) => v / peak), i, t, nearest: Math.round(x) };
+  }
+
+  function drawMap(i, t, nearest) {
+    const svg = $("map"); clear(svg);
+    const W = 420, H = 320, pad = 18;
+    const shown = run.route.filter(Boolean), xs = shown.map((p) => p[0]), ys = shown.map((p) => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const s = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
+    const ox = (W - (maxX - minX) * s) / 2, oy = (H - (maxY - minY) * s) / 2;
+    const P = (p) => p ? [ox + (p[0] - minX) * s, H - oy - (p[1] - minY) * s] : null;
+    el("path", { d: pathOf(run.route.map(P)), fill: "none", stroke: "var(--route)", "stroke-width": 4, "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
+    [[i, 1 - t], [i + 1, t]].forEach(([k, w]) => {
+      const st = run.stretches[k];
+      el("path", { d: pathOf(run.route.slice(st.a, st.b + 1).map(P)), fill: "none", stroke: "var(--bend)", "stroke-width": 5,
+        "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-opacity": (0.15 + 0.85 * w).toFixed(2) }, svg);
+    });
+    const ns = run.stretches[nearest], c0 = P(ns.p0), c1 = P(ns.p1);
+    if (c0 && c1) el("line", { x1: c0[0], y1: c0[1], x2: c1[0], y2: c1[1], stroke: "var(--muted)", "stroke-width": 1.4, "stroke-dasharray": "5 4" }, svg);
+    run.stretches.forEach((st, k) => {
+      const q = P(run.route[st.a]);
+      if (q) el("circle", { cx: q[0], cy: q[1], r: k === nearest ? 4.5 : 3, fill: k === nearest ? "var(--fg)" : "var(--muted)" }, svg);
+    });
+    const s0 = P(run.route[0]);
+    if (!s0) return;
+    el("circle", { cx: s0[0], cy: s0[1], r: 6, fill: "var(--panel)", stroke: "var(--fg)", "stroke-width": 2 }, svg);
+    const right = s0[0] > W - 60;
+    const lab = el("text", { x: s0[0] + (right ? -10 : 10), y: s0[1] + 4, "text-anchor": right ? "end" : "start" }, svg); lab.textContent = "start";
+  }
+
+  function drawWave(f) {
+    const svg = $("wave"); clear(svg);
+    const W = 600, H = 240, top = 14, bot = 22, mid = top + (H - top - bot) / 2, amp = (H - top - bot) / 2;
+    el("line", { x1: 0, y1: mid, x2: W, y2: mid, stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("line", { x1: W / 2, y1: top, x2: W / 2, y2: H - bot, stroke: "var(--line)", "stroke-dasharray": "2 4" }, svg);
+    const n = f.length;
+    for (let c = 0; c < 2; c++) {
+      const pts = f.map((v, j) => [c * W / 2 + (j / (n - 1)) * W / 2, mid - v * amp]);
+      el("path", { d: pathOf(pts), fill: "none", stroke: "var(--wave)", "stroke-width": 2, "stroke-opacity": c ? 0.3 : 1, "stroke-linejoin": "round" }, svg);
+    }
+    const t1 = el("text", { x: 0, y: H - 4 }, svg); t1.textContent = "one cycle";
+    const t2 = el("text", { x: W / 2 + 6, y: H - 4 }, svg); t2.textContent = "next repeat";
+  }
+
+  function lineChart(svg, xs, ys, color, opts = {}) {
+    clear(svg);
+    const W = 320, H = 170, L = 40, R = 8, T = 8, B = 24;
+    const lo = Math.min(...ys, ...(opts.extra || []), opts.zero ? 0 : Infinity);
+    const hi = Math.max(...ys, ...(opts.extra || []), opts.zero ? 0 : -Infinity);
+    const span = hi - lo || 1, xmax = xs[xs.length - 1] || 1;
+    const X = (x) => L + (x / xmax) * (W - L - R), Y = (y) => T + (1 - (y - lo) / span) * (H - T - B);
+    [lo, hi].forEach((v) => {
+      el("line", { x1: L, y1: Y(v), x2: W - R, y2: Y(v), stroke: "var(--grid)" }, svg);
+      const tx = el("text", { x: L - 6, y: Y(v) + 4, "text-anchor": "end" }, svg); tx.textContent = Math.round(v);
+    });
+    if (opts.zero) el("line", { x1: L, y1: Y(0), x2: W - R, y2: Y(0), stroke: "var(--muted)", "stroke-dasharray": "4 3" }, svg);
+    if (opts.slope) {
+      const a = ys[0], b = ys[ys.length - 1];
+      const line = xs.map((x) => a + (b - a) * (x / xmax));
+      const area = xs.map((x, k) => [X(x), Y(ys[k])]).concat(xs.slice().reverse().map((x, k) => [X(x), Y(line[xs.length - 1 - k])]));
+      el("path", { d: pathOf(area) + "Z", fill: "var(--hill-fill)", stroke: "none" }, svg);
+      el("line", { x1: X(0), y1: Y(a), x2: X(xmax), y2: Y(b), stroke: "var(--muted)", "stroke-dasharray": "4 3" }, svg);
+    }
+    el("path", { d: pathOf(xs.map((x, k) => [X(x), Y(ys[k])])), fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+    const x0 = el("text", { x: L, y: H - 6 }, svg); x0.textContent = "0 m";
+    const x1 = el("text", { x: W - R, y: H - 6, "text-anchor": "end" }, svg); x1.textContent = Math.round(xmax) + " m along";
+  }
+
+  function render() {
+    if (!run) return;
+    const p = +pos.value;
+    const { f, i, t, nearest } = frameAt(p);
+    posOut.textContent = p + " / " + NF;
+    const a = run.stretches[i], b = run.stretches[i + 1];
+    const wa = Math.round((1 - t) * 100), wb = 100 - wa;
+    status.innerHTML = t < 0.001
+      ? `Keyframe <b>${i + 1}</b>: stretch ${i + 1} only, <span class="num">${a.km[0].toFixed(1)}\u2013${a.km[1].toFixed(1)} km</span> of ${run.km.toFixed(1)} km.`
+      : `Blend of stretch <b>${i + 1}</b> (<span class="num">${wa}%</span>, ${a.km[0].toFixed(1)}\u2013${a.km[1].toFixed(1)} km) and stretch <b>${i + 2}</b> (<span class="num">${wb}%</span>, ${b.km[0].toFixed(1)}\u2013${b.km[1].toFixed(1)} km) of ${run.km.toFixed(1)} km.`;
+    drawMap(i, t, nearest);
+    drawWave(f);
+    const st = run.stretches[nearest];
+    lineChart($("ing-bend"), st.along, st.side, "var(--bend)", { zero: true });
+    lineChart($("ing-turn"), st.along, st.turn, "var(--turn)", { zero: true });
+    lineChart($("ing-hill"), st.along, st.elev, "var(--hill)", { slope: true });
+    $("ing-cap").textContent = `Stretch ${nearest + 1}, ${st.km[0].toFixed(1)}\u2013${st.km[1].toFixed(1)} km: keyframe ${nearest + 1} sits at WT POS ${Math.round(nearest * (NF - 1) / (NK - 1)) + 1}.`;
+    sound.update(f);
+  }
+
+  // Sound: loop the current frame and crossfade when it changes.
+  const sound = {
+    ctx: null, master: null, cur: null, on: false, pending: null, raf: 0,
+    start() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { status.textContent = "This browser can't play sound here."; return false; }
+      if (!this.ctx) { this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.gain.value = 0.16; this.master.connect(this.ctx.destination); }
+      this.ctx.resume(); this.on = true; return true;
+    },
+    stop() {
+      this.on = false;
+      if (this.cur) { const old = this.cur; old.g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.02); setTimeout(() => { try { old.src.stop(); } catch (e) {} }, 300); this.cur = null; }
+    },
+    update(f) {
+      if (!this.on) return;
+      this.pending = f;
+      if (this.raf) return;
+      this.raf = requestAnimationFrame(() => { this.raf = 0; this.play(this.pending); });
+    },
+    play(f) {
+      const ctx = this.ctx, buf = ctx.createBuffer(1, f.length, ctx.sampleRate);
+      buf.copyToChannel(Float32Array.from(f), 0);
+      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      src.playbackRate.value = (+$("note").value) * f.length / ctx.sampleRate;
+      const g = ctx.createGain(); g.gain.value = 0; src.connect(g); g.connect(this.master); src.start();
+      const now = ctx.currentTime; g.gain.setTargetAtTime(1, now, 0.012);
+      if (this.cur) { const old = this.cur; old.g.gain.setTargetAtTime(0, now, 0.012); setTimeout(() => { try { old.src.stop(); } catch (e) {} }, 250); }
+      this.cur = { src, g };
+    },
+  };
+
+  $("sound").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    if (b.getAttribute("aria-pressed") === "true") { sound.stop(); b.setAttribute("aria-pressed", "false"); b.textContent = "Play sound"; return; }
+    if (sound.start()) { b.setAttribute("aria-pressed", "true"); b.textContent = "Stop sound"; render(); }
+  });
+  $("note").addEventListener("change", render);
+
+  // Sweep: move WT POS from where it is to the end over about 10 seconds.
+  let sweepRaf = 0;
+  function stopSweep() { cancelAnimationFrame(sweepRaf); sweepRaf = 0; $("sweep").setAttribute("aria-pressed", "false"); $("sweep").textContent = "Sweep through the race"; }
+  $("sweep").addEventListener("click", () => {
+    if (sweepRaf) { stopSweep(); return; }
+    if (+pos.value >= NF) pos.value = 1;
+    const from = +pos.value, t0 = performance.now(), dur = 10000 * (NF - from) / (NF - 1);
+    $("sweep").setAttribute("aria-pressed", "true"); $("sweep").textContent = "Stop sweep";
+    const step = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      pos.value = Math.round(from + (NF - from) * k); render();
+      if (k < 1) sweepRaf = requestAnimationFrame(step); else stopSweep();
+    };
+    sweepRaf = requestAnimationFrame(step);
+  });
+  pos.addEventListener("input", () => { if (sweepRaf) stopSweep(); render(); });
+
+  function selectRun(id) {
+    run = data.runs.find((r) => r.id === id) || data.runs[0];
+    document.querySelectorAll("#runs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.id === run.id)));
+    render();
+  }
+
+  fetch("waverunner.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+    data = d;
+    const box = $("runs");
+    d.runs.forEach((r) => {
+      const b = document.createElement("button"); b.type = "button"; b.dataset.id = r.id;
+      b.innerHTML = `${r.day}<small>${r.where ? r.where + " \u00b7 " : ""}${r.km.toFixed(1)} km</small>`;
+      b.addEventListener("click", () => selectRun(r.id));
+      box.appendChild(b);
+    });
+    selectRun(d.runs[0].id);
+  }).catch(() => { status.textContent = "The run data didn't load. Reload the page to try again."; });
+})();
+</script>
+</body>
+</html>
