@@ -1,0 +1,8 @@
+# Impeccable: runtime state and caches stay local (from Impeccable's own .gitignore)
+.impeccable/live/server.json
+.impeccable/live/codex-worker.json
+.impeccable/live/codex-worker.log
+**/.impeccable/hook.cache.json
+.impeccable/live/sessions/
+.impeccable/live/previews/
+.impeccable/live/annotations/
