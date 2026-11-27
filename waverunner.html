@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Waverunner &mdash; Kev&rsquo;s Kitchen</title>
-<meta name="description" content="Waverunner: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, watch which stretch of the course each frame comes from, and hear it.">
+<meta name="description" content="Waverunner: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, or load your own GPX file, watch which stretch of the course each frame comes from, hear it, and download the wavetable.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,6 +54,16 @@ input[type="range"]{width:100%;accent-color:var(--accent)}
 svg{width:100%;height:auto;display:block;overflow:visible}
 svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
 .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.file-btn{border:1px dashed var(--ink-faint);background:transparent;padding:7px 12px;border-radius:2px;cursor:pointer;font-weight:500;font-size:14px;display:inline-flex;align-items:center}
+.file-btn:hover{background:var(--sunk);border-color:var(--ink-soft)}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.downloads[hidden]{display:none}
+.axis-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.axis-head h3{font-family:var(--body);font-size:14px;font-weight:600;margin:0;color:var(--ink)}
+.axis-head button{padding:4px 10px;font-size:13px}
+.axis-note{margin:6px 0 0;color:var(--muted);font-size:.82rem}
+body.dragging .controls{outline:2px dashed var(--accent);outline-offset:4px}
 .notes{color:var(--ink-soft);font-size:.92rem;display:grid;gap:8px;max-width:54ch}
 .notes p{margin:0}
 .page-foot{position:relative;z-index:1;border-top:1px solid var(--line);padding:clamp(2rem,5vh,3rem) 0 clamp(3rem,8vh,5rem)}
@@ -83,7 +93,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
   <header class="top">
     <div class="brand">
       <h1>Waverunner</h1>
-      <p>How a race becomes a wavetable. Pick a race and drag WT POS to move through it: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start line, frame 256 the finish.</p>
+      <p>How a race becomes a wavetable. Pick a race, or load a GPX file of your own, and drag WT POS to move through it: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start line, frame 256 the finish.</p>
     </div>
   </header>
 
@@ -91,6 +101,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     <div class="row">
       <span class="label">Race</span>
       <div class="seg" id="runs" role="group" aria-label="Choose a race"></div>
+      <label class="file-btn">Add your own GPX<input id="gpx" type="file" accept=".gpx,application/gpx+xml" multiple></label>
     </div>
     <div class="slider-row">
       <label class="label" for="pos">WT POS</label>
@@ -106,6 +117,11 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
         <option value="110" selected>A2 (110 Hz)</option>
         <option value="220">A3 (220 Hz)</option>
       </select>
+    </div>
+    <div class="row downloads" id="downloads" hidden>
+      <span class="label">Download</span>
+      <button id="dl-progress" type="button">Progress wavetable (.wav)</button>
+      <button id="dl-morph" type="button">Lon &rarr; Ele &rarr; Lat wavetable (.wav)</button>
     </div>
     <p class="status" id="status" aria-live="polite">Loading races&hellip;</p>
   </section>
@@ -142,13 +158,34 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     <p class="cap" id="ing-cap"></p>
   </section>
 
+  <section class="panel" aria-labelledby="axes-h">
+    <h2 id="axes-h">The original recipe: longitude, elevation, latitude</h2>
+    <p class="cap">The first way I made these wavetables: take one reading from the whole run, start to finish, and squeeze it into a single cycle. Longitude is how far east or west you were, elevation how high, latitude how far north or south. The morph wavetable blends longitude into elevation into latitude across its 256 frames. These waves end at a different level from where they start, which gives them a buzzy edge when they loop; progress mode avoids that by measuring each stretch against a straight line from its start to its end.</p>
+    <div class="trio">
+      <div>
+        <div class="axis-head"><h3>Longitude</h3><button type="button" class="axis-play" data-axis="lon" aria-pressed="false">Play</button></div>
+        <svg id="axis-lon" viewBox="0 0 320 150" role="img" aria-label="The run's longitude as one wave cycle"></svg>
+      </div>
+      <div>
+        <div class="axis-head"><h3>Elevation</h3><button type="button" class="axis-play" data-axis="ele" aria-pressed="false">Play</button></div>
+        <svg id="axis-ele" viewBox="0 0 320 150" role="img" aria-label="The run's elevation as one wave cycle"></svg>
+        <p class="axis-note" id="ele-note" hidden>This file has no elevation, so this wave is flat.</p>
+      </div>
+      <div>
+        <div class="axis-head"><h3>Latitude</h3><button type="button" class="axis-play" data-axis="lat" aria-pressed="false">Play</button></div>
+        <svg id="axis-lat" viewBox="0 0 320 150" role="img" aria-label="The run's latitude as one wave cycle"></svg>
+      </div>
+    </div>
+  </section>
+
   <section class="notes" aria-label="How it works">
     <p>Each run is cut into 16 overlapping stretches of road. A keyframe mixes three ingredients from its stretch: how far the road bends from a straight line, how your direction changes compared with a steady turn (every corner adds brightness), and how the hills rise and fall compared with a steady slope. Between each pair of keyframes, 16 frames blend gradually from one to the next, so sweeping the wavetable position doesn&rsquo;t click.</p>
     <p>Some keyframes are stored upside down so they match their neighbour. A held note sounds the same either way. The sound here plays a 512-sample version of each frame, so it previews the tone rather than matching a synth exactly.</p>
+    <p>To use your own run, export a GPX file: on Strava, open the activity on the website, click the &hellip; menu and choose Export GPX; on Garmin Connect, use the gear menu on the activity. Your file never leaves your browser: the page does all the maths on your device, and the map of your route isn&rsquo;t sent anywhere. The downloads are full 256-frame, 2048-sample wavetables that load in Serum and Vital.</p>
   </section>
 
   <div class="page-foot">
-    <p>These are four of my races, tracked on my watch: the Cherry Blossom 10 Miler and the Eugene, Marine Corps and Philly marathons. Each one becomes a 256-frame wavetable for Serum and Vital.</p>
+    <p>These are four of my races, tracked on my watch: the Cherry Blossom 10 Miler and the Eugene, Marine Corps and Philly marathons. Each one becomes a 256-frame wavetable for Serum and Vital, and so can yours.</p>
     <a class="more-link" href="kitchen.html">Back to Kev&rsquo;s Kitchen &rarr;</a>
   </div>
   <footer id="contact">
@@ -166,13 +203,14 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
 </main>
 
 <script src="main.js"></script>
+<script src="waverunner-core.js"></script>
 <script>
 (() => {
   const NK = 16, NF = 256;
   const $ = (id) => document.getElementById(id);
   const pos = $("pos"), posOut = $("pos-out"), status = $("status");
   const NS = "http://www.w3.org/2000/svg";
-  let data = null, run = null;
+  let data = null, run = null, listen = null, uploads = 0;
 
   const el = (tag, attrs, parent) => {
     const n = document.createElementNS(NS, tag);
@@ -233,6 +271,29 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     const t2 = el("text", { x: W / 2 + 6, y: H - 4 }, svg); t2.textContent = "next repeat";
   }
 
+  function drawAxis(svg, f) {
+    clear(svg);
+    const W = 320, H = 150, mid = H / 2, amp = H / 2 - 10;
+    el("line", { x1: 0, y1: mid, x2: W, y2: mid, stroke: "var(--grid)", "stroke-width": 1 }, svg);
+    el("path", { d: pathOf(f.map((v, j) => [(j / (f.length - 1)) * W, mid - v * amp])), fill: "none", stroke: "var(--wave)", "stroke-width": 1.8, "stroke-linejoin": "round" }, svg);
+  }
+
+  function drawAxes() {
+    if (!run.axes) return;
+    drawAxis($("axis-lon"), run.axes.lon);
+    drawAxis($("axis-ele"), run.axes.ele);
+    drawAxis($("axis-lat"), run.axes.lat);
+    $("ele-note").hidden = run.hasEle !== false;
+  }
+
+  function setListen(axis) {
+    listen = axis;
+    document.querySelectorAll(".axis-play").forEach((b) => {
+      const on = b.dataset.axis === axis;
+      b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "Playing" : "Play";
+    });
+  }
+
   function lineChart(svg, xs, ys, color, opts = {}) {
     clear(svg);
     const W = 320, H = 170, L = 40, R = 8, T = 8, B = 24;
@@ -274,7 +335,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     lineChart($("ing-turn"), st.along, st.turn, "var(--turn)", { zero: true });
     lineChart($("ing-hill"), st.along, st.elev, "var(--hill)", { slope: true });
     $("ing-cap").textContent = `Stretch ${nearest + 1}, ${st.km[0].toFixed(1)}\u2013${st.km[1].toFixed(1)} km: keyframe ${nearest + 1} sits at WT POS ${Math.round(nearest * (NF - 1) / (NK - 1)) + 1}.`;
-    sound.update(f);
+    sound.update(listen && run.axes ? run.axes[listen] : f);
   }
 
   // Sound: loop the current frame and crossfade when it changes.
@@ -308,11 +369,16 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     },
   };
 
+  function soundButton(on) { const b = $("sound"); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "Stop sound" : "Play sound"; }
   $("sound").addEventListener("click", (e) => {
-    const b = e.currentTarget;
-    if (b.getAttribute("aria-pressed") === "true") { sound.stop(); b.setAttribute("aria-pressed", "false"); b.textContent = "Play sound"; return; }
-    if (sound.start()) { b.setAttribute("aria-pressed", "true"); b.textContent = "Stop sound"; render(); }
+    if (e.currentTarget.getAttribute("aria-pressed") === "true") { sound.stop(); soundButton(false); setListen(null); return; }
+    if (sound.start()) { soundButton(true); render(); }
   });
+  document.querySelectorAll(".axis-play").forEach((b) => b.addEventListener("click", () => {
+    if (listen === b.dataset.axis) { sound.stop(); soundButton(false); setListen(null); return; }
+    if (!sound.on && !sound.start()) return;
+    soundButton(true); setListen(b.dataset.axis); render();
+  }));
   $("note").addEventListener("change", render);
 
   // Sweep: move WT POS from where it is to the end over about 10 seconds.
@@ -325,28 +391,90 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
     $("sweep").setAttribute("aria-pressed", "true"); $("sweep").textContent = "Stop sweep";
     const step = (now) => {
       const k = Math.min(1, (now - t0) / dur);
-      pos.value = Math.round(from + (NF - from) * k); render();
+      pos.value = Math.round(from + (NF - from) * k); setListen(null); render();
       if (k < 1) sweepRaf = requestAnimationFrame(step); else stopSweep();
     };
     sweepRaf = requestAnimationFrame(step);
   });
-  pos.addEventListener("input", () => { if (sweepRaf) stopSweep(); render(); });
+  pos.addEventListener("input", () => { if (sweepRaf) stopSweep(); setListen(null); render(); });
 
   function selectRun(id) {
     run = data.runs.find((r) => r.id === id) || data.runs[0];
     document.querySelectorAll("#runs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.id === run.id)));
+    $("downloads").hidden = !run.full;
+    drawAxes();
     render();
   }
 
+  function addRunButton(r) {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.id = r.id;
+    b.textContent = r.day;
+    const small = document.createElement("small");
+    small.textContent = `${r.where ? r.where + " \u00b7 " : ""}${r.km.toFixed(1)} km`;
+    b.appendChild(small);
+    b.addEventListener("click", () => selectRun(r.id));
+    $("runs").appendChild(b);
+  }
+
+  // Your own GPX: parsed and turned into frames right here, never uploaded.
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  async function addGPX(file) {
+    const W = window.WaverunnerCore;
+    const track = W.parseGPX(await file.text());
+    const when = track.time ? new Date(track.time) : null;
+    const month = when && !isNaN(when) ? `${MONTHS[when.getMonth()]} ${when.getFullYear()}` : "";
+    const name = (track.name || file.name.replace(/\.gpx$/i, "")).slice(0, 40);
+    const r = W.buildRun(track, "gpx-" + (++uploads), name, (month ? month + " \u00b7 " : "") + "your file");
+    data.runs.push(r);
+    addRunButton(r);
+    return r;
+  }
+
+  async function addFiles(files) {
+    if (!data) return;
+    const list = [...files].filter((f) => /\.gpx$/i.test(f.name) || f.type.includes("gpx"));
+    if (!list.length) { status.textContent = "That isn't a GPX file. Export one from Strava or Garmin Connect and try again."; return; }
+    status.textContent = "Reading your run\u2026";
+    await new Promise((ok) => setTimeout(ok, 30));  // let the message paint before the maths
+    let last = null;
+    const problems = [];
+    for (const f of list) {
+      try { last = await addGPX(f); } catch (err) { problems.push(`${f.name}: ${err.message}`); }
+    }
+    if (last) { setListen(null); selectRun(last.id); }
+    if (problems.length) status.textContent = (last ? "Some files were skipped. " : "") + problems.join(" ");
+  }
+
+  $("gpx").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
+  let dragDepth = 0;
+  window.addEventListener("dragenter", (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { dragDepth++; document.body.classList.add("dragging"); } });
+  window.addEventListener("dragleave", () => { if (dragDepth && --dragDepth === 0) document.body.classList.remove("dragging"); });
+  window.addEventListener("dragover", (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) e.preventDefault(); });
+  window.addEventListener("drop", (e) => {
+    if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+    e.preventDefault(); dragDepth = 0; document.body.classList.remove("dragging");
+    addFiles(e.dataTransfer.files);
+  });
+
+  function download(kind) {
+    const W = window.WaverunnerCore;
+    if (!run || !run.full) return;
+    const frames = kind === "morph"
+      ? W.morphFrames([run.full.axes.lon, run.full.axes.ele, run.full.axes.lat])
+      : W.blendKeys(run.full.keys);
+    const slug = run.day.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "run";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(W.wavetableWav(frames, run.day));
+    a.download = `waverunner_${slug}_${kind === "morph" ? "lon-ele-lat" : "progress"}.wav`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  $("dl-progress").addEventListener("click", () => download("progress"));
+  $("dl-morph").addEventListener("click", () => download("morph"));
+
   fetch("waverunner.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     data = d;
-    const box = $("runs");
-    d.runs.forEach((r) => {
-      const b = document.createElement("button"); b.type = "button"; b.dataset.id = r.id;
-      b.innerHTML = `${r.day}<small>${r.where ? r.where + " \u00b7 " : ""}${r.km.toFixed(1)} km</small>`;
-      b.addEventListener("click", () => selectRun(r.id));
-      box.appendChild(b);
-    });
+    d.runs.forEach(addRunButton);
     selectRun(d.runs[0].id);
   }).catch(() => { status.textContent = "The run data didn't load. Reload the page to try again."; });
 })();
