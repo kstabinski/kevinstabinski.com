@@ -18,7 +18,7 @@
     --line:      #33251b;   /* hairline dividers */
     --ink:       #f3e6d6;   /* warm cream */
     --ink-soft:  #c2ab94;   /* muted secondary */
-    --ink-faint: #86705c;   /* faintest labels */
+    --ink-faint: #937c66;   /* faintest labels (4.6:1 or better on every site surface) */
     --accent:    #e08a3c;   /* amber */
     --accent-2:  #7fb6b3;   /* teal, for small labels */
 
@@ -32,6 +32,7 @@
     padding-bottom: var(--safe-b);
   }
   *,*::before,*::after{ box-sizing: inherit; }
+  p, li{ text-wrap: pretty; }  /* avoids one-word last lines */
   html{ scroll-behavior: smooth; scroll-padding-top: calc(4.5rem + var(--safe-t)); }
   @media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } }
 
@@ -238,7 +239,7 @@
   }
   .disco-info{ min-width:0; }
   .disco-title{ font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:1.3rem; letter-spacing:-0.01em; margin:0; }
-  .disco-meta{ color:var(--ink-faint); font-size:0.82rem; margin:.2rem 0 0; }
+  .disco-meta{ color:var(--ink-faint); font-size:0.82rem; margin:.2rem 0 0; max-width:54ch; }
   .disco-links{ display:flex; gap:1.1rem; flex-wrap:wrap; }
   .disco-links a{
     color:var(--ink-soft); font-size:0.86rem; border-bottom:1px solid transparent;
