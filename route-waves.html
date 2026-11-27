@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Route Wave Explorer &mdash; Kev&rsquo;s Kitchen</title>
-<meta name="description" content="Route Wave Explorer: see how a run becomes a wavetable. Drag through the run, watch which stretch of road each frame comes from, and hear it.">
+<meta name="description" content="Route Wave Explorer: see how a race becomes a wavetable. Drag through the Cherry Blossom 10 Miler or the Eugene, Marine Corps and Philly marathons, watch which stretch of the course each frame comes from, and hear it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,14 +83,14 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
   <header class="top">
     <div class="brand">
       <h1>Route Wave Explorer</h1>
-      <p>How a run becomes a wavetable. Drag WT POS to move through the run: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start of the run, frame 256 the finish.</p>
+      <p>How a race becomes a wavetable. Pick a race and drag WT POS to move through it: the map shows which stretch of road the current frame comes from, the wave is the frame a synth plays at that position, and you can hear it. Frame 1 is the start line, frame 256 the finish.</p>
     </div>
   </header>
 
   <section class="panel controls" aria-label="Controls">
     <div class="row">
-      <span class="label">Run</span>
-      <div class="seg" id="runs" role="group" aria-label="Choose a run"></div>
+      <span class="label">Race</span>
+      <div class="seg" id="runs" role="group" aria-label="Choose a race"></div>
     </div>
     <div class="slider-row">
       <label class="label" for="pos">WT POS</label>
@@ -98,7 +98,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
       <output id="pos-out" for="pos">120 / 256</output>
     </div>
     <div class="row">
-      <button id="sweep" type="button" aria-pressed="false">Sweep through the run</button>
+      <button id="sweep" type="button" aria-pressed="false">Sweep through the race</button>
       <button id="sound" type="button" aria-pressed="false">Play sound</button>
       <label class="label" for="note">Note</label>
       <select id="note">
@@ -107,14 +107,14 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
         <option value="220">A3 (220 Hz)</option>
       </select>
     </div>
-    <p class="status" id="status" aria-live="polite">Loading runs&hellip;</p>
+    <p class="status" id="status" aria-live="polite">Loading races&hellip;</p>
   </section>
 
   <div class="pair">
     <section class="panel" aria-labelledby="map-h">
-      <h2 id="map-h">Where in the run</h2>
+      <h2 id="map-h">Where in the race</h2>
       <svg id="map" viewBox="0 0 420 320" role="img" aria-label="Route map with the current stretches highlighted"></svg>
-      <p class="cap">Dots mark where each of the 16 stretches starts. The highlighted stretches are the two keyframes this frame is blended from; the stronger one counts more. Dashed: the straight line the nearest stretch is measured against. The start and finish are left off the map.</p>
+      <p class="cap">Dots mark where each of the 16 stretches starts. The highlighted stretches are the two keyframes this frame is blended from; the stronger one counts more. Dashed: the straight line the nearest stretch is measured against.</p>
     </section>
     <section class="panel" aria-labelledby="wave-h">
       <h2 id="wave-h">The frame at this position</h2>
@@ -148,7 +148,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
   </section>
 
   <div class="page-foot">
-    <p>The runs here were tracked on my watch and turned into 256-frame wavetables for Serum and Vital.</p>
+    <p>These are four of my races, tracked on my watch: the Cherry Blossom 10 Miler and the Eugene, Marine Corps and Philly marathons. Each one becomes a 256-frame wavetable for Serum and Vital.</p>
     <a class="more-link" href="kitchen.html">Back to Kev&rsquo;s Kitchen &rarr;</a>
   </div>
   <footer id="contact">
@@ -317,7 +317,7 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
 
   // Sweep: move WT POS from where it is to the end over about 10 seconds.
   let sweepRaf = 0;
-  function stopSweep() { cancelAnimationFrame(sweepRaf); sweepRaf = 0; $("sweep").setAttribute("aria-pressed", "false"); $("sweep").textContent = "Sweep through the run"; }
+  function stopSweep() { cancelAnimationFrame(sweepRaf); sweepRaf = 0; $("sweep").setAttribute("aria-pressed", "false"); $("sweep").textContent = "Sweep through the race"; }
   $("sweep").addEventListener("click", () => {
     if (sweepRaf) { stopSweep(); return; }
     if (+pos.value >= NF) pos.value = 1;
