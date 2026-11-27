@@ -58,7 +58,15 @@ svg text{fill:var(--ink-faint);font-family:var(--mono);font-size:11px}
 .file-btn:hover{background:var(--sunk);border-color:var(--ink-soft)}
 .file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .file-btn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.downloads[hidden]{display:none}
+.downloads[hidden],.folder[hidden]{display:none}
+.folder{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.folder .f-row{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.folder .f-name{font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.folder .linkbtn{border:0;background:none;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;font-weight:400}
+.folder .linkbtn:hover{background:none;color:var(--ink)}
+.folder p{margin:0;max-width:72ch}
+#saved{margin:0;font-size:13px;color:var(--ink-soft)}
+#saved:empty{display:none}
 .axis-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .axis-head h3{font-family:var(--body);font-size:14px;font-weight:600;margin:0;color:var(--ink)}
 .axis-head button{padding:4px 10px;font-size:13px}
@@ -118,10 +126,14 @@ body.dragging .controls{outline:2px dashed var(--accent);outline-offset:4px}
         <option value="220">A3 (220 Hz)</option>
       </select>
     </div>
-    <div class="row downloads" id="downloads" hidden>
-      <span class="label">Download</span>
-      <button id="dl-progress" type="button">Progress wavetable (.wav)</button>
-      <button id="dl-morph" type="button">Lon &rarr; Ele &rarr; Lat wavetable (.wav)</button>
+    <div class="downloads" id="downloads" hidden>
+      <div class="row">
+        <span class="label" id="dl-label">Download</span>
+        <button id="dl-progress" type="button">Progress wavetable (.wav)</button>
+        <button id="dl-morph" type="button">Lon &rarr; Ele &rarr; Lat wavetable (.wav)</button>
+      </div>
+      <div class="folder" id="folderBox" hidden></div>
+      <p id="saved" aria-live="polite"></p>
     </div>
     <p class="status" id="status" aria-live="polite">Loading races&hellip;</p>
   </section>
@@ -182,6 +194,7 @@ body.dragging .controls{outline:2px dashed var(--accent);outline-offset:4px}
     <p>Each run is cut into 16 overlapping stretches of road. A keyframe mixes three ingredients from its stretch: how far the road bends from a straight line, how your direction changes compared with a steady turn (every corner adds brightness), and how the hills rise and fall compared with a steady slope. Between each pair of keyframes, 16 frames blend gradually from one to the next, so sweeping the wavetable position doesn&rsquo;t click.</p>
     <p>Some keyframes are stored upside down so they match their neighbour. A held note sounds the same either way. The sound here plays a 512-sample version of each frame, so it previews the tone rather than matching a synth exactly.</p>
     <p>To use your own run, export a GPX file: on Strava, open the activity on the website, click the &hellip; menu and choose Export GPX; on Garmin Connect, use the gear menu on the activity. Your file never leaves your browser: the page does all the maths on your device, and the map of your route isn&rsquo;t sent anywhere. The downloads are full 256-frame, 2048-sample wavetables that load in Serum and Vital.</p>
+    <p>In Chrome or Edge you can link a folder instead of downloading. It&rsquo;s the same folder Spice Drawer and Chord Pantry use, and each tool saves into its own subfolder, so your wavetables land in <b>Waverunner</b> next to your samples and MIDI. Once it&rsquo;s linked, every GPX you add saves both wavetables there straight away.</p>
   </section>
 
   <div class="page-foot">
@@ -437,12 +450,20 @@ body.dragging .controls{outline:2px dashed var(--accent);outline-offset:4px}
     status.textContent = "Reading your run\u2026";
     await new Promise((ok) => setTimeout(ok, 30));  // let the message paint before the maths
     let last = null;
-    const problems = [];
+    const problems = [], added = [];
     for (const f of list) {
-      try { last = await addGPX(f); } catch (err) { problems.push(`${f.name}: ${err.message}`); }
+      try { last = await addGPX(f); added.push(last); } catch (err) { problems.push(`${f.name}: ${err.message}`); }
     }
     if (last) { setListen(null); selectRun(last.id); }
     if (problems.length) status.textContent = (last ? "Some files were skipped. " : "") + problems.join(" ");
+    if (dirH && added.length) {
+      // Reading files doesn't count as a click, so only save if access was already granted.
+      let ok = false;
+      try { ok = (await dirH.queryPermission(RW)) === "granted"; } catch (e) {}
+      if (!ok) { said(`Click Save to put these wavetables in ${dirH.name}/${SUB} (the browser will ask for access).`); return; }
+      for (const r of added) await saveRun(r, Promise.resolve(true), ["progress", "morph"]);
+      if (added.length > 1) said(`Saved ${added.length * 2} wavetables to ${dirH.name}/${SUB}.`);
+    }
   }
 
   $("gpx").addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
@@ -456,21 +477,101 @@ body.dragging .controls{outline:2px dashed var(--accent);outline-offset:4px}
     addFiles(e.dataTransfer.files);
   });
 
-  function download(kind) {
+  function wavetable(r, kind) {
     const W = window.WaverunnerCore;
-    if (!run || !run.full) return;
     const frames = kind === "morph"
-      ? W.morphFrames([run.full.axes.lon, run.full.axes.ele, run.full.axes.lat])
-      : W.blendKeys(run.full.keys);
+      ? W.morphFrames([r.full.axes.lon, r.full.axes.ele, r.full.axes.lat])
+      : W.blendKeys(r.full.keys);
+    return W.wavetableWav(frames, r.day);
+  }
+
+  function download(kind) {
+    if (!run || !run.full) return;
     const slug = run.day.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "run";
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(W.wavetableWav(frames, run.day));
+    a.href = URL.createObjectURL(wavetable(run, kind));
     a.download = `waverunner_${slug}_${kind === "morph" ? "lon-ele-lat" : "progress"}.wav`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
-  $("dl-progress").addEventListener("click", () => download("progress"));
-  $("dl-morph").addEventListener("click", () => download("morph"));
+
+  /* Linked folder (Chrome/Edge): one folder for all of Kev's Kitchen, shared with Spice Drawer and
+     Chord Pantry through the same IndexedDB store. Waverunner writes into its own subfolder. */
+  const LOCAL = !(window.claude && window.claude.use);
+  const CAN_LINK = LOCAL && typeof window.showDirectoryPicker === "function";
+  const SUB = "Waverunner", RW = { mode: "readwrite" };
+  const KIND = { progress: "progress", morph: "lon-ele-lat" };
+  let dirH = null;
+  const kv = (mode, fn) => new Promise((res, rej) => {
+    const r = indexedDB.open("spicedrawer", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onerror = () => rej(r.error);
+    r.onsuccess = () => { const tx = r.result.transaction("kv", mode), q = fn(tx.objectStore("kv")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); };
+  });
+  const said = (msg) => { $("saved").textContent = msg; };
+  async function loadDir() { if (!CAN_LINK) return; try { dirH = (await kv("readonly", (st) => st.get("dir"))) || null; } catch (e) { dirH = null; } folderUI(); }
+  async function linkDir() {
+    try {
+      dirH = await window.showDirectoryPicker({ id: "spicedrawer", mode: "readwrite", startIn: "music" });
+      try { await kv("readwrite", (st) => st.put(dirH, "dir")); } catch (e) {}
+      said(`Linked ${dirH.name}. Wavetables will be saved in ${dirH.name}/${SUB}.`);
+    } catch (e) { if (e && e.name !== "AbortError") said("Couldn\u2019t link that folder."); }
+    folderUI();
+  }
+  async function unlinkDir() { dirH = null; try { await kv("readwrite", (st) => st.delete("dir")); } catch (e) {} said(""); folderUI(); }
+  // Call at the very start of a click handler: Chrome only shows the permission prompt during a user gesture.
+  function dirReady() {
+    if (!dirH) return Promise.resolve(false);
+    return dirH.queryPermission(RW).then((p) => (p === "granted" ? true : dirH.requestPermission(RW).then((q) => q === "granted"))).catch(() => false);
+  }
+  async function writeWav(r, kind) {
+    const d = await dirH.getDirectoryHandle(SUB, { create: true });
+    const blob = wavetable(r, kind), bytes = new Uint8Array(await blob.arrayBuffer());
+    const same = async (h) => { const a = new Uint8Array(await (await h.getFile()).arrayBuffer()); return a.length === bytes.length && a.every((x, i) => x === bytes[i]); };
+    const title = `${r.day.replace(/[\\/:*?"<>|]+/g, " ").trim() || "Run"} (${KIND[kind]})`;
+    let n = title, k = 2;
+    for (;;) { let h; try { h = await d.getFileHandle(n + ".wav"); } catch (e) { break; } if (await same(h)) return n + ".wav"; n = `${title} ${k++}`; }  // identical file already there: keep it
+    const fh = await d.getFileHandle(n + ".wav", { create: true }), w = await fh.createWritable();
+    await w.write(blob); await w.close();
+    return n + ".wav";
+  }
+  async function saveRun(r, perm, kinds) {
+    if (!(await perm)) { said(`Allow access to ${dirH.name} to save wavetables there.`); return false; }
+    try {
+      const names = [];
+      for (const kind of kinds) names.push(await writeWav(r, kind));
+      said(`Saved to ${dirH.name}/${SUB}: ${names.join(", ")}`);
+      return true;
+    } catch (e) { said(`Couldn\u2019t write to ${dirH.name}. Try linking the folder again.`); return false; }
+  }
+  function folderUI() {
+    const box = $("folderBox");
+    box.hidden = !CAN_LINK;
+    $("dl-label").textContent = dirH ? "Save" : "Download";
+    if (!CAN_LINK) return;
+    box.textContent = "";
+    const row = document.createElement("div"); row.className = "f-row";
+    const help = document.createElement("p");
+    const btn = (text, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "linkbtn"; b.textContent = text; b.addEventListener("click", fn); return b; };
+    if (dirH) {
+      const name = document.createElement("span"); name.className = "f-name"; name.textContent = `${dirH.name}/${SUB}`;
+      row.append("Saving to", name, btn("Change folder", linkDir), btn("Unlink", unlinkDir));
+      help.textContent = "The same folder Spice Drawer and Chord Pantry use, with a subfolder for each tool. Every GPX you add saves both wavetables here.";
+    } else {
+      row.append(btn("Link a folder\u2026", linkDir));
+      help.textContent = "Or link one folder for all of Kev\u2019s Kitchen: each tool saves into its own subfolder, and every GPX you add here saves its wavetables into Waverunner.";
+    }
+    box.append(row, help);
+  }
+
+  function saveOrDownload(kind) {
+    if (!run || !run.full) return;
+    if (dirH) { saveRun(run, dirReady(), [kind]); return; }
+    download(kind);
+  }
+  $("dl-progress").addEventListener("click", () => saveOrDownload("progress"));
+  $("dl-morph").addEventListener("click", () => saveOrDownload("morph"));
+  loadDir();
 
   fetch("waverunner.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     data = d;

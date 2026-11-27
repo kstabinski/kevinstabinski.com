@@ -2676,8 +2676,11 @@ function loadItem(it){
 }
 
 /* Linked folder (Chrome/Edge, outside Claude): every sample added to the pack is also written
-   straight into a folder on disk, e.g. one added to Ableton's browser under Places. */
+   straight into a folder on disk, e.g. one added to Ableton's browser under Places.
+   One folder serves all of Kev's Kitchen (same store as Chord Pantry and Waverunner); each tool
+   writes into its own subfolder, so samples land in Spice Drawer / pack name / sound type. */
 const CAN_LINK = LOCAL && typeof window.showDirectoryPicker==='function';
+const SUB='Spice Drawer';
 let dirH=null;
 function kv(mode,fn){ return new Promise((res,rej)=>{ const r=indexedDB.open('spicedrawer',1);
   r.onupgradeneeded=()=>r.result.createObjectStore('kv');
@@ -2696,13 +2699,13 @@ function dirReady(){ if(!dirH) return Promise.resolve(false);
   const o={mode:'readwrite'};
   return dirH.queryPermission(o).then(p=>p==='granted'?true:dirH.requestPermission(o).then(q=>q==='granted')).catch(()=>false); }
 async function writeToDir(type,name,buf,params){
-  const pn=safe(S.packName)||'Spice Drawer';
-  const d1=await dirH.getDirectoryHandle(pn,{create:true}), sub=folderOf(type,params), d2=await d1.getDirectoryHandle(sub,{create:true});
+  const pn=safe(S.packName)||'Untitled Pack';
+  const d0=await dirH.getDirectoryHandle(SUB,{create:true}), d1=await d0.getDirectoryHandle(pn,{create:true}), sub=folderOf(type,params), d2=await d1.getDirectoryHandle(sub,{create:true});
   const base=safe(name); let n=base, k=2;
   for(;;){ try{ await d2.getFileHandle(n+'.wav'); n=base+' '+(k++); }catch(e){ break; } }
   const fh=await d2.getFileHandle(n+'.wav',{create:true}), w=await fh.createWritable();
   await w.write(new Blob([wav(buf)],{type:'audio/wav'})); await w.close();
-  return pn+'/'+sub+'/'+n+'.wav'; }
+  return SUB+'/'+pn+'/'+sub+'/'+n+'.wav'; }
 const folderOf=(type,params)=> type==='bass' && params && params.kind==='log' ? 'Log Drums' : TYPES[type].folder;
 async function toDir(perm,type,name,buf,params){
   if(!dirH) return null;
@@ -2712,11 +2715,11 @@ function folderUI(){
   const box=$('#folderBox'); if(!box) return;
   box.hidden=!CAN_LINK; if(!CAN_LINK) return;
   if(dirH){
-    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every sample you add lands in <b>pack name / sound type</b> inside this folder. In Ableton, add the folder under Places (Add Folder…) and drag samples from the browser.</p>`;
+    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every sample you add lands in <b>${SUB} / pack name / sound type</b> inside this folder. It’s one folder for all of Kev’s Kitchen: Chord Pantry and Waverunner save into their own folders beside it. In Ableton, add the folder under Places (Add Folder…) and drag samples from the browser.</p>`;
     box.querySelector('.f-name').textContent=dirH.name;
     box.querySelector('#fChange').onclick=linkDir; box.querySelector('#fUnlink').onclick=unlinkDir;
   } else {
-    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every sample you add to the pack is saved straight into it. Add the same folder to Ableton’s browser under Places, and new sounds show up there, ready to drag in.</p>`;
+    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every sample you add to the pack is saved straight into it, under <b>${SUB}</b>. The same folder works across Kev’s Kitchen, with a subfolder for each tool. Add it to Ableton’s browser under Places, and new sounds show up there, ready to drag in.</p>`;
     box.querySelector('#fLink').onclick=linkDir;
   } }
 async function saveFile(filename, blob){
@@ -2826,7 +2829,7 @@ $('#bVar').onclick=async()=>{
 };
 $('#bExport').onclick=async()=>{
   if(dirH){ const perm=dirReady(); let n=0; for(const it of S.pack){ if(it.buf && await toDir(perm,it.type,it.name,it.buf,it.params)) n++; else if(!dirH) break; }
-    if(n){ toast('Saved '+n+' sample'+(n===1?'':'s')+' to '+dirH.name+'/'+(safe(S.packName)||'Spice Drawer')); return; } }
+    if(n){ toast('Saved '+n+' sample'+(n===1?'':'s')+' to '+dirH.name+'/'+SUB+'/'+(safe(S.packName)||'Untitled Pack')); return; } }
   const pn=safe(S.packName), used=new Set(), files=[];
   for(const it of S.pack){
     let path=`${pn}/${folderOf(it.type,it.params)}/${safe(it.name)}`, k=2, p=path;

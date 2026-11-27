@@ -1042,7 +1042,7 @@ async function saveFile(filename,blob){
   catch(e){ const c=e&&e.code; toast(c==='declined'?'Save canceled.':c==='rate_limited'?'A save prompt is already open.':'Couldn’t save the file here.'); }
 }
 /* Linked folder (Chrome/Edge on the site or the desktop copy): MIDI is written straight into a folder on disk,
-   e.g. one added to Ableton's browser under Places. Shares the folder link with Spice Drawer (same site, same store). */
+   e.g. one added to Ableton's browser under Places. Shares the folder link with Spice Drawer and Waverunner (same site, same store); each tool has its own subfolder. */
 const CAN_LINK = LOCAL && typeof window.showDirectoryPicker==='function';
 const SUB='Chord Pantry';
 let dirH=null;
@@ -1077,11 +1077,11 @@ function folderUI(){
   const box=$('#folderBox'); if(!box) return;
   box.hidden=!CAN_LINK; if(!CAN_LINK) return;
   if(dirH){
-    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every progression you add to the pantry is saved as MIDI in <b>${SUB}</b> inside this folder. In Ableton, add the folder under Places (Add Folder…) and drag the clips from the browser.</p>`;
+    box.innerHTML=`<div class="f-row"><span>Saving to</span><span class="f-name"></span></div><div class="f-row"><button type="button" class="linkbtn" id="fChange">Change folder</button><button type="button" class="linkbtn" id="fUnlink">Unlink</button></div><p class="f-help">Every progression you add to the pantry is saved as MIDI in <b>${SUB}</b> inside this folder. It’s one folder for all of Kev’s Kitchen: Spice Drawer and Waverunner save into their own folders beside it. In Ableton, add the folder under Places (Add Folder…) and drag the clips from the browser.</p>`;
     box.querySelector('.f-name').textContent=dirH.name;
     box.querySelector('#fChange').onclick=linkDir; box.querySelector('#fUnlink').onclick=unlinkDir;
   } else {
-    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every progression you add to the pantry is saved straight into it as MIDI. Add the same folder to Ableton’s browser under Places, and new progressions show up there, ready to drag in.</p>`;
+    box.innerHTML=`<div class="f-row"><button type="button" class="tbtn" id="fLink">Link a folder…</button></div><p class="f-help">Pick a folder once and every progression you add to the pantry is saved straight into it as MIDI, under <b>${SUB}</b>. The same folder works across Kev’s Kitchen, with a subfolder for each tool. Add it to Ableton’s browser under Places, and new progressions show up there, ready to drag in.</p>`;
     box.querySelector('#fLink').onclick=linkDir;
   } }
 async function saveCurrent(){
